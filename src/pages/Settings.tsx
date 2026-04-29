@@ -1,0 +1,231 @@
+import { useState } from 'react';
+import { useMedicationStore } from '../stores/medicationStore';
+import { useWeightStore } from '../stores/weightStore';
+import { useUIStore } from '../stores/uiStore';
+import { exportData, downloadBackupJSON, importData } from '../lib/cloudSync';
+import { generatePDF, downloadPDF } from '../lib/pdfExport';
+import { requestNotificationPermission } from '../lib/notifications';
+import {
+  Bell, FileText, Download, Upload,
+  Trash2, ChevronRight, Shield, Check
+} from 'lucide-react';
+
+export function Settings() {
+  const { medications, doses } = useMedicationStore();
+  const { entries: weightEntries } = useWeightStore();
+  const { addToast } = useUIStore();
+
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const handleEnableNotifications = async () => {
+    const granted = await requestNotificationPermission();
+    setNotificationsEnabled(granted);
+    addToast(granted ? 'Notifications enabled!' : 'Notifications denied', granted ? 'success' : 'error');
+  };
+
+  const handleExportPDF = async () => {
+    const doc = generatePDF(medications, doses, weightEntries);
+    downloadPDF(doc);
+    addToast('PDF report downloaded', 'success');
+  };
+
+  const handleExportJSON = async () => {
+    setExporting(true);
+    try {
+      const data = await exportData();
+      downloadBackupJSON(data);
+      addToast('Backup downloaded', 'success');
+    } catch {
+      addToast('Export failed', 'error');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleImportJSON = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      await importData(data);
+      await useMedicationStore.getState().loadData();
+      await useWeightStore.getState().loadData();
+      addToast('Data restored successfully!', 'success');
+    } catch (err) {
+      addToast(`Import failed: ${err instanceof Error ? err.message : 'Invalid file'}`, 'error');
+    } finally {
+      setImporting(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (!confirm('WARNING: This will permanently delete ALL your data. This cannot be undone. Are you sure?')) return;
+    if (!confirm('Really sure? All medications, doses, and weight entries will be gone.')) return;
+
+    const { db } = await import('../db/database');
+    await db.medications.clear();
+    await db.doses.clear();
+    await db.weightEntries.clear();
+    await useMedicationStore.getState().loadData();
+    await useWeightStore.getState().loadData();
+    addToast('All data cleared', 'info');
+  };
+
+  return (
+    <div className="min-h-full pb-24 px-5 pt-6">
+      <h1 className="text-2xl font-bold text-white mb-6">Settings</h1>
+
+      {/* Notifications */}
+      <div className="mb-6">
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Reminders</h2>
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
+          <button
+            onClick={handleEnableNotifications}
+            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Bell size={18} className="text-primary-400" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-white">Dose Reminders</p>
+                <p className="text-xs text-slate-400">
+                  {notificationsEnabled ? 'Enabled' : 'Tap to enable browser notifications'}
+                </p>
+              </div>
+            </div>
+            {notificationsEnabled ? (
+              <Check size={18} className="text-emerald-400" />
+            ) : (
+              <ChevronRight size={16} className="text-slate-500" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Reports */}
+      <div className="mb-6">
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Reports</h2>
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
+          <button
+            onClick={handleExportPDF}
+            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <FileText size={18} className="text-accent-500" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-white">Export PDF Report</p>
+                <p className="text-xs text-slate-400">Doctor-ready summary</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-slate-500" />
+          </button>
+        </div>
+      </div>
+
+      {/* Data Management */}
+      <div className="mb-6">
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Data</h2>
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
+          <button
+            onClick={handleExportJSON}
+            disabled={exporting}
+            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors border-b border-white/5"
+          >
+            <div className="flex items-center gap-3">
+              <Download size={18} className="text-emerald-400" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-white">Backup Data</p>
+                <p className="text-xs text-slate-400">Download JSON backup file</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-slate-500" />
+          </button>
+
+          <label className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors cursor-pointer border-b border-white/5">
+            <div className="flex items-center gap-3">
+              <Upload size={18} className="text-primary-400" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-white">Restore Data</p>
+                <p className="text-xs text-slate-400">Upload JSON backup file</p>
+              </div>
+            </div>
+            <input
+              type="file"
+              accept=".json,application/json"
+              onChange={handleImportJSON}
+              className="hidden"
+            />
+            {importing ? (
+              <span className="text-xs text-primary-400">Restoring...</span>
+            ) : (
+              <ChevronRight size={16} className="text-slate-500" />
+            )}
+          </label>
+
+          <button
+            onClick={handleClearAll}
+            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-red-500/10 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Trash2 size={18} className="text-red-400" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-red-400">Clear All Data</p>
+                <p className="text-xs text-slate-400">Permanently delete everything</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-red-400/50" />
+          </button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="mb-6">
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Stats</h2>
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-4">
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <p className="text-xl font-bold text-white">{medications.length}</p>
+              <p className="text-[10px] text-slate-400 uppercase">Meds</p>
+            </div>
+            <div>
+              <p className="text-xl font-bold text-white">{doses.length}</p>
+              <p className="text-[10px] text-slate-400 uppercase">Doses</p>
+            </div>
+            <div>
+              <p className="text-xl font-bold text-white">{weightEntries.length}</p>
+              <p className="text-[10px] text-slate-400 uppercase">Weights</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* About */}
+      <div className="mb-6">
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Shield size={14} className="text-primary-400" />
+            <p className="text-sm font-medium text-white">Privacy First</p>
+          </div>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            All your data stays on this device. PeptyTrack does not send any health information to external servers.
+            Internet is only used for optional cloud backup when you explicitly choose to sync.
+          </p>
+        </div>
+      </div>
+
+      <div className="text-center pb-4">
+        <p className="text-[10px] text-slate-600">
+          PeptyTrack v1.0 — Free GLP-1 tracker
+        </p>
+        <p className="text-[10px] text-slate-600 mt-0.5">
+          Not medical advice. Consult your healthcare provider.
+        </p>
+      </div>
+    </div>
+  );
+}

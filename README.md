@@ -1,0 +1,90 @@
+# PeptyTrack
+
+> **Free · Private · Offline-first GLP-1 Medication Tracker**
+
+PeptyTrack is a fully functional, open-source alternative to paid GLP-1 tracking apps like Shotsy. It works entirely on your device — no cloud required, no subscriptions, no data mining. Your health data stays yours.
+
+## Features
+
+### Core Tracking
+- **Dose Logging** — Log injections with dosage, date/time, and injection site (abdomen, thigh, arm with quadrant selection)
+- **Medication Level Visualization** — Real-time estimated medication concentration chart based on pharmacokinetic half-life modeling
+- **Weight Tracking** — Log daily weights with trend analysis and interactive charts
+- **Multiple Medications** — Track several GLP-1 drugs simultaneously with independent schedules
+
+### Supported Medications
+| Medication | Brands | Half-Life | Frequency |
+|------------|--------|-----------|-----------|
+| Semaglutide | Ozempic, Wegovy, Rybelsus | 168h (7d) | Weekly |
+| Tirzepatide | Mounjaro, Zepbound | 120h (5d) | Weekly |
+| Liraglutide | Victoza, Saxenda | 13h | Daily |
+| Dulaglutide | Trulicity | 120h (5d) | Weekly |
+| Exenatide | Byetta | 2.4h | Twice daily |
+| Exenatide ER | Bydureon, Bydureon BCise | 336h (14d) | Weekly |
+| Lixisenatide | Adlyxin | 3h | Daily |
+| Retatrutide | Zepbound | 168h (7d) | Weekly |
+
+### Smart Features
+- **Configurable Reminders** — Set per-medication reminder hours before next dose
+- **PDF Reports** — Generate doctor-ready reports with medication history, dose logs, and weight trends
+- **Data Backup/Restore** — Export/import JSON backups; auto-backup on every change with restore prompt
+- **PWA Offline Support** — Install as a standalone app, works without internet
+- **Edit Everything** — Modify medications, dose entries, and weight entries after logging
+- **Multi-Med Chart** — View all enabled medications simultaneously with legend toggling
+- **Custom Medications** — Add any medication not in the built-in library
+
+## Tech Stack
+
+- **React 19** + **TypeScript** + **Vite**
+- **Tailwind CSS** — Dark theme with teal/emerald palette
+- **IndexedDB (Dexie)** — 100% local data storage
+- **Zustand** — Lightweight state management
+- **Recharts** — Interactive charts
+- **jsPDF** — PDF report generation
+- **vite-plugin-pwa** — Service worker + manifest
+
+## Privacy
+
+All data is stored locally in your browser's IndexedDB. No health information is ever transmitted to external servers unless you explicitly choose to back up to Google Drive or Dropbox.
+
+## Getting Started
+
+```bash
+npm install
+npm run dev     # Start dev server (http://localhost:5173)
+npm run build   # Production build  → dist/
+npm run test    # Run unit tests
+```
+
+## Deploy to Netlify
+
+```bash
+npm run build
+npx netlify deploy --prod --dir=dist
+```
+
+**Live URL:** https://peptytrack.netlify.app
+
+The app is deployed on Netlify with a permanent URL. Updates are instant — just rebuild and redeploy. All user data stays in the phone's IndexedDB and survives code updates.
+
+## Cloud Backup Setup
+
+### Google Drive
+1. Create a project at [Google Cloud Console](https://console.cloud.google.com/)
+2. Enable the Google Drive API
+3. Create OAuth 2.0 credentials (Web application type)
+4. Add your domain to authorized origins
+5. Enter your Client ID in the Settings page
+
+### Dropbox
+1. Create an app at [Dropbox App Console](https://www.dropbox.com/developers/apps)
+2. Choose "Scoped access"
+3. Enter your App Key in the Settings page
+
+## Disclaimer
+
+This app is for tracking and educational purposes only. It does not provide medical advice, diagnosis, or treatment. Always consult your healthcare provider regarding your medication.
+
+## License
+
+MIT

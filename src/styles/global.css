@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    overscroll-behavior-y: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  /* Custom focus styles */
+  *:focus-visible {
+    outline: 2px solid #14b8a6;
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+
+  /* Safe area for notched devices */
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Glass morphism card utility */
+  .glass {
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Premium shadow for cards */
+  .shadow-elevated {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.1),
+      0 4px 12px rgba(0, 0, 0, 0.15),
+      0 8px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    background: linear-gradient(135deg, #2dd4bf 0%, #10b981 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Smooth page transitions */
+  .page-enter {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  .page-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.25s ease-out;
+  }
+}
+
+@layer components {
+  /* Recharts tooltip override for dark theme */
+  .recharts-tooltip-wrapper {
+    outline: none !important;
+  }
+
+  /* Input date/time picker dark styling */
+  input[type="date"],
+  input[type="time"] {
+    color-scheme: dark;
+  }
+
+  /* Number input hide spinner */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
+
+@layer utilities {
+  /* Prevent text selection on interactive elements */
+  .no-select {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
