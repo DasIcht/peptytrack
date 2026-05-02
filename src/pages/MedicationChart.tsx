@@ -233,6 +233,8 @@ export function MedicationChart() {
                 tick={{ fill: '#94a3b8', fontSize: 10 }}
                 axisLine={false}
                 tickLine={false}
+                label={false}
+                tickFormatter={(v: number) => v.toFixed(2)}
               />
               <YAxis
                 yAxisId="right"
@@ -242,7 +244,8 @@ export function MedicationChart() {
                 tick={{ fill: '#94a3b8', fontSize: 10 }}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(v) => `${Math.round(v)}`}
+                label={false}
+                tickFormatter={(v: number) => v.toFixed(2)}
               />
               <Legend
                 onClick={handleLegendClick}
