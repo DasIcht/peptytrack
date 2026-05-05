@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWeightStore } from '../stores/weightStore';
 import { useUIStore } from '../stores/uiStore';
+import { useSettingsStore } from '../stores/settingsStore';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
@@ -10,10 +12,17 @@ import { TrendingDown, TrendingUp, Minus, Scale, Trash2, Pencil } from 'lucide-r
 export function WeightTracker() {
   const { entries, addEntry, updateEntry, deleteEntry, getTrend } = useWeightStore();
   const { addToast } = useUIStore();
+  const { settings } = useSettingsStore();
 
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [weight, setWeight] = useState('');
   const [unit, setUnit] = useState<'kg' | 'lb'>('kg');
+
+  useEffect(() => {
+    if (!editingEntryId) {
+      setUnit(settings.weightUnit);
+    }
+  }, [settings.weightUnit, editingEntryId]);
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [time, setTime] = useState(format(new Date(), 'HH:mm'));
   const [notes, setNotes] = useState('');
@@ -80,15 +89,27 @@ export function WeightTracker() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this weight entry?')) return;
-    try {
-      await deleteEntry(id);
-      addToast('Weight entry deleted', 'info');
-      if (editingEntryId === id) resetForm();
-    } catch {
-      addToast('Failed to delete entry', 'error');
-    }
+  const { openModal } = useUIStore();
+
+  const handleDelete = (id: string) => {
+    openModal(
+      <ConfirmDialog
+        title="Delete Weight Entry?"
+        message="This action cannot be undone. The weight entry will be permanently removed from your history."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        danger
+        onConfirm={async () => {
+          try {
+            await deleteEntry(id);
+            addToast('Weight entry deleted', 'info');
+            if (editingEntryId === id) resetForm();
+          } catch {
+            addToast('Failed to delete entry', 'error');
+          }
+        }}
+      />
+    );
   };
 
   const submitLabel = editingEntryId

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMedicationStore } from '../stores/medicationStore';
 import { useUIStore } from '../stores/uiStore';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MEDICATION_LIBRARY } from '../db/seed';
 import type { Frequency } from '../types';
 import { Pill, Trash2, Edit3, Clock, ChevronRight, X, Plus, Save } from 'lucide-react';
@@ -23,7 +24,7 @@ const DEFAULT_CUSTOM_FORM = {
 
 export function Medications() {
   const { medications, deleteMedication, updateMedication, enableMedication, loadData } = useMedicationStore();
-  const { addToast } = useUIStore();
+  const { addToast, openModal } = useUIStore();
 
   const [editingId, setEditingId] = useState<string | null>(null);
 interface EditForm {
@@ -42,11 +43,20 @@ interface EditForm {
   const [addMode, setAddMode] = useState<'library' | 'custom'>('library');
   const [customForm, setCustomForm] = useState({ ...DEFAULT_CUSTOM_FORM });
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Delete this medication and all its dose history?')) {
-      await deleteMedication(id);
-      addToast('Medication deleted', 'info');
-    }
+  const handleDelete = (id: string) => {
+    openModal(
+      <ConfirmDialog
+        title="Delete Medication?"
+        message="This will permanently delete the medication and all its dose history. This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        danger
+        onConfirm={async () => {
+          await deleteMedication(id);
+          addToast('Medication deleted', 'info');
+        }}
+      />
+    );
   };
 
   const startEdit = (med: typeof medications[0]) => {

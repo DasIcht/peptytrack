@@ -165,7 +165,7 @@ interface WeightEntry {
 | `medicationStore` | Medication + dose CRUD (incl. dose update/delete), computed levels | `medications[]`, `doses[]`, `initialized` |
 | `weightStore` | Weight entry CRUD (incl. update/delete), trend calculation | `entries[]` |
 | `uiStore` | Navigation, modals, toast queue, log-dose preselection | `activePage`, `logDoseMedId`, `toasts[]`, `modalConfig` |
-| `settingsStore` | App preferences | (minimal — currently unused) |
+| `settingsStore` | App preferences | `settings` (weightUnit, medicationUnit, notificationsEnabled) |
 
 ### 5.2 Store Pattern
 
@@ -340,6 +340,8 @@ App.tsx
 | `halfLifeEngine.test.ts` | 15 tests — concentration decay, dose accumulation, series generation, next dose timing |
 | `database.test.ts` | 14 tests — medication CRUD, dose queries, weight sorting, settings persistence, seed deduplication & idempotency |
 | `medicationStore.test.ts` | 5 tests — enable/disable toggle, state persistence across reloads, custom medication creation, dose update |
+| `settingsStore.test.ts` | 4 tests — default settings, persist/reload, getSetting, merge with defaults |
+| `ConfirmDialog.test.tsx` | 7 tests — rendering, confirm/cancel actions, danger styling, modal close |
 
 **Run tests:** `npm run test`
 
@@ -351,9 +353,9 @@ App.tsx
 
 | # | Item | Location | Description |
 |---|------|----------|-------------|
-| 1 | **settingsStore unused** | `src/stores/settingsStore.ts` | Store exists but is not integrated. Should be wired into Settings page for weight unit default, notification master switch, etc. |
-| 2 | **Modal component unused** | `src/components/Modal.tsx` | Modal infrastructure exists but no page actually uses `useUIStore().openModal()`. Either remove or implement confirmation dialogs (e.g., delete dose). |
-| 3 | **Notifications not wired to SW** | `src/lib/notifications.ts` | Reminders use `window.Notification` but are not connected to the service worker. Background reminders won't work when app is closed. |
+| 1 | ~~settingsStore unused~~ | ✅ `src/stores/settingsStore.ts` | Implemented. Wires weight unit default, notification master switch, persists to IndexedDB settings table. |
+| 2 | ~~Modal component unused~~ | ✅ `src/components/Modal.tsx` | Implemented. `ConfirmDialog` component used via `openModal()` for delete confirmations across LogDose, WeightTracker, Medications, and Settings pages. |
+| 3 | **Notifications not wired to SW** | `src/lib/notifications.ts` | Reminders use `window.Notification` but are not connected to the service worker. Background reminders won't work when app is closed. **Partial fix:** reminders now gated behind `settings.notificationsEnabled` master switch. |
 
 ### 12.2 Features — Nice to Have
 
@@ -379,6 +381,7 @@ App.tsx
 | 14 | **Vite dynamic import warning** | `database.ts` is both statically and dynamically imported — dynamic import is ineffective. Consolidate imports. |
 | 15 | **Type safety in charts** | Recharts `Tooltip` formatter types require manual casting — not type-safe. |
 | 16 | **No e2e tests** | No browser automation tests (Playwright/Cypress) for critical user flows. |
+| 17 | **Service Worker push notifications** | Web Push API or Periodic Background Sync needed for true background reminders. Limited mobile browser support. |
 
 ---
 
@@ -426,3 +429,11 @@ npm run test       # Runs unit tests
 | 2026-04-29 | Medications tab: inline full edit mode (name, brand, ingredient, dosages, unit, frequency, half-life, color, reminder) via pencil icon |
 | 2026-04-29 | Added auto-backup to localStorage on every data change with restore prompt on empty DB startup |
 | 2026-04-29 | Deployed to Netlify at https://peptytrack.netlify.app with permanent URL and auto-update support |
+| 2026-05-05 | Created `settingsStore.ts` — persisted weightUnit, medicationUnit, notificationsEnabled to IndexedDB |
+| 2026-05-05 | Settings page: added Preferences section with weight unit toggle and notification master switch |
+| 2026-05-05 | WeightTracker: default unit now driven by `settingsStore.weightUnit` |
+| 2026-05-05 | App: reminder polling gated behind `settings.notificationsEnabled`; settings loaded on init |
+| 2026-05-05 | Created `ConfirmDialog.tsx` — reusable styled confirmation dialog for destructive actions |
+| 2026-05-05 | Replaced all `window.confirm()` with `openModal(<ConfirmDialog />)` in LogDose, WeightTracker, Medications, Settings |
+| 2026-05-05 | Added `settingsStore.test.ts` (4 tests) and `ConfirmDialog.test.tsx` (7 tests) |
+| 2026-05-05 | Configured `vitest.config.ts` with jsdom environment and jest-dom matchers setup |

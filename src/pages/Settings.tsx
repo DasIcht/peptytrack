@@ -1,29 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMedicationStore } from '../stores/medicationStore';
 import { useWeightStore } from '../stores/weightStore';
 import { useUIStore } from '../stores/uiStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { exportData, downloadBackupJSON, importData } from '../lib/cloudSync';
 import { generatePDF, downloadPDF } from '../lib/pdfExport';
 import { requestNotificationPermission } from '../lib/notifications';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import {
   Bell, FileText, Download, Upload,
-  Trash2, ChevronRight, Shield, Check
+  Trash2, ChevronRight, Shield, Scale, ToggleLeft, ToggleRight
 } from 'lucide-react';
 
 export function Settings() {
   const { medications, doses } = useMedicationStore();
   const { entries: weightEntries } = useWeightStore();
-  const { addToast } = useUIStore();
+  const { addToast, openModal } = useUIStore();
+  const { settings, updateSetting } = useSettingsStore();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  const handleEnableNotifications = async () => {
-    const granted = await requestNotificationPermission();
-    setNotificationsEnabled(granted);
-    addToast(granted ? 'Notifications enabled!' : 'Notifications denied', granted ? 'success' : 'error');
-  };
+  useEffect(() => {
+    if (settings.notificationsEnabled) {
+      requestNotificationPermission().then((granted) => {
+        setNotificationsEnabled(granted);
+      });
+    }
+  }, [settings.notificationsEnabled]);
 
   const handleExportPDF = async () => {
     const doc = generatePDF(medications, doses, weightEntries);
@@ -64,29 +69,88 @@ export function Settings() {
     }
   };
 
-  const handleClearAll = async () => {
-    if (!confirm('WARNING: This will permanently delete ALL your data. This cannot be undone. Are you sure?')) return;
-    if (!confirm('Really sure? All medications, doses, and weight entries will be gone.')) return;
-
-    const { db } = await import('../db/database');
-    await db.medications.clear();
-    await db.doses.clear();
-    await db.weightEntries.clear();
-    await useMedicationStore.getState().loadData();
-    await useWeightStore.getState().loadData();
-    addToast('All data cleared', 'info');
+  const handleClearAll = () => {
+    openModal(
+      <ConfirmDialog
+        title="Clear All Data?"
+        message="This will permanently delete ALL your medications, doses, and weight entries. This action cannot be undone."
+        confirmLabel="Clear Everything"
+        cancelLabel="Cancel"
+        danger
+        onConfirm={() => {
+          openModal(
+            <ConfirmDialog
+              title="Are You Really Sure?"
+              message="All your data will be permanently erased. There is no way to recover it unless you have a backup file."
+              confirmLabel="Yes, Clear Everything"
+              cancelLabel="Cancel"
+              danger
+              onConfirm={async () => {
+                const { db } = await import('../db/database');
+                await db.medications.clear();
+                await db.doses.clear();
+                await db.weightEntries.clear();
+                await useMedicationStore.getState().loadData();
+                await useWeightStore.getState().loadData();
+                addToast('All data cleared', 'info');
+              }}
+            />
+          );
+        }}
+      />
+    );
   };
 
   return (
     <div className="min-h-full pb-24 px-5 pt-6">
       <h1 className="text-2xl font-bold text-white mb-6">Settings</h1>
 
-      {/* Notifications */}
+      {/* Preferences */}
       <div className="mb-6">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Reminders</h2>
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Preferences</h2>
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
+          {/* Weight Unit */}
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/5">
+            <div className="flex items-center gap-3">
+              <Scale size={18} className="text-primary-400" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-white">Default Weight Unit</p>
+                <p className="text-xs text-slate-400">
+                  Used when logging new weight entries
+                </p>
+              </div>
+            </div>
+            <div className="flex rounded-lg border border-white/10 overflow-hidden">
+              {(['kg', 'lb'] as const).map((u) => (
+                <button
+                  key={u}
+                  onClick={() => updateSetting('weightUnit', u)}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    settings.weightUnit === u
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-surface-700 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {u.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Notification Master Switch */}
           <button
-            onClick={handleEnableNotifications}
+            onClick={async () => {
+              const newValue = !settings.notificationsEnabled;
+              await updateSetting('notificationsEnabled', newValue);
+              if (newValue) {
+                const granted = await requestNotificationPermission();
+                setNotificationsEnabled(granted);
+                addToast(granted ? 'Notifications enabled!' : 'Notifications denied', granted ? 'success' : 'error');
+              } else {
+                setNotificationsEnabled(false);
+                addToast('Notifications disabled', 'info');
+              }
+            }}
             className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors"
           >
             <div className="flex items-center gap-3">
@@ -94,14 +158,18 @@ export function Settings() {
               <div className="text-left">
                 <p className="text-sm font-medium text-white">Dose Reminders</p>
                 <p className="text-xs text-slate-400">
-                  {notificationsEnabled ? 'Enabled' : 'Tap to enable browser notifications'}
+                  {settings.notificationsEnabled
+                    ? notificationsEnabled
+                      ? 'Enabled'
+                      : 'Permission needed — tap to request'
+                    : 'Disabled'}
                 </p>
               </div>
             </div>
-            {notificationsEnabled ? (
-              <Check size={18} className="text-emerald-400" />
+            {settings.notificationsEnabled ? (
+              <ToggleRight size={22} className="text-primary-400" />
             ) : (
-              <ChevronRight size={16} className="text-slate-500" />
+              <ToggleLeft size={22} className="text-slate-500" />
             )}
           </button>
         </div>

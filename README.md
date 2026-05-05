@@ -25,7 +25,9 @@ PeptyTrack is a fully functional, open-source alternative to paid GLP-1 tracking
 | Retatrutide | Zepbound | 168h (7d) | Weekly |
 
 ### Smart Features
-- **Configurable Reminders** — Set per-medication reminder hours before next dose
+- **Persistent Settings** — Choose default weight unit (kg/lb) and control notification master switch
+- **Modal Confirmation Dialogs** — Styled, non-blocking confirmation dialogs for all destructive actions (delete dose, delete weight, delete medication, clear all data)
+- **Configurable Reminders** — Set per-medication reminder hours before next dose; master on/off switch
 - **PDF Reports** — Generate doctor-ready reports with medication history, dose logs, and weight trends
 - **Data Backup/Restore** — Export/import JSON backups; auto-backup on every change with restore prompt
 - **PWA Offline Support** — Install as a standalone app, works without internet
@@ -53,7 +55,24 @@ All data is stored locally in your browser's IndexedDB. No health information is
 npm install
 npm run dev     # Start dev server (http://localhost:5173)
 npm run build   # Production build  → dist/
-npm run test    # Run unit tests
+npm run test    # Run unit tests (Vitest + jsdom)
+```
+
+## Testing
+
+The project includes unit and component tests using **Vitest** with **jsdom** environment and **@testing-library/react**.
+
+| Suite | Tests | Focus |
+|-------|-------|-------|
+| `database.test.ts` | 14 | Dexie CRUD, settings persistence, seed deduplication |
+| `medicationStore.test.ts` | 5 | Enable/disable toggle, custom meds, dose updates |
+| `settingsStore.test.ts` | 4 | Default settings, persist/reload, getSetting |
+| `halfLifeEngine.test.ts` | 15 | Concentration decay, dose accumulation, next dose timing |
+| `ConfirmDialog.test.tsx` | 7 | Rendering, confirm/cancel actions, danger styling |
+
+**Run all tests:**
+```bash
+npm run test
 ```
 
 ## Deploy to Netlify

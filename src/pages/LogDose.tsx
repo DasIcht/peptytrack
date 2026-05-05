@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useMedicationStore } from '../stores/medicationStore';
 import { useUIStore } from '../stores/uiStore';
 import { scheduleReminder } from '../lib/notifications';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import type { Dose, InjectionSite } from '../types';
 import { ChevronDown, MapPin, Calendar, Clock, FileText, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -118,15 +119,27 @@ export function LogDose() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this dose entry?')) return;
-    try {
-      await deleteDose(id);
-      addToast('Dose deleted', 'info');
-      if (editingDoseId === id) resetForm();
-    } catch {
-      addToast('Failed to delete dose', 'error');
-    }
+  const { openModal } = useUIStore();
+
+  const handleDelete = (id: string) => {
+    openModal(
+      <ConfirmDialog
+        title="Delete Dose Entry?"
+        message="This action cannot be undone. The dose will be permanently removed from your history."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        danger
+        onConfirm={async () => {
+          try {
+            await deleteDose(id);
+            addToast('Dose deleted', 'info');
+            if (editingDoseId === id) resetForm();
+          } catch {
+            addToast('Failed to delete dose', 'error');
+          }
+        }}
+      />
+    );
   };
 
   const submitLabel = editingDoseId

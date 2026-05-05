@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useUIStore } from './stores/uiStore';
 import { useMedicationStore } from './stores/medicationStore';
 import { useWeightStore } from './stores/weightStore';
+import { useSettingsStore } from './stores/settingsStore';
 import { seedDatabaseIfEmpty } from './db/database';
 import { checkAndFireReminders } from './lib/notifications';
-import { getAutoBackup, clearAutoBackup } from './lib/autoBackup';
+import { getAutoBackup, clearAutoBackup, saveAutoBackup } from './lib/autoBackup';
 import { importData, exportData } from './lib/cloudSync';
 import { BottomNav } from './components/BottomNav';
 import { ToastContainer } from './components/Toast';
@@ -28,25 +29,30 @@ const PAGE_COMPONENTS = {
 
 function App() {
   const { activePage, addToast } = useUIStore();
-  const { loadData: loadMeds, initialized, medications, doses } = useMedicationStore();
+  const { loadData: loadMeds, initialized: medsInitialized, medications, doses } = useMedicationStore();
   const { loadData: loadWeight, entries: weightEntries } = useWeightStore();
+  const { loadSettings, initialized: settingsInitialized, settings } = useSettingsStore();
   const [restorePrompt, setRestorePrompt] = useState(false);
+
+  const initialized = medsInitialized && settingsInitialized;
 
   useEffect(() => {
     const init = async () => {
       await seedDatabaseIfEmpty();
       await loadMeds();
       await loadWeight();
+      await loadSettings();
     };
     init();
-  }, [loadMeds, loadWeight]);
+  }, [loadMeds, loadWeight, loadSettings]);
 
   useEffect(() => {
     if (!initialized) return;
+    if (!settings.notificationsEnabled) return;
     const interval = setInterval(checkAndFireReminders, 60000);
     checkAndFireReminders();
     return () => clearInterval(interval);
-  }, [initialized]);
+  }, [initialized, settings.notificationsEnabled]);
 
   // Auto-backup whenever data changes
   useEffect(() => {
@@ -54,11 +60,7 @@ function App() {
     const totalItems = medications.length + doses.length + weightEntries.length;
     if (totalItems === 0) return;
     exportData().then((data) => {
-      try {
-        localStorage.setItem('peptytrack-autobackup', JSON.stringify(data));
-      } catch {
-        // storage full
-      }
+      saveAutoBackup(JSON.stringify(data));
     });
   }, [initialized, medications.length, doses.length, weightEntries.length]);
 
@@ -82,6 +84,7 @@ function App() {
       await importData(JSON.parse(backup));
       await loadMeds();
       await loadWeight();
+      await loadSettings();
       addToast('Data restored from backup!', 'success');
     } catch {
       addToast('Failed to restore backup', 'error');
