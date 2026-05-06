@@ -41,10 +41,24 @@ export type InjectionSite =
 export interface Dose {
   id: string;
   medicationId: string;
+  vialId?: string;
   dosage: number;
   unit: string;
   injectionSite: InjectionSite;
   dateTime: number;
+  notes: string;
+  createdAt: number;
+}
+
+export interface Vial {
+  id: string;
+  medicationId: string;
+  name: string;
+  peptideAmount: number;
+  peptideUnit: string;
+  bacWaterAmount: number;
+  reconstitutedAt: number;
+  remainingOverride: number | null;
   notes: string;
   createdAt: number;
 }

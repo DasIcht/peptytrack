@@ -55,7 +55,10 @@ peptyTrack/
 │   │   ├── medicationStore.test.ts
 │   │   ├── weightStore.ts     # Weight entries + trend calculations
 │   │   ├── uiStore.ts         # Page nav, modals, toast queue, log-dose preselection
-│   │   └── settingsStore.ts   # ⚠️ EXISTS BUT UNUSED — see §12.1
+│   │   ├── settingsStore.ts   # App preferences (weight unit, notification master switch)
+│   │   ├── settingsStore.test.ts
+│   │   ├── vialStore.ts       # Vial CRUD + computed remaining tracking
+│   │   └── vialStore.test.ts
 │   ├── lib/                   # Core business logic — PURE FUNCTIONS preferred
 │   │   ├── halfLifeEngine.ts      # Pharmacokinetic accumulation model
 │   │   ├── halfLifeEngine.test.ts # 15 unit tests
@@ -66,14 +69,17 @@ peptyTrack/
 │   ├── components/            # Reusable UI components
 │   │   ├── BottomNav.tsx      # Fixed bottom tab bar (6 tabs)
 │   │   ├── MedicationCard.tsx # Dashboard card with level gauge + countdown
-│   │   ├── Modal.tsx          # ⚠️ UNUSED — generic modal wrapper
+│   │   ├── Modal.tsx          # Generic modal wrapper (rendered by App.tsx)
+│   │   ├── ConfirmDialog.tsx  # Styled confirmation dialog for destructive actions
+│   │   ├── ConfirmDialog.test.tsx
 │   │   └── Toast.tsx          # Toast notification system
 │   └── pages/                 # Full-page route components
 │       ├── Dashboard.tsx      # Home: stats, medication cards, quick actions
-│       ├── LogDose.tsx        # Dose logging with injection site picker + history
+│       ├── LogDose.tsx        # Dose logging with injection site picker, vial selection, auto-calculated injection volume (ml + U-100 units)
 │       ├── MedicationChart.tsx# Dual-axis medication level + weight chart
 │       ├── WeightTracker.tsx  # Weight logging with date picker + history
-│       ├── Medications.tsx    # Medication management + enable/disable + inline edit
+│       ├── Medications.tsx    # Medication management — add from library/custom, enable/disable
+│       ├── Vials.tsx          # Vial management grouped by med, filter dropdown defaults to last-logged
 │       └── Settings.tsx       # Notifications, PDF export, backup/restore, clear data
 ├── index.html                 # HTML shell with PWA meta tags
 ├── vite.config.ts             # Vite + PWA + allowedHosts config
@@ -169,9 +175,23 @@ export interface Medication {
   createdAt: number;           // Unix timestamp
 }
 
+export interface Vial {
+  id: string;
+  medicationId: string;        // FK → medications.id
+  name: string;                // Vial label (e.g., "Vial #1")
+  peptideAmount: number;       // Total peptide in vial
+  peptideUnit: string;         // mg | mcg | units
+  bacWaterAmount: number;      // ml of bacteriostatic water
+  reconstitutedAt: number;     // Unix timestamp when mixed
+  remainingOverride: number | null; // Manual override for remaining amount
+  notes: string;
+  createdAt: number;
+}
+
 export interface Dose {
   id: string;
   medicationId: string;        // FK → medications.id
+  vialId?: string;             // FK → vials.id (optional vial link)
   dosage: number;
   unit: string;
   injectionSite: InjectionSite;
@@ -196,9 +216,9 @@ export interface WeightEntry {
 }
 
 export interface AppSettings {
-  weightUnit: 'kg' | 'lb';
-  medicationUnit: 'mg' | 'mcg' | 'units';
-  notificationsEnabled: boolean;
+  weightUnit: 'kg' | 'lb';                 // Default for weight entries
+  medicationUnit: 'mg' | 'mcg' | 'units';  // Default for custom meds and vials
+  notificationsEnabled: boolean;           // Master switch for dose reminders
 }
 ```
 
@@ -208,6 +228,7 @@ export interface AppSettings {
 | `medications` | `id` | `activeIngredient`, `createdAt` |
 | `doses` | `id` | `medicationId`, `dateTime`, `createdAt` |
 | `weightEntries` | `id` | `dateTime`, `createdAt` |
+| `vials` | `id` | `medicationId`, `createdAt` |
 | `settings` | `id` | — |
 
 ### 5.3 Seeding Logic
@@ -366,8 +387,11 @@ colors: {
 | Test File | Coverage |
 |-----------|----------|
 | `halfLifeEngine.test.ts` | 15 tests — concentration decay, accumulation, series generation, next dose timing |
-| `database.test.ts` | 14 tests — CRUD, queries, sorting, seed deduplication & idempotency |
+| `database.test.ts` | 16 tests — CRUD, queries, sorting, seed deduplication & idempotency, vial storage |
 | `medicationStore.test.ts` | 5 tests — enable/disable, persistence, custom med creation, dose update |
+| `settingsStore.test.ts` | 4 tests — default settings, persist/reload, getSetting, merge with defaults |
+| `vialStore.test.ts` | 10 tests — CRUD, remaining computation, filtering, last used, remaining override |
+| `ConfirmDialog.test.tsx` | 7 tests — rendering, confirm/cancel actions, danger styling, modal close |
 
 ### 9.1 Testing Patterns
 - Use `fake-indexeddb` for IndexedDB mocking in tests.
@@ -424,10 +448,12 @@ colors: {
 
 ### 12.1 Critical — Must Fix
 | # | Item | Location | Description |
-|---|------|----------|-------------|
-| 1 | ~~settingsStore unused~~ | `src/stores/settingsStore.ts` | Implemented. Wires weight unit default, notification master switch, persists to IndexedDB settings table. |
-| 2 | ~~Modal component unused~~ | `src/components/Modal.tsx` | Implemented. `ConfirmDialog` component used via `openModal()` for delete confirmations across LogDose, WeightTracker, Medications, and Settings pages. |
-| 3 | **Notifications not wired to SW** | `src/lib/notifications.ts` | Uses `window.Notification` only. Background reminders fail when app is closed. **Partial fix:** reminders now gated behind `settings.notificationsEnabled` master switch. |
+|---|---|------|----------|-------------|
+| 1 | **Auto-backup excludes settings** | `src/lib/cloudSync.ts` | ✅ Fixed. `exportData` now includes `settings`; `importData` restores them. Backup version bumped to 3. |
+| 2 | **Clear All Data incomplete** | `src/pages/Settings.tsx` | ✅ Fixed. Now clears vials and settings tables, and reloads all stores. |
+| 3 | **Vials inline in Medications** | `src/pages/Medications.tsx` | ✅ Fixed. Vials moved to dedicated `Vials.tsx` page with grouped-by-medication layout and bottom nav tab. |
+| 4 | **Auto-seed library medications** | `src/db/database.ts` | ✅ Removed. `seedDatabaseIfEmpty()` no longer called on init. Medications tab starts empty; users add from library manually. |
+| 5 | **Notifications not wired to SW** | `src/lib/notifications.ts` | Uses `window.Notification` only. Background reminders fail when app is closed. **Partial fix:** reminders now gated behind `settings.notificationsEnabled` master switch. |
 
 ### 12.2 Feature Opportunities
 | # | Item | Description |
@@ -511,10 +537,11 @@ npx netlify deploy --prod --dir=dist
 ## 15. Evolution Roadmap (Suggested Priority)
 
 ### Phase 1: Foundation Hardening
-1. Wire up `settingsStore` (weight unit, notification master switch)
-2. Use `Modal` for confirmation dialogs (delete dose, clear data)
-3. Normalize weight units for chart accuracy
-4. Fix `database.ts` import consolidation
+1. ✅ Wire up `settingsStore` (weight unit, notification master switch)
+2. ✅ Use `Modal` + `ConfirmDialog` for confirmation dialogs (delete dose, clear data)
+3. ✅ Include settings in backup/restore (version 3)
+4. ✅ Make "Clear All Data" truly clear everything (vials, settings)
+5. Normalize weight units for chart accuracy
 
 ### Phase 2: UX Improvements
 5. Add injection site rotation suggestions
@@ -535,5 +562,5 @@ npx netlify deploy --prod --dir=dist
 
 ---
 
-> **Last Updated:** 2026-05-05  
+> **Last Updated:** 2026-05-06  
 > **Document Version:** 1.1

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useMedicationStore } from '../stores/medicationStore';
+import { useVialStore } from '../stores/vialStore';
 import { useWeightStore } from '../stores/weightStore';
 import { useUIStore } from '../stores/uiStore';
 import { MedicationCard } from '../components/MedicationCard';
@@ -12,6 +13,7 @@ export function Dashboard() {
   );
   const { loadData, initialized } = useMedicationStore();
   const { loadData: loadWeight, getTrend, getLatest } = useWeightStore();
+  const { vials } = useVialStore();
   const { setPage, setLogDoseMedId } = useUIStore();
 
   useEffect(() => {
@@ -33,10 +35,14 @@ export function Dashboard() {
       </div>
 
       {/* Quick Stats */}
-      <div className="px-5 grid grid-cols-3 gap-3 mb-6">
+      <div className="px-5 grid grid-cols-4 gap-3 mb-6">
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-3 text-center">
           <p className="text-xs text-slate-400 mb-1">Medications</p>
           <p className="text-xl font-bold text-white">{medications.length}</p>
+        </div>
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-3 text-center">
+          <p className="text-xs text-slate-400 mb-1">Vials</p>
+          <p className="text-xl font-bold text-white">{vials.length}</p>
         </div>
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-3 text-center">
           <p className="text-xs text-slate-400 mb-1">Weight Trend</p>

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { db } from '../db/database';
+import { uuid } from '../lib/uuid';
 import type { WeightEntry } from '../types';
 
 interface WeightState {
@@ -30,7 +31,7 @@ export const useWeightStore = create<WeightState>((set, get) => ({
   addEntry: async (entry) => {
     const newEntry: WeightEntry = {
       ...entry,
-      id: crypto.randomUUID(),
+      id: uuid(),
       createdAt: Date.now(),
     };
     await db.weightEntries.add(newEntry);

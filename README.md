@@ -7,10 +7,11 @@ PeptyTrack is a fully functional, open-source alternative to paid GLP-1 tracking
 ## Features
 
 ### Core Tracking
-- **Dose Logging** — Log injections with dosage, date/time, and injection site (abdomen, thigh, arm with quadrant selection)
+- **Dose Logging** — Log injections with dosage, date/time, injection site (abdomen, thigh, arm with quadrant selection), and optional vial association
 - **Medication Level Visualization** — Real-time estimated medication concentration chart based on pharmacokinetic half-life modeling
 - **Weight Tracking** — Log daily weights with trend analysis and interactive charts
 - **Multiple Medications** — Track several GLP-1 drugs simultaneously with independent schedules
+- **Vial Tracking** — Dedicated Vials page with medication filter (defaults to last-logged). Manage peptide vials with reconstitution details, auto-track remaining amount as doses are administered, or set a manual override. When logging a dose, the app calculates and displays the exact injection volume in both ml and insulin units (U-100 scale) based on vial concentration
 
 ### Supported Medications
 | Medication | Brands | Half-Life | Frequency |
@@ -64,10 +65,11 @@ The project includes unit and component tests using **Vitest** with **jsdom** en
 
 | Suite | Tests | Focus |
 |-------|-------|-------|
-| `database.test.ts` | 14 | Dexie CRUD, settings persistence, seed deduplication |
+| `database.test.ts` | 16 | Dexie CRUD, vial storage, settings persistence, seed deduplication |
 | `medicationStore.test.ts` | 5 | Enable/disable toggle, custom meds, dose updates |
 | `settingsStore.test.ts` | 4 | Default settings, persist/reload, getSetting |
 | `halfLifeEngine.test.ts` | 15 | Concentration decay, dose accumulation, next dose timing |
+| `vialStore.test.ts` | 10 | CRUD, remaining computation, filtering, last used, remaining override |
 | `ConfirmDialog.test.tsx` | 7 | Rendering, confirm/cancel actions, danger styling |
 
 **Run all tests:**

@@ -1,5 +1,5 @@
-import { db } from '../db/database';
-import type { Medication, Dose, WeightEntry } from '../types';
+import { db, getSettings } from '../db/database';
+import type { Medication, Dose, WeightEntry, Vial } from '../types';
 
 interface BackupData {
   version: number;
@@ -7,9 +7,11 @@ interface BackupData {
   medications: Medication[];
   doses: Dose[];
   weightEntries: WeightEntry[];
+  vials: Vial[];
+  settings: Record<string, unknown>;
 }
 
-const BACKUP_VERSION = 1;
+const BACKUP_VERSION = 3;
 
 /**
  * Export all data as a JSON blob for download or cloud upload.
@@ -18,6 +20,8 @@ export async function exportData(): Promise<BackupData> {
   const medications = await db.medications.toArray();
   const doses = await db.doses.toArray();
   const weightEntries = await db.weightEntries.toArray();
+  const vials = await db.vials.toArray();
+  const settings = await getSettings();
 
   return {
     version: BACKUP_VERSION,
@@ -25,6 +29,8 @@ export async function exportData(): Promise<BackupData> {
     medications,
     doses,
     weightEntries,
+    vials,
+    settings,
   };
 }
 
@@ -46,18 +52,26 @@ export function downloadBackupJSON(data: BackupData): void {
  * Import data from JSON backup, replacing all current data.
  */
 export async function importData(data: BackupData): Promise<void> {
-  if (data.version !== BACKUP_VERSION) {
+  if (data.version !== BACKUP_VERSION && data.version !== 2 && data.version !== 1) {
     throw new Error(`Unsupported backup version: ${data.version}`);
   }
 
-  await db.transaction('rw', db.medications, db.doses, db.weightEntries, async () => {
+  await db.transaction('rw', [db.medications, db.doses, db.weightEntries, db.vials, db.settings], async () => {
     await db.medications.clear();
     await db.doses.clear();
     await db.weightEntries.clear();
+    await db.vials.clear();
+    await db.settings.clear();
 
     if (data.medications.length) await db.medications.bulkAdd(data.medications);
     if (data.doses.length) await db.doses.bulkAdd(data.doses);
     if (data.weightEntries.length) await db.weightEntries.bulkAdd(data.weightEntries);
+    if (data.vials?.length) await db.vials.bulkAdd(data.vials);
+    if (data.settings && Object.keys(data.settings).length > 0) {
+      for (const [key, value] of Object.entries(data.settings)) {
+        await db.settings.put({ id: key, value });
+      }
+    }
   });
 }
 

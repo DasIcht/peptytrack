@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useMedicationStore } from '../stores/medicationStore';
+import { useVialStore } from '../stores/vialStore';
 import { useUIStore } from '../stores/uiStore';
 import { scheduleReminder } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import type { Dose, InjectionSite } from '../types';
-import { ChevronDown, MapPin, Calendar, Clock, FileText, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, MapPin, Calendar, Clock, FileText, Pencil, Trash2, FlaskConical, AlertTriangle, Syringe } from 'lucide-react';
 import { format } from 'date-fns';
 
 const INJECTION_SITES: { id: InjectionSite; label: string }[] = [
@@ -20,16 +21,13 @@ const INJECTION_SITES: { id: InjectionSite; label: string }[] = [
 
 export function LogDose() {
   const { medications, doses, logDose, updateDose, deleteDose } = useMedicationStore();
+  const { vials, getVialRemaining, getVialPercentage, getLastUsedVialId } = useVialStore();
   const { addToast, logDoseMedId, setLogDoseMedId } = useUIStore();
 
   const initialMedId = logDoseMedId || medications[0]?.id || '';
   const [selectedMedId, setSelectedMedId] = useState(initialMedId);
-
-  useEffect(() => {
-    if (logDoseMedId) setLogDoseMedId(null);
-  }, [logDoseMedId, setLogDoseMedId]);
-
   const [editingDoseId, setEditingDoseId] = useState<string | null>(null);
+  const [selectedVialId, setSelectedVialId] = useState<string>('');
   const [dosage, setDosage] = useState('');
   const [customDosage, setCustomDosage] = useState(false);
   const [injectionSite, setInjectionSite] = useState<InjectionSite>('abdomen-upper-left');
@@ -38,6 +36,22 @@ export function LogDose() {
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (logDoseMedId) setLogDoseMedId(null);
+  }, [logDoseMedId, setLogDoseMedId]);
+
+  // Auto-select last used vial when medication changes (not during edit)
+  useEffect(() => {
+    if (editingDoseId || !selectedMedId) return;
+    const lastUsed = getLastUsedVialId(selectedMedId, doses);
+    if (lastUsed) {
+      setSelectedVialId(lastUsed);
+    } else {
+      setSelectedVialId('');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMedId, editingDoseId]);
+
   const selectedMed = medications.find((m) => m.id === selectedMedId);
 
   // Dropdown only shows meds with logged doses (plus current selection for preselection)
@@ -45,12 +59,34 @@ export function LogDose() {
     (m) => m.id === selectedMedId || doses.some((d) => d.medicationId === m.id)
   );
 
+  // Vials for selected medication (only non-empty, sorted newest first)
+  const vialsForMed = vials
+    .filter((v) => v.medicationId === selectedMedId)
+    .sort((a, b) => b.createdAt - a.createdAt);
+
+  const selectedVial = vialsForMed.find((v) => v.id === selectedVialId);
+
+  const remainingPeptide = selectedVial
+    ? getVialRemaining(selectedVial.id, doses)
+    : 0;
+
+  // Reconstituted concentration: peptideAmount / bacWaterAmount per ml
+  const concentrationPerMl = selectedVial && selectedVial.bacWaterAmount > 0
+    ? selectedVial.peptideAmount / selectedVial.bacWaterAmount
+    : 0;
+
+  // Remaining volume in ml
+  const remainingMl = concentrationPerMl > 0
+    ? remainingPeptide / concentrationPerMl
+    : 0;
+
   const medDoses = doses
     .filter((d) => d.medicationId === selectedMedId)
     .sort((a, b) => b.dateTime - a.dateTime);
 
   const resetForm = () => {
     setEditingDoseId(null);
+    setSelectedVialId('');
     setDosage('');
     setCustomDosage(false);
     setInjectionSite('abdomen-upper-left');
@@ -62,6 +98,7 @@ export function LogDose() {
   const handleEdit = (dose: Dose) => {
     setEditingDoseId(dose.id);
     setSelectedMedId(dose.medicationId);
+    setSelectedVialId(dose.vialId || '');
     setDosage(String(dose.dosage));
     const med = medications.find((m) => m.id === dose.medicationId);
     if (med && !med.dosageOptions.includes(dose.dosage)) {
@@ -88,6 +125,7 @@ export function LogDose() {
       if (editingDoseId) {
         await updateDose(editingDoseId, {
           medicationId: selectedMed.id,
+          vialId: selectedVialId || undefined,
           dosage: parseFloat(dosage),
           unit: selectedMed.unit,
           injectionSite,
@@ -98,6 +136,7 @@ export function LogDose() {
       } else {
         await logDose({
           medicationId: selectedMed.id,
+          vialId: selectedVialId || undefined,
           dosage: parseFloat(dosage),
           unit: selectedMed.unit,
           injectionSite,
@@ -106,8 +145,8 @@ export function LogDose() {
         });
         const createdAt = Date.now(); // eslint-disable-line react-hooks/purity
         scheduleReminder(selectedMed, [...doses, {
-          id: '', medicationId: selectedMed.id, dosage: parseFloat(dosage),
-          unit: selectedMed.unit, injectionSite, dateTime, notes, createdAt
+          id: '', medicationId: selectedMed.id, vialId: selectedVialId || undefined,
+          dosage: parseFloat(dosage), unit: selectedMed.unit, injectionSite, dateTime, notes, createdAt
         }]);
         addToast('Dose logged successfully!', 'success');
       }
@@ -146,6 +185,8 @@ export function LogDose() {
     ? (submitting ? 'Updating...' : 'Update Dose')
     : (submitting ? 'Logging...' : 'Log Dose');
 
+  const doseExceedsRemaining = selectedVial && dosage && parseFloat(dosage) > remainingPeptide;
+
   return (
     <div className="min-h-full pb-24 px-5 pt-6">
       <h1 className="text-2xl font-bold text-white mb-6">{editingDoseId ? 'Update Dose' : 'Log Dose'}</h1>
@@ -159,6 +200,7 @@ export function LogDose() {
               value={selectedMedId}
               onChange={(e) => {
                 setSelectedMedId(e.target.value);
+                setSelectedVialId('');
                 setDosage('');
                 setCustomDosage(false);
               }}
@@ -172,6 +214,102 @@ export function LogDose() {
             <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           </div>
         </div>
+
+        {/* Vial Select */}
+        {selectedMed && vialsForMed.length > 0 && (
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">
+              <FlaskConical size={12} className="inline mr-1" />
+              Vial
+            </label>
+            <div className="relative">
+              <select
+                value={selectedVialId}
+                onChange={(e) => setSelectedVialId(e.target.value)}
+                className="w-full appearance-none bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary-500 transition-colors"
+              >
+                <option value="">No vial — generic dose</option>
+                {vialsForMed.map((v) => {
+                  const rem = getVialRemaining(v.id, doses);
+                  return (
+                    <option key={v.id} value={v.id}>
+                      {v.name} — {rem.toFixed(2)} {v.peptideUnit} remaining
+                    </option>
+                  );
+                })}
+              </select>
+              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+        )}
+
+        {/* Remaining Amount Display */}
+        {selectedVial && (
+          <div className="rounded-xl border border-primary-500/20 bg-primary-600/5 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <FlaskConical size={14} className="text-primary-400" />
+              <span className="text-xs font-medium text-primary-300 uppercase tracking-wider">
+                Vial Remaining
+              </span>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold text-white">{remainingPeptide.toFixed(2)}</span>
+              <span className="text-sm text-slate-400">{selectedVial.peptideUnit}</span>
+            </div>
+            {selectedVial.bacWaterAmount > 0 && concentrationPerMl > 0 && (
+              <p className="text-xs text-slate-500 mt-1">
+                ≈ {remainingMl.toFixed(2)} ml at {concentrationPerMl.toFixed(2)} {selectedVial.peptideUnit}/ml
+              </p>
+            )}
+            {/* Progress Bar */}
+            {selectedVial && (
+              <div className="mt-2">
+                <div className="flex items-center justify-between text-[10px] mb-0.5">
+                  <span className="text-slate-400">{getVialPercentage(selectedVial.id, doses).toFixed(0)}% full</span>
+                </div>
+                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      getVialPercentage(selectedVial.id, doses) > 50
+                        ? 'bg-emerald-500'
+                        : getVialPercentage(selectedVial.id, doses) > 25
+                        ? 'bg-amber-500'
+                        : 'bg-red-500'
+                    }`}
+                    style={{ width: `${getVialPercentage(selectedVial.id, doses)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            {doseExceedsRemaining && (
+              <div className="flex items-center gap-1.5 mt-2 text-amber-400 text-xs">
+                <AlertTriangle size={12} />
+                This dose exceeds the remaining amount in the vial.
+              </div>
+            )}
+            {/* Injection Volume */}
+            {selectedVial && dosage && parseFloat(dosage) > 0 && concentrationPerMl > 0 && (
+              <div className="mt-3 pt-3 border-t border-white/10">
+                <div className="flex items-center gap-2">
+                  <Syringe size={14} className="text-primary-400" />
+                  <span className="text-sm text-white">
+                    Inject <strong className="text-primary-300">{(parseFloat(dosage) / concentrationPerMl).toFixed(2)} ml</strong>
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    ({concentrationPerMl.toFixed(2)} {selectedVial.peptideUnit}/ml)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-1.5 ml-5">
+                  <span className="text-xs text-slate-400">or</span>
+                  <span className="text-sm text-white">
+                    <strong className="text-primary-300">{Math.round((parseFloat(dosage) / concentrationPerMl) * 100)}</strong> units
+                  </span>
+                  <span className="text-[10px] text-slate-600">(U-100 scale)</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Dosage */}
         {selectedMed && (
@@ -320,6 +458,7 @@ export function LogDose() {
           <div className="flex flex-col gap-2">
             {medDoses.map((dose) => {
               const med = medications.find((m) => m.id === dose.medicationId);
+              const vial = vials.find((v) => v.id === dose.vialId);
               return (
                 <div
                   key={dose.id}
@@ -335,6 +474,11 @@ export function LogDose() {
                   >
                     <p className="text-sm font-medium text-white">
                       {dose.dosage} {med?.unit || dose.unit}
+                      {vial && (
+                        <span className="text-slate-500 font-normal ml-1.5">
+                          · {vial.name}
+                        </span>
+                      )}
                     </p>
                     <p className="text-xs text-slate-400">
                       {format(new Date(dose.dateTime), 'PPP p')}

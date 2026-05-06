@@ -1,5 +1,6 @@
 import { useMedicationStore } from '../stores/medicationStore';
-import { Clock, ChevronRight } from 'lucide-react';
+import { useVialStore } from '../stores/vialStore';
+import { Clock, ChevronRight, FlaskConical } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface MedicationCardProps {
@@ -10,8 +11,11 @@ interface MedicationCardProps {
 export function MedicationCard({ medId, onClick }: MedicationCardProps) {
   const { medications, getMedicationLevel, getTimeUntil, getDosesForMedication } =
     useMedicationStore();
+  const { vials } = useVialStore();
   const med = medications.find((m) => m.id === medId);
   if (!med) return null;
+
+  const medVialCount = vials.filter((v) => v.medicationId === medId).length;
 
   const level = getMedicationLevel(medId);
   const timeUntil = getTimeUntil(medId);
@@ -37,7 +41,15 @@ export function MedicationCard({ medId, onClick }: MedicationCardProps) {
           </div>
           <div>
             <h3 className="font-semibold text-white text-sm">{med.name}</h3>
-            <p className="text-xs text-slate-400">{med.brand}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs text-slate-400">{med.brand}</p>
+              {medVialCount > 0 && (
+                <span className="flex items-center gap-0.5 text-[9px] px-1 py-0.5 rounded-full bg-primary-500/10 text-primary-400">
+                  <FlaskConical size={8} />
+                  {medVialCount}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <ChevronRight size={16} className="text-slate-500 group-hover:text-slate-300 transition-colors" />

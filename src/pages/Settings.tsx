@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMedicationStore } from '../stores/medicationStore';
 import { useWeightStore } from '../stores/weightStore';
+import { useVialStore } from '../stores/vialStore';
 import { useUIStore } from '../stores/uiStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { exportData, downloadBackupJSON, importData } from '../lib/cloudSync';
@@ -9,7 +10,7 @@ import { requestNotificationPermission } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import {
   Bell, FileText, Download, Upload,
-  Trash2, ChevronRight, Shield, Scale, ToggleLeft, ToggleRight
+  Trash2, ChevronRight, Shield, Scale, ToggleLeft, ToggleRight, Pill
 } from 'lucide-react';
 
 export function Settings() {
@@ -60,6 +61,8 @@ export function Settings() {
       await importData(data);
       await useMedicationStore.getState().loadData();
       await useWeightStore.getState().loadData();
+      await useVialStore.getState().loadData();
+      await useSettingsStore.getState().loadSettings();
       addToast('Data restored successfully!', 'success');
     } catch (err) {
       addToast(`Import failed: ${err instanceof Error ? err.message : 'Invalid file'}`, 'error');
@@ -90,8 +93,12 @@ export function Settings() {
                 await db.medications.clear();
                 await db.doses.clear();
                 await db.weightEntries.clear();
+                await db.vials.clear();
+                await db.settings.clear();
                 await useMedicationStore.getState().loadData();
                 await useWeightStore.getState().loadData();
+                await useVialStore.getState().loadData();
+                await useSettingsStore.getState().loadSettings();
                 addToast('All data cleared', 'info');
               }}
             />
@@ -132,6 +139,34 @@ export function Settings() {
                   }`}
                 >
                   {u.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Medication Unit */}
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/5">
+            <div className="flex items-center gap-3">
+              <Pill size={18} className="text-primary-400" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-white">Default Medication Unit</p>
+                <p className="text-xs text-slate-400">
+                  Used when adding custom medications and vials
+                </p>
+              </div>
+            </div>
+            <div className="flex rounded-lg border border-white/10 overflow-hidden">
+              {(['mg', 'mcg', 'units'] as const).map((u) => (
+                <button
+                  key={u}
+                  onClick={() => updateSetting('medicationUnit', u)}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    settings.medicationUnit === u
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-surface-700 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {u}
                 </button>
               ))}
             </div>

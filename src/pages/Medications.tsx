@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMedicationStore } from '../stores/medicationStore';
 import { useUIStore } from '../stores/uiStore';
+import { useSettingsStore } from '../stores/settingsStore';
+import { uuid } from '../lib/uuid';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MEDICATION_LIBRARY } from '../db/seed';
 import type { Frequency } from '../types';
@@ -11,16 +13,25 @@ const COLOR_PRESETS = [
   '#3b82f6', '#06b6d4', '#84cc16', '#ef4444', '#a855f7',
 ];
 
-const DEFAULT_CUSTOM_FORM = {
-  name: '',
-  brand: '',
-  activeIngredient: '',
-  dosageOptions: '',
-  unit: 'mg',
-  frequency: 'weekly' as Frequency,
-  halfLifeHours: '',
-  color: COLOR_PRESETS[0],
-};
+function useDefaultUnit(): 'mg' | 'mcg' | 'units' {
+  const { getSetting } = useSettingsStore();
+  return (getSetting('medicationUnit') as 'mg' | 'mcg' | 'units' | undefined) || 'mg';
+}
+
+function useCustomFormDefaults() {
+  const defaultUnit = useDefaultUnit();
+  const [customForm, setCustomForm] = useState({
+    name: '',
+    brand: '',
+    activeIngredient: '',
+    dosageOptions: '',
+    unit: defaultUnit,
+    frequency: 'weekly' as Frequency,
+    halfLifeHours: '',
+    color: COLOR_PRESETS[0],
+  });
+  return { customForm, setCustomForm, defaultUnit };
+}
 
 export function Medications() {
   const { medications, deleteMedication, updateMedication, enableMedication, loadData } = useMedicationStore();
@@ -41,7 +52,13 @@ interface EditForm {
   const [editForm, setEditForm] = useState<EditForm>({});
   const [showAddModal, setShowAddModal] = useState(false);
   const [addMode, setAddMode] = useState<'library' | 'custom'>('library');
-  const [customForm, setCustomForm] = useState({ ...DEFAULT_CUSTOM_FORM });
+  const { customForm, setCustomForm, defaultUnit } = useCustomFormDefaults();
+
+  // Sync unit when settings change
+  useEffect(() => {
+    setCustomForm((f) => ({ ...f, unit: defaultUnit }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultUnit]);
 
   const handleDelete = (id: string) => {
     openModal(
@@ -110,77 +127,95 @@ interface EditForm {
   };
 
   const handleAddFromLibrary = async (template: typeof MEDICATION_LIBRARY[0]) => {
-    const exists = medications.some((m) => m.templateId === template.id);
-    if (exists) {
-      addToast('This medication is already in your list', 'error');
-      return;
+    try {
+      const exists = medications.some((m) => m.templateId === template.id);
+      if (exists) {
+        addToast('This medication is already in your list', 'error');
+        return;
+      }
+
+      await useMedicationStore.getState().addMedication({
+        templateId: template.id,
+        name: template.name,
+        brand: template.brand,
+        activeIngredient: template.activeIngredient,
+        dosageOptions: template.dosageOptions,
+        unit: template.unit,
+        frequency: template.frequency,
+        halfLifeHours: template.halfLifeHours,
+        color: template.color,
+        reminderHoursBefore: template.frequency === 'daily' ? 1 : 24,
+        enabled: true,
+      });
+
+      setShowAddModal(false);
+      setAddMode('library');
+      await loadData();
+      addToast('Medication added!', 'success');
+    } catch (err) {
+      console.error('Failed to add medication from library:', err);
+      addToast('Failed to add medication', 'error');
     }
-
-    await useMedicationStore.getState().addMedication({
-      templateId: template.id,
-      name: template.name,
-      brand: template.brand,
-      activeIngredient: template.activeIngredient,
-      dosageOptions: template.dosageOptions,
-      unit: template.unit,
-      frequency: template.frequency,
-      halfLifeHours: template.halfLifeHours,
-      color: template.color,
-      reminderHoursBefore: template.frequency === 'daily' ? 1 : 24,
-      enabled: true,
-    });
-
-    setShowAddModal(false);
-    setAddMode('library');
-    await loadData();
-    addToast('Medication added!', 'success');
   };
 
   const handleAddCustom = async () => {
-    const dosages = customForm.dosageOptions
-      .split(/[,;\s]+/)
-      .map((s) => parseFloat(s.trim()))
-      .filter((n) => !isNaN(n) && n > 0);
+    try {
+      const dosages = customForm.dosageOptions
+        .split(/[,;\s]+/)
+        .map((s) => parseFloat(s.trim()))
+        .filter((n) => !isNaN(n) && n > 0);
 
-    if (!customForm.name.trim()) {
-      addToast('Medication name is required', 'error');
-      return;
-    }
-    if (dosages.length === 0) {
-      addToast('Enter at least one valid dosage (comma-separated numbers)', 'error');
-      return;
-    }
-    const halfLife = parseFloat(customForm.halfLifeHours);
-    if (isNaN(halfLife) || halfLife <= 0) {
-      addToast('Enter a valid half-life in hours', 'error');
-      return;
-    }
+      if (!customForm.name.trim()) {
+        addToast('Medication name is required', 'error');
+        return;
+      }
+      if (dosages.length === 0) {
+        addToast('Enter at least one valid dosage (comma-separated numbers)', 'error');
+        return;
+      }
+      const halfLife = parseFloat(customForm.halfLifeHours);
+      if (isNaN(halfLife) || halfLife <= 0) {
+        addToast('Enter a valid half-life in hours', 'error');
+        return;
+      }
 
-    await useMedicationStore.getState().addMedication({
-      templateId: 'custom-' + crypto.randomUUID(),
-      name: customForm.name.trim(),
-      brand: customForm.brand.trim() || 'Custom',
-      activeIngredient: customForm.activeIngredient.trim() || customForm.name.trim(),
-      dosageOptions: dosages,
-      unit: customForm.unit,
-      frequency: customForm.frequency,
-      halfLifeHours: halfLife,
-      color: customForm.color,
-      reminderHoursBefore: customForm.frequency === 'daily' ? 1 : 24,
-      enabled: true,
-    });
+      await useMedicationStore.getState().addMedication({
+        templateId: 'custom-' + uuid(),
+        name: customForm.name.trim(),
+        brand: customForm.brand.trim() || 'Custom',
+        activeIngredient: customForm.activeIngredient.trim() || customForm.name.trim(),
+        dosageOptions: dosages,
+        unit: customForm.unit,
+        frequency: customForm.frequency,
+        halfLifeHours: halfLife,
+        color: customForm.color,
+        reminderHoursBefore: customForm.frequency === 'daily' ? 1 : 24,
+        enabled: true,
+      });
 
-    setCustomForm({ ...DEFAULT_CUSTOM_FORM });
-    setAddMode('library');
-    setShowAddModal(false);
-    await loadData();
-    addToast('Custom medication added!', 'success');
+      setCustomForm({
+        name: '', brand: '', activeIngredient: '', dosageOptions: '',
+        unit: defaultUnit, frequency: 'weekly' as Frequency, halfLifeHours: '',
+        color: COLOR_PRESETS[0],
+      });
+      setAddMode('library');
+      setShowAddModal(false);
+      await loadData();
+      addToast('Custom medication added!', 'success');
+    } catch (err) {
+      console.error('Failed to add custom medication:', err);
+      addToast('Failed to add medication', 'error');
+    }
   };
 
   const resetModal = () => {
     setShowAddModal(false);
     setAddMode('library');
-    setCustomForm({ ...DEFAULT_CUSTOM_FORM });
+    setCustomForm({
+      name: '', brand: '', activeIngredient: '', dosageOptions: '',
+      unit: defaultUnit, frequency: 'weekly' as Frequency, halfLifeHours: '',
+      color: COLOR_PRESETS[0],
+    });
   };
 
   return (
@@ -377,7 +412,7 @@ interface EditForm {
                       <p className="text-xs font-medium text-white">{med.dosageOptions.join(', ')} {med.unit}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <div className="flex items-center gap-2 text-xs text-slate-400 mb-3">
                     <Clock size={14} />
                     Reminder: {med.reminderHoursBefore}h before dose
                   </div>
@@ -529,7 +564,7 @@ interface EditForm {
                       <label className="text-xs text-slate-400 block mb-1">Unit</label>
                       <select
                         value={customForm.unit}
-                        onChange={(e) => setCustomForm((f) => ({ ...f, unit: e.target.value }))}
+                        onChange={(e) => setCustomForm((f) => ({ ...f, unit: e.target.value as 'mg' | 'mcg' | 'units' }))}
                         className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-primary-500/50"
                       >
                         <option value="mg">mg</option>

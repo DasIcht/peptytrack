@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { db } from '../db/database';
+import { uuid } from '../lib/uuid';
 import type { Medication, Dose } from '../types';
 import {
   medicationLevelAtTime,
@@ -43,7 +44,7 @@ export const useMedicationStore = create<MedicationState>((set, get) => ({
   addMedication: async (med) => {
     const newMed: Medication = {
       ...med,
-      id: crypto.randomUUID(),
+      id: uuid(),
       createdAt: Date.now(),
     };
     await db.medications.add(newMed);
@@ -80,7 +81,7 @@ export const useMedicationStore = create<MedicationState>((set, get) => ({
   logDose: async (dose) => {
     const newDose: Dose = {
       ...dose,
-      id: crypto.randomUUID(),
+      id: uuid(),
       createdAt: Date.now(),
     };
     await db.doses.add(newDose);

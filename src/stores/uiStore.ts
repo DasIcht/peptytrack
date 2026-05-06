@@ -1,6 +1,7 @@
 import { create } from 'zustand';
+import { uuid } from '../lib/uuid';
 
-export type PageId = 'dashboard' | 'log' | 'chart' | 'weight' | 'medications' | 'settings';
+export type PageId = 'dashboard' | 'log' | 'chart' | 'weight' | 'medications' | 'vials' | 'settings';
 
 interface Toast {
   id: string;
@@ -35,7 +36,7 @@ export const useUIStore = create<UIState>((set) => ({
   openModal: (content) => set({ isModalOpen: true, modalContent: content }),
   closeModal: () => set({ isModalOpen: false, modalContent: null }),
   addToast: (message, type = 'info') => {
-    const id = crypto.randomUUID();
+    const id = uuid();
     set((state) => ({
       toasts: [...state.toasts, { id, message, type }],
     }));

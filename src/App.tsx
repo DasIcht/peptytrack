@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useUIStore } from './stores/uiStore';
 import { useMedicationStore } from './stores/medicationStore';
 import { useWeightStore } from './stores/weightStore';
+import { useVialStore } from './stores/vialStore';
 import { useSettingsStore } from './stores/settingsStore';
-import { seedDatabaseIfEmpty } from './db/database';
 import { checkAndFireReminders } from './lib/notifications';
 import { getAutoBackup, clearAutoBackup, saveAutoBackup } from './lib/autoBackup';
 import { importData, exportData } from './lib/cloudSync';
@@ -15,6 +15,7 @@ import { LogDose } from './pages/LogDose';
 import { MedicationChart } from './pages/MedicationChart';
 import { WeightTracker } from './pages/WeightTracker';
 import { Medications } from './pages/Medications';
+import { Vials } from './pages/Vials';
 import { Settings } from './pages/Settings';
 import './styles/global.css';
 
@@ -24,6 +25,7 @@ const PAGE_COMPONENTS = {
   chart: MedicationChart,
   weight: WeightTracker,
   medications: Medications,
+  vials: Vials,
   settings: Settings,
 };
 
@@ -31,20 +33,27 @@ function App() {
   const { activePage, addToast } = useUIStore();
   const { loadData: loadMeds, initialized: medsInitialized, medications, doses } = useMedicationStore();
   const { loadData: loadWeight, entries: weightEntries } = useWeightStore();
+  const { loadData: loadVials, initialized: vialsInitialized, vials } = useVialStore();
   const { loadSettings, initialized: settingsInitialized, settings } = useSettingsStore();
   const [restorePrompt, setRestorePrompt] = useState(false);
 
-  const initialized = medsInitialized && settingsInitialized;
+  const initialized = medsInitialized && settingsInitialized && vialsInitialized;
 
   useEffect(() => {
     const init = async () => {
-      await seedDatabaseIfEmpty();
-      await loadMeds();
-      await loadWeight();
-      await loadSettings();
+      try {
+        await loadMeds();
+        if (useMedicationStore.getState().medications.length === 0) {
+          await loadMeds();
+        }
+        await Promise.all([loadWeight(), loadVials(), loadSettings()]);
+      } catch (err) {
+        console.error('App initialization failed:', err);
+        addToast('Failed to initialize app data', 'error');
+      }
     };
     init();
-  }, [loadMeds, loadWeight, loadSettings]);
+  }, [loadMeds, loadWeight, loadVials, loadSettings, addToast]);
 
   useEffect(() => {
     if (!initialized) return;
@@ -57,17 +66,17 @@ function App() {
   // Auto-backup whenever data changes
   useEffect(() => {
     if (!initialized) return;
-    const totalItems = medications.length + doses.length + weightEntries.length;
+    const totalItems = medications.length + doses.length + weightEntries.length + vials.length;
     if (totalItems === 0) return;
     exportData().then((data) => {
       saveAutoBackup(JSON.stringify(data));
     });
-  }, [initialized, medications.length, doses.length, weightEntries.length]);
+  }, [initialized, medications.length, doses.length, weightEntries.length, vials.length]);
 
   // Prompt to restore if DB is empty but localStorage backup exists
   useEffect(() => {
     if (!initialized) return;
-    const totalItems = medications.length + doses.length + weightEntries.length;
+    const totalItems = medications.length + doses.length + weightEntries.length + vials.length;
     if (totalItems > 0) return;
     const backup = getAutoBackup();
     if (backup) {
@@ -84,6 +93,7 @@ function App() {
       await importData(JSON.parse(backup));
       await loadMeds();
       await loadWeight();
+      await loadVials();
       await loadSettings();
       addToast('Data restored from backup!', 'success');
     } catch {

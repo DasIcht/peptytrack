@@ -45,6 +45,7 @@ describe('Database CRUD', () => {
     await db.medications.clear();
     await db.doses.clear();
     await db.weightEntries.clear();
+    await db.vials.clear();
     await db.settings.clear();
   });
 
@@ -118,6 +119,46 @@ describe('Database CRUD', () => {
     it('returns empty object when no settings', async () => {
       const settings = await getSettings();
       expect(settings).toEqual({});
+    });
+  });
+
+  describe('vials', () => {
+    it('can add and retrieve a vial', async () => {
+      const vial = {
+        id: 'vial-1',
+        medicationId: 'test-1',
+        name: 'Vial #1',
+        peptideAmount: 10,
+        peptideUnit: 'mg',
+        bacWaterAmount: 2,
+        reconstitutedAt: Date.now(),
+        remainingOverride: null,
+        notes: '',
+        createdAt: Date.now(),
+      };
+      await db.vials.add(vial);
+      const result = await db.vials.get('vial-1');
+      expect(result).toBeDefined();
+      expect(result!.peptideAmount).toBe(10);
+    });
+
+    it('can query vials by medication', async () => {
+      const vial = {
+        id: 'vial-1',
+        medicationId: 'test-1',
+        name: 'Vial #1',
+        peptideAmount: 10,
+        peptideUnit: 'mg',
+        bacWaterAmount: 2,
+        reconstitutedAt: Date.now(),
+        remainingOverride: null,
+        notes: '',
+        createdAt: Date.now(),
+      };
+      await db.vials.add(vial);
+      const results = await db.vials.where('medicationId').equals('test-1').toArray();
+      expect(results).toHaveLength(1);
+      expect(results[0].name).toBe('Vial #1');
     });
   });
 

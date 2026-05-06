@@ -1,7 +1,7 @@
 # PeptyTrack — Architecture Document
 
 > **Purpose:** This document describes the overall architecture, data flow, component relationships, and known outstanding items for the PeptyTrack GLP-1 medication tracker PWA.
-> **Last Updated:** 2026-04-29
+> **Last Updated:** 2026-05-06
 
 ---
 
@@ -79,10 +79,11 @@ peptyTrack/
 │   │
 │   └── pages/                 # Full-page route components
 │       ├── Dashboard.tsx      # Home — stats, medication cards, quick actions
-│       ├── LogDose.tsx        # Dose logging with injection site picker
+│       ├── LogDose.tsx        # Dose logging with injection site picker, vial selection, auto-calculated injection volume (ml + U-100 units)
 │       ├── MedicationChart.tsx# Dual-axis medication level + weight chart
 │       ├── WeightTracker.tsx  # Weight logging with date picker + history
-│       ├── Medications.tsx    # Medication management + enable/disable toggle
+│       ├── Medications.tsx    # Medication management — add from library/custom, enable/disable
+│       ├── Vials.tsx          # Vial management grouped by med, filter dropdown defaults to last-logged
 │       └── Settings.tsx       # Notifications, PDF export, backup/restore, clear data
 │
 ├── index.html                 # HTML shell with PWA meta tags
@@ -117,10 +118,24 @@ interface Medication {
 interface Dose {
   id: string;
   medicationId: string;        // FK → medications.id
+  vialId?: string;             // FK → vials.id (optional vial link)
   dosage: number;              // Amount taken
   unit: string;                // mg | mcg
   injectionSite: string;       // e.g., "abdomen-upper-left"
   dateTime: number;            // Unix timestamp of dose
+  notes: string;
+  createdAt: number;
+}
+
+interface Vial {
+  id: string;
+  medicationId: string;        // FK → medications.id
+  name: string;                // Vial label (e.g., "Vial #1")
+  peptideAmount: number;       // Total peptide in vial
+  peptideUnit: string;         // mg | mcg | units
+  bacWaterAmount: number;      // ml of bacteriostatic water
+  reconstitutedAt: number;     // Unix timestamp when mixed
+  remainingOverride: number | null; // Manual override for remaining amount
   notes: string;
   createdAt: number;
 }
@@ -140,8 +155,9 @@ interface WeightEntry {
 | Table | Primary Key | Indexed Fields |
 |-------|-------------|----------------|
 | `medications` | `id` | `activeIngredient`, `createdAt` |
-| `doses` | `id` | `medicationId`, `dateTime`, `createdAt` |
+| `doses` | `id` | `medicationId`, `vialId`, `dateTime`, `createdAt` |
 | `weightEntries` | `id` | `dateTime`, `createdAt` |
+| `vials` | `id` | `medicationId`, `createdAt` |
 | `settings` | `id` | — |
 
 ### 4.3 Seeding Logic
@@ -165,7 +181,8 @@ interface WeightEntry {
 | `medicationStore` | Medication + dose CRUD (incl. dose update/delete), computed levels | `medications[]`, `doses[]`, `initialized` |
 | `weightStore` | Weight entry CRUD (incl. update/delete), trend calculation | `entries[]` |
 | `uiStore` | Navigation, modals, toast queue, log-dose preselection | `activePage`, `logDoseMedId`, `toasts[]`, `modalConfig` |
-| `settingsStore` | App preferences | `settings` (weightUnit, medicationUnit, notificationsEnabled) |
+| `settingsStore` | App preferences (weightUnit, medicationUnit, notificationsEnabled) | `settings` |
+| `vialStore` | Vial CRUD + computed remaining tracking | `vials[]`, `initialized` |
 
 ### 5.2 Store Pattern
 
@@ -209,7 +226,8 @@ Navigation is handled by `uiStore.activePage` (string enum). `App.tsx` maps page
 | `log` | `LogDose` | Log a new dose |
 | `chart` | `MedicationChart` | View medication level + weight charts |
 | `weight` | `WeightTracker` | Log weight + view history |
-| `medications` | `Medications` | Manage medications (add/remove/enable) |
+| `medications` | `Medications` | Manage medications — add from library or custom, enable/disable, edit |
+| `vials` | `Vials` | Manage vials grouped by medication. Filter dropdown defaults to last-logged med |
 | `settings` | `Settings` | Notifications, export, backup, clear data |
 
 Navigation triggers via `useUIStore().setPage('key')`.
@@ -263,6 +281,8 @@ App.tsx mounts
   └─> seedDatabaseIfEmpty()  → Seeds 7 GLP-1 meds if DB empty
   └─> medicationStore.loadData() → Loads medications + doses from IndexedDB
   └─> weightStore.loadData()     → Loads weight entries from IndexedDB
+  └─> vialStore.loadData()       → Loads vials from IndexedDB
+  └─> settingsStore.loadSettings() → Loads app preferences
   └─> Reminder polling starts (60s interval)
 ```
 
@@ -273,9 +293,10 @@ User taps a medication card on Dashboard
   └─> uiStore.setPage('log')
   └─> LogDose.tsx
       └─> Preselects medication from uiStore.logDoseMedId (cleared after read)
-      └─> User picks dosage, site, date/time
+      └─> User picks vial (optional), dosage, site, date/time
+      └─> Vial remaining is displayed in real time
       └─> Submit → medicationStore.logDose(dose) or updateDose(id, updates)
-          └─> Persists to IndexedDB (db.doses.add / update)
+          └─> Persists to IndexedDB (db.doses.add / update), includes vialId
           └─> Updates Zustand state
           └─> Toast: "Dose logged!" / "Dose updated!"
           └─> Triggers notification reschedule
@@ -302,9 +323,11 @@ App.tsx
 │   ├── Dashboard.tsx
 │   │   └── MedicationCard[] (per enabled medication)
 │   ├── LogDose.tsx
+│   │   └── VialSelector + RemainingDisplay
 │   ├── MedicationChart.tsx
 │   ├── WeightTracker.tsx
 │   ├── Medications.tsx
+│   │   └── VialList (per medication)
 │   └── Settings.tsx
 │
 ├── BottomNav.tsx          (fixed, all pages)
@@ -338,9 +361,10 @@ App.tsx
 | Test File | Coverage |
 |-----------|----------|
 | `halfLifeEngine.test.ts` | 15 tests — concentration decay, dose accumulation, series generation, next dose timing |
-| `database.test.ts` | 14 tests — medication CRUD, dose queries, weight sorting, settings persistence, seed deduplication & idempotency |
+| `database.test.ts` | 16 tests — medication CRUD, dose queries, weight sorting, settings persistence, seed deduplication & idempotency, vial CRUD |
 | `medicationStore.test.ts` | 5 tests — enable/disable toggle, state persistence across reloads, custom medication creation, dose update |
 | `settingsStore.test.ts` | 4 tests — default settings, persist/reload, getSetting, merge with defaults |
+| `vialStore.test.ts` | 10 tests — CRUD, remaining computation, filtering, last used, remaining override |
 | `ConfirmDialog.test.tsx` | 7 tests — rendering, confirm/cancel actions, danger styling, modal close |
 
 **Run tests:** `npm run test`
@@ -414,6 +438,7 @@ npm run test       # Runs unit tests
 |------|--------|
 | 2026-04-29 | Initial architecture document |
 | 2026-04-29 | Added `enabled` field to Medication; Dashboard filters by enabled |
+| 2026-05-06 | Added vial support: `Vial` type, `vialStore`, schema v2, vial selector in LogDose, inline vial management in Medications page |
 | 2026-04-29 | Added date/time picker to WeightTracker |
 | 2026-04-29 | Merged weight data into MedicationChart (dual-axis) |
 | 2026-04-29 | Fixed seeding deduplication by `templateId` |
@@ -437,3 +462,4 @@ npm run test       # Runs unit tests
 | 2026-05-05 | Replaced all `window.confirm()` with `openModal(<ConfirmDialog />)` in LogDose, WeightTracker, Medications, Settings |
 | 2026-05-05 | Added `settingsStore.test.ts` (4 tests) and `ConfirmDialog.test.tsx` (7 tests) |
 | 2026-05-05 | Configured `vitest.config.ts` with jsdom environment and jest-dom matchers setup |
+| 2026-05-06 | Backup/restore now includes settings (version 3). "Clear All Data" now clears vials and settings. Import reloads all stores. |

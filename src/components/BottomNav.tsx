@@ -1,4 +1,4 @@
-import { Home, Syringe, TrendingUp, Weight, Pill, Settings } from 'lucide-react';
+import { Home, Syringe, TrendingUp, Weight, Pill, FlaskConical, Settings } from 'lucide-react';
 import { useUIStore } from '../stores/uiStore';
 import type { PageId } from '../stores/uiStore';
 
@@ -8,6 +8,7 @@ const NAV_ITEMS: { id: PageId; label: string; icon: typeof Home }[] = [
   { id: 'chart', label: 'Chart', icon: TrendingUp },
   { id: 'weight', label: 'Weight', icon: Weight },
   { id: 'medications', label: 'Meds', icon: Pill },
+  { id: 'vials', label: 'Vials', icon: FlaskConical },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
