@@ -184,7 +184,7 @@ export function MedicationChart() {
   }
 
   return (
-    <div className="min-h-full pb-24 px-5 pt-6">
+    <div className="min-h-full pb-24 px-3 pt-6">
       <h1 className="text-2xl font-bold text-white mb-1">Medication Levels</h1>
       <p className="text-sm text-slate-400 mb-6">Estimated concentration based on half-life</p>
 
@@ -206,9 +206,9 @@ export function MedicationChart() {
       </div>
 
       {chartData.length > 0 && (
-        <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-4">
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-2">
           <ResponsiveContainer width="100%" height={350}>
-            <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
               <defs>
                 {medications.map((med) => (
                   <linearGradient key={med.id} id={`grad_${med.id}`} x1="0" y1="0" x2="0" y2="1">
