@@ -86,13 +86,13 @@ describe('LogDose', () => {
   describe('Mode Toggle', () => {
     it('renders Quick Log mode by default', () => {
       render(<LogDose />);
-      expect(screen.getByText('Quick Log')).toBeInTheDocument();
-      expect(screen.getByText('Full Log')).toBeInTheDocument();
+      expect(screen.getByText('Quick')).toBeInTheDocument();
+      expect(screen.getByText('Full')).toBeInTheDocument();
     });
 
     it('defaults to Quick Log when no localStorage preference exists', () => {
       render(<LogDose />);
-      const quickBtn = screen.getByText('Quick Log').closest('button');
+      const quickBtn = screen.getByText('Quick').closest('button');
       expect(quickBtn?.classList.contains('active')).toBe(true);
     });
 
@@ -105,7 +105,7 @@ describe('LogDose', () => {
 
     it('saves mode preference to localStorage when toggled', async () => {
       render(<LogDose />);
-      const fullBtn = screen.getByText('Full Log').closest('button')!;
+      const fullBtn = screen.getByText('Full').closest('button')!;
       fireEvent.click(fullBtn);
       // Mode switch has a 200ms animation delay before localStorage is updated
       await waitFor(() => {
@@ -128,11 +128,13 @@ describe('LogDose', () => {
           createdAt: Date.now(),
         }],
       });
+      // Switch to full mode so the Dose History (with edit button) is visible
+      localStorage.setItem('pepty-log-mode', 'full');
       render(<LogDose />);
       // Edit the first dose
       const editBtn = screen.getByLabelText('Edit dose');
       fireEvent.click(editBtn);
-      expect(screen.queryByText('Quick Log')).not.toBeInTheDocument();
+      expect(screen.queryByText('Quick')).not.toBeInTheDocument();
     });
   });
 
@@ -211,7 +213,8 @@ describe('LogDose', () => {
   });
 
   describe('Injection Site Zone Strip', () => {
-    it('renders zone cards for active zones', () => {
+    it('renders zone cards for active zones in full mode', () => {
+      localStorage.setItem('pepty-log-mode', 'full');
       render(<LogDose />);
       expect(screen.getByText('Abdomen')).toBeInTheDocument();
       expect(screen.getByText('Thigh')).toBeInTheDocument();
@@ -219,6 +222,7 @@ describe('LogDose', () => {
     });
 
     it('expands zone when clicked to show site options', () => {
+      localStorage.setItem('pepty-log-mode', 'full');
       render(<LogDose />);
       const abdomenZone = screen.getByText('Abdomen').closest('button')!;
       fireEvent.click(abdomenZone);
@@ -227,6 +231,7 @@ describe('LogDose', () => {
     });
 
     it('selects a site when clicked in expanded zone', () => {
+      localStorage.setItem('pepty-log-mode', 'full');
       render(<LogDose />);
       const abdomenZone = screen.getByText('Abdomen').closest('button')!;
       fireEvent.click(abdomenZone);
@@ -244,6 +249,7 @@ describe('LogDose', () => {
         },
         initialized: true,
       });
+      localStorage.setItem('pepty-log-mode', 'full');
       render(<LogDose />);
       expect(screen.getByText('Abdomen')).toBeInTheDocument();
       expect(screen.queryByText('Thigh')).not.toBeInTheDocument();

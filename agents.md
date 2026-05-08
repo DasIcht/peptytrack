@@ -82,7 +82,7 @@ peptyTrack/
 │   │   └── Toast.tsx          # Toast notification system
 │   └── pages/                 # Full-page route components
 │       ├── Dashboard.tsx      # Home: stats, medication cards, quick actions
-│       ├── LogDose.tsx        # Dual-mode dose logging: Quick Log (3-tap fast flow) and Full Log (complete form). Features visual body-zone injection site strip, compact vial summary, and full vial dashboard with circular progress
+│       ├── LogDose.tsx        # Dual-mode dose logging: Quick Log (compact single-screen layout, no scroll) and Full Log (complete form with all sections). Quick mode shows an inline header toggle, compact card padding, horizontal scrollable injection site pills, and hides dose history. Full mode features the visual body-zone 2-column selector, compact vial summary, full vial dashboard with circular progress, notes, side effects, and dose history timeline.
 │       ├── MedicationChart.tsx# Dual-axis medication level + weight chart
 │       ├── WeightTracker.tsx  # Weight logging with date picker + history
 │       ├── Medications.tsx    # Medication management — add from library/custom, enable/disable

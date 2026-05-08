@@ -183,6 +183,10 @@ export function LogDose() {
     ? remainingPeptide / concentrationPerMl
     : 0;
 
+  const doseUnits = dosage && parseFloat(dosage) > 0 && concentrationPerMl > 0
+    ? Math.round((parseFloat(dosage) / concentrationPerMl) * 100)
+    : 0;
+
   const vialPercentage = selectedVial ? getVialPercentage(selectedVial.id, doses) : 0;
   const animatedRemaining = useAnimatedNumber(remainingPeptide);
   const animatedRemainingMl = useAnimatedNumber(remainingMl);
@@ -331,49 +335,82 @@ export function LogDose() {
   const isQuick = logMode === 'quick' && !editingDoseId;
 
   return (
-    <div className="min-h-full pb-28 px-5 pt-6" ref={formRef}>
-      {/* Hero Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          {editingDoseId && (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="p-2 rounded-xl bg-surface-800/60 border border-white/5 text-slate-400 hover:text-white hover:bg-surface-700 transition-all btn-tactile"
-            >
-              <ArrowLeft size={18} />
-            </button>
-          )}
-          <h1 className="text-3xl font-extrabold tracking-tight">
-            <span className="text-gradient">{editingDoseId ? 'Update' : 'Log'}</span>
-            <span className="text-white ml-2">Dose</span>
-          </h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider ${
-              editingDoseId
-                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                : 'bg-primary-500/10 text-primary-400 border border-primary-500/20'
-            }`}
-          >
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                editingDoseId ? 'bg-amber-400' : 'bg-primary-400 animate-pulse'
-              }`}
-            />
-            {editingDoseId ? 'Editing Entry' : 'New Dose'}
-          </span>
-          {selectedMed && (
-            <span className="text-xs text-slate-500">
-              {selectedMed.name} — {selectedMed.brand}
-            </span>
-          )}
-        </div>
+    <div className={`min-h-full ${isQuick ? 'pb-24' : 'pb-28'} px-5 ${isQuick ? 'pt-3 quick-log' : 'pt-6'}`} ref={formRef}>
+      {/* Header */}
+      <div className={isQuick ? 'mb-3' : 'mb-6'}>
+        {isQuick ? (
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold tracking-tight">
+              <span className="text-gradient">Log</span>
+              <span className="text-white ml-1">Dose</span>
+            </h1>
+            <div className="mode-toggle">
+              <button
+                type="button"
+                onClick={() => handleModeChange('quick')}
+                className={`mode-toggle-btn ${isQuick ? 'active' : ''}`}
+              >
+                <span className="flex items-center justify-center gap-1">
+                  <Zap size={11} />
+                  Quick
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleModeChange('full')}
+                className={`mode-toggle-btn ${!isQuick ? 'active' : ''}`}
+              >
+                <span className="flex items-center justify-center gap-1">
+                  <List size={11} />
+                  Full
+                </span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-3 mb-2">
+              {editingDoseId && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="p-2 rounded-xl bg-surface-800/60 border border-white/5 text-slate-400 hover:text-white hover:bg-surface-700 transition-all btn-tactile"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+              )}
+              <h1 className="text-3xl font-extrabold tracking-tight">
+                <span className="text-gradient">{editingDoseId ? 'Update' : 'Log'}</span>
+                <span className="text-white ml-2">Dose</span>
+              </h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider ${
+                  editingDoseId
+                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                    : 'bg-primary-500/10 text-primary-400 border border-primary-500/20'
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    editingDoseId ? 'bg-amber-400' : 'bg-primary-400 animate-pulse'
+                  }`}
+                />
+                {editingDoseId ? 'Editing Entry' : 'New Dose'}
+              </span>
+              {selectedMed && (
+                <span className="text-xs text-slate-500">
+                  {selectedMed.name} — {selectedMed.brand}
+                </span>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Mode Toggle — hidden when editing */}
-      {!editingDoseId && (
+      {/* Mode Toggle — shown only in full mode */}
+      {!editingDoseId && !isQuick && (
         <div className="mode-toggle mb-6">
           <button
             type="button"
@@ -398,7 +435,7 @@ export function LogDose() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className={`flex flex-col gap-5 mode-content ${switchingMode ? 'switching' : ''}`}>
+      <form onSubmit={handleSubmit} className={`flex flex-col ${isQuick ? 'gap-2.5' : 'gap-5'} mode-content ${switchingMode ? 'switching' : ''}`}>
         {/* Medication Select */}
         <div className="card-premium p-5">
           <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-widest">
@@ -436,8 +473,8 @@ export function LogDose() {
             </label>
             {isQuick ? (
               // Quick Log: 2-column layout — dropdown left, summary right
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
                   <div className="relative">
                     <select
                       value={selectedVialId}
@@ -457,16 +494,30 @@ export function LogDose() {
                     <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
                   {selectedVial ? (
-                    <div className="vial-summary justify-between">
-                      <span className="vial-name truncate">{selectedVial.name}</span>
-                      <span className="vial-remaining whitespace-nowrap">
-                        <span className={
-                          vialPercentage < 25 ? 'low' : vialPercentage < 50 ? 'medium' : 'high'
-                        }>
-                          {remainingPeptide.toFixed(2)}
-                        </span>
-                        {' '}{selectedVial.peptideUnit}
+                    <div className="vial-summary !flex-col !items-stretch !gap-1 justify-center">
+                      <span className="vial-name truncate text-[11px] leading-tight">
+                        {selectedVial.name}
+                        {doseUnits > 0 && (
+                          <span className="text-slate-400 font-normal ml-1">
+                            · {doseUnits} units
+                          </span>
+                        )}
                       </span>
+                      <div className="w-full flex items-center gap-1.5">
+                        <div className="flex-1 h-1.5 rounded-full bg-surface-700/50 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              vialPercentage < 25 ? 'bg-red-500' : vialPercentage < 50 ? 'bg-amber-500' : 'bg-emerald-500'
+                            }`}
+                            style={{ width: `${Math.max(vialPercentage, 3)}%` }}
+                          />
+                        </div>
+                        <span className={`text-[10px] font-bold whitespace-nowrap ${
+                          vialPercentage < 25 ? 'text-red-400' : vialPercentage < 50 ? 'text-amber-400' : 'text-emerald-400'
+                        }`}>
+                          {Math.round(vialPercentage)}%
+                        </span>
+                      </div>
                     </div>
                   ) : (
                     <div className="vial-summary justify-center text-slate-500 text-xs">
@@ -478,21 +529,6 @@ export function LogDose() {
                   <div className="flex items-center gap-2 text-amber-400 text-xs bg-amber-500/5 border border-amber-500/10 rounded-lg px-3 py-2">
                     <AlertTriangle size={14} className="flex-shrink-0" />
                     This dose exceeds the remaining amount.
-                  </div>
-                )}
-                {dosage && parseFloat(dosage) > 0 && concentrationPerMl > 0 && (
-                  <div className="rounded-lg border border-white/5 bg-surface-900/40 p-3 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary-500/10 flex items-center justify-center flex-shrink-0">
-                      <Syringe size={18} className="text-primary-400" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-sm text-white">
-                        Inject <strong className="text-primary-300">{animatedInjectMl.toFixed(2)} ml</strong>
-                      </div>
-                      <div className="text-xs text-slate-400">
-                        {Math.round((parseFloat(dosage) / concentrationPerMl) * 100)} units (U-100)
-                      </div>
-                    </div>
                   </div>
                 )}
               </div>
@@ -642,7 +678,7 @@ export function LogDose() {
           </div>
         )}
 
-        {/* Injection Site — 2-Column: Zone Selector | Site Grid */}
+        {/* Injection Site */}
         <div className="card-premium p-5">
           <div className="flex items-center justify-between mb-3">
             <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
@@ -657,76 +693,101 @@ export function LogDose() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {/* Left: Zone Selector */}
-            <div className="flex flex-col gap-1.5">
-              {activeZones.map((zone) => {
-                const isActive = selectedZone?.key === zone.key;
+          {isQuick ? (
+            <div className="flex gap-1 overflow-x-auto no-scrollbar py-0.5">
+              {(settings.injectionRotationSites.length > 0 ? settings.injectionRotationSites : INJECTION_SITES.map((s) => s.id)).map((siteId) => {
+                const site = INJECTION_SITES.find((s) => s.id === siteId)!;
+                const isSelected = injectionSite === siteId;
                 return (
                   <button
-                    key={zone.key}
+                    key={siteId}
                     type="button"
-                    onClick={() => {
-                      setExpandedZone(zone.key);
-                      if (!zone.sites.includes(injectionSite)) {
-                        const firstActive = zone.sites.find((s) => settings.injectionRotationSites.includes(s));
-                        if (firstActive) setInjectionSite(firstActive);
-                      }
-                    }}
-                    className={`btn-tactile flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all ${
-                      isActive
-                        ? 'bg-primary-600/15 border border-primary-500/40 text-primary-300 shadow-[0_0_12px_rgba(20,184,166,0.12)]'
-                        : 'bg-surface-900/50 border border-white/5 text-slate-400 hover:border-white/15 hover:bg-surface-800'
+                    onClick={() => setInjectionSite(siteId)}
+                    className={`btn-tactile flex-shrink-0 h-7 px-2 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all ${
+                      isSelected
+                        ? 'bg-primary-600/20 border border-primary-500/50 text-primary-300 shadow-[0_0_8px_rgba(20,184,166,0.12)]'
+                        : 'bg-surface-800/50 border border-white/5 text-slate-500 hover:border-white/15 hover:bg-surface-700 hover:text-slate-300'
                     }`}
                   >
-                    <span className="text-base leading-none">{zone.emoji}</span>
-                    <span className="text-[11px] font-semibold">{zone.label}</span>
+                    {site.emoji} {site.label}
                   </button>
                 );
               })}
             </div>
-
-            {/* Right: Site Grid */}
-            <div className="bg-surface-900/30 rounded-xl border border-white/5 p-2">
-              <div className="grid grid-cols-2 gap-1.5 h-full">
-                {(() => {
-                  const zone = activeZones.find((z) => z.key === expandedZone) || activeZones[0];
-                  if (!zone) return null;
-                  const zoneSites = zone.sites.filter((s) => settings.injectionRotationSites.includes(s));
-                  return zoneSites.map((siteId) => {
-                    const site = INJECTION_SITES.find((s) => s.id === siteId)!;
-                    const isSelected = injectionSite === siteId;
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                {/* Left: Zone Selector */}
+                <div className="flex flex-col gap-1.5">
+                  {activeZones.map((zone) => {
+                    const isActive = selectedZone?.key === zone.key;
                     return (
                       <button
-                        key={siteId}
+                        key={zone.key}
                         type="button"
-                        onClick={() => setInjectionSite(siteId)}
-                        className={`btn-tactile flex items-center justify-center gap-1 px-1.5 py-2 rounded-lg text-[10px] font-semibold text-center transition-all ${
-                          isSelected
-                            ? 'bg-primary-600/20 border border-primary-500/50 text-primary-300 shadow-[0_0_8px_rgba(20,184,166,0.12)]'
-                            : 'bg-surface-800/50 border border-white/5 text-slate-500 hover:border-white/15 hover:bg-surface-700 hover:text-slate-300'
+                        onClick={() => {
+                          setExpandedZone(zone.key);
+                          if (!zone.sites.includes(injectionSite)) {
+                            const firstActive = zone.sites.find((s) => settings.injectionRotationSites.includes(s));
+                            if (firstActive) setInjectionSite(firstActive);
+                          }
+                        }}
+                        className={`btn-tactile flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all ${
+                          isActive
+                            ? 'bg-primary-600/15 border border-primary-500/40 text-primary-300 shadow-[0_0_12px_rgba(20,184,166,0.12)]'
+                            : 'bg-surface-900/50 border border-white/5 text-slate-400 hover:border-white/15 hover:bg-surface-800'
                         }`}
                       >
-                        {isSelected && <Check size={10} className="text-primary-400 flex-shrink-0" />}
-                        <span className="truncate">{site.label}</span>
+                        <span className="text-base leading-none">{zone.emoji}</span>
+                        <span className="text-[11px] font-semibold">{zone.label}</span>
                       </button>
                     );
-                  });
-                })()}
-              </div>
-            </div>
-          </div>
+                  })}
+                </div>
 
-          {/* Current Selection Summary */}
-          <div className="mt-3 pt-3 border-t border-white/5">
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <MapPin size={12} className="text-primary-400" />
-              <span>Selected:</span>
-              <span className="text-white font-medium capitalize">
-                {selectedZone?.label} · {INJECTION_SITES.find((s) => s.id === injectionSite)?.label}
-              </span>
-            </div>
-          </div>
+                {/* Right: Site Grid */}
+                <div className="bg-surface-900/30 rounded-xl border border-white/5 p-2">
+                  <div className="grid grid-cols-2 gap-1.5 h-full">
+                    {(() => {
+                      const zone = activeZones.find((z) => z.key === expandedZone) || activeZones[0];
+                      if (!zone) return null;
+                      const zoneSites = zone.sites.filter((s) => settings.injectionRotationSites.includes(s));
+                      return zoneSites.map((siteId) => {
+                        const site = INJECTION_SITES.find((s) => s.id === siteId)!;
+                        const isSelected = injectionSite === siteId;
+                        return (
+                          <button
+                            key={siteId}
+                            type="button"
+                            onClick={() => setInjectionSite(siteId)}
+                            className={`btn-tactile flex items-center justify-center gap-1 px-1.5 py-2 rounded-lg text-[10px] font-semibold text-center transition-all ${
+                              isSelected
+                                ? 'bg-primary-600/20 border border-primary-500/50 text-primary-300 shadow-[0_0_8px_rgba(20,184,166,0.12)]'
+                                : 'bg-surface-800/50 border border-white/5 text-slate-500 hover:border-white/15 hover:bg-surface-700 hover:text-slate-300'
+                            }`}
+                          >
+                            {isSelected && <Check size={10} className="text-primary-400 flex-shrink-0" />}
+                            <span className="truncate">{site.label}</span>
+                          </button>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Selection Summary */}
+              <div className="mt-3 pt-3 border-t border-white/5">
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <MapPin size={12} className="text-primary-400" />
+                  <span>Selected:</span>
+                  <span className="text-white font-medium capitalize">
+                    {selectedZone?.label} · {INJECTION_SITES.find((s) => s.id === injectionSite)?.label}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Full Log Only Sections */}
@@ -812,7 +873,7 @@ export function LogDose() {
           <button
             type="submit"
             disabled={!selectedMed || !dosage || submitting}
-            className={`btn-tactile flex-1 py-4 rounded-xl font-semibold text-sm transition-all shadow-lg ${
+            className={`btn-tactile flex-1 ${isQuick ? 'py-2.5' : 'py-4'} rounded-xl font-semibold text-sm transition-all shadow-lg ${
               submitSuccess
                 ? 'bg-emerald-600 text-white shadow-emerald-900/30'
                 : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white shadow-primary-900/30'
@@ -847,7 +908,7 @@ export function LogDose() {
       </form>
 
       {/* Dose History — Timeline */}
-      {selectedMed && medDoses.length > 0 && (
+      {!isQuick && selectedMed && medDoses.length > 0 && (
         <div className="mt-10">
           <button
             type="button"
