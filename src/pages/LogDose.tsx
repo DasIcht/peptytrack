@@ -281,8 +281,6 @@ export function LogDose() {
 
   const doseExceedsRemaining = selectedVial && dosage && parseFloat(dosage) > remainingPeptide;
 
-  const activeZone = SITE_ZONES.find((z) => z.sites.includes(injectionSite));
-
   return (
     <div className="min-h-full pb-28 px-5 pt-6" ref={formRef}>
       {/* Hero Header */}
@@ -508,7 +506,6 @@ export function LogDose() {
             {SITE_ZONES.map((zone) => {
               const zoneSites = zone.sites.filter((s) => settings.injectionRotationSites.includes(s));
               if (zoneSites.length === 0) return null;
-              const isActiveZone = activeZone?.key === zone.key;
               return (
                 <div key={zone.key}>
                   <div className="flex items-center gap-2 mb-2">
@@ -678,7 +675,7 @@ export function LogDose() {
               <div className="absolute left-[7px] top-2 bottom-2 w-px bg-white/8" />
 
               <div className="flex flex-col gap-4 stagger-children">
-                {medDoses.map((dose, idx) => {
+                {medDoses.map((dose) => {
                   const med = medications.find((m) => m.id === dose.medicationId);
                   const vial = vials.find((v) => v.id === dose.vialId);
                   const isEditing = editingDoseId === dose.id;

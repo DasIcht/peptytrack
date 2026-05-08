@@ -6,7 +6,26 @@ import { db } from '../db/database';
 describe('SettingsStore', () => {
   beforeEach(async () => {
     await db.settings.clear();
-    useSettingsStore.setState({ settings: { weightUnit: 'kg', medicationUnit: 'mg', notificationsEnabled: true }, loading: false, initialized: false });
+    useSettingsStore.setState({
+      settings: {
+        weightUnit: 'kg',
+        medicationUnit: 'mg',
+        notificationsEnabled: true,
+        injectionRotationStrategy: 'sequential',
+        injectionRotationSites: [
+          'abdomen-upper-left',
+          'abdomen-upper-right',
+          'abdomen-lower-left',
+          'abdomen-lower-right',
+          'thigh-left',
+          'thigh-right',
+          'arm-left',
+          'arm-right',
+        ],
+      },
+      loading: false,
+      initialized: false,
+    });
   });
 
   it('loads default settings when DB is empty', async () => {
@@ -31,7 +50,25 @@ describe('SettingsStore', () => {
     expect(state.settings.notificationsEnabled).toBe(false);
 
     // Simulate reload
-    useSettingsStore.setState({ settings: { weightUnit: 'kg', medicationUnit: 'mg', notificationsEnabled: true }, initialized: false });
+    useSettingsStore.setState({
+      settings: {
+        weightUnit: 'kg',
+        medicationUnit: 'mg',
+        notificationsEnabled: true,
+        injectionRotationStrategy: 'sequential',
+        injectionRotationSites: [
+          'abdomen-upper-left',
+          'abdomen-upper-right',
+          'abdomen-lower-left',
+          'abdomen-lower-right',
+          'thigh-left',
+          'thigh-right',
+          'arm-left',
+          'arm-right',
+        ],
+      },
+      initialized: false,
+    });
     await useSettingsStore.getState().loadSettings();
 
     state = useSettingsStore.getState();

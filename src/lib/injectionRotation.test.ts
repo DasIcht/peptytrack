@@ -49,7 +49,7 @@ describe('injectionRotation', () => {
     });
 
     it('respects activeSites subset', () => {
-      const active = ['abdomen-upper-left', 'thigh-left', 'arm-right'];
+      const active: InjectionSite[] = ['abdomen-upper-left', 'thigh-left', 'arm-right'];
       const doses: Dose[] = [
         { id: '1', medicationId: 'm1', dosage: 1, unit: 'mg', injectionSite: 'thigh-left', dateTime: 1000, notes: '', createdAt: 1000 },
       ];
@@ -66,7 +66,7 @@ describe('injectionRotation', () => {
     });
 
     it('wraps around within active quadrant subset', () => {
-      const active = ['abdomen-upper-left', 'abdomen-lower-right', 'arm-left'];
+      const active: InjectionSite[] = ['abdomen-upper-left', 'abdomen-lower-right', 'arm-left'];
       const doses: Dose[] = [
         { id: '1', medicationId: 'm1', dosage: 1, unit: 'mg', injectionSite: 'arm-left', dateTime: 1000, notes: '', createdAt: 1000 },
       ];
