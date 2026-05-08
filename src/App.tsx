@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUIStore } from './stores/uiStore';
 import { useMedicationStore } from './stores/medicationStore';
 import { useWeightStore } from './stores/weightStore';
 import { useVialStore } from './stores/vialStore';
 import { useSettingsStore } from './stores/settingsStore';
+import { useSideEffectsStore } from './stores/sideEffectsStore';
 import { checkAndFireReminders } from './lib/notifications';
 import { getAutoBackup, clearAutoBackup, saveAutoBackup } from './lib/autoBackup';
 import { importData, exportData } from './lib/cloudSync';
@@ -30,14 +31,19 @@ const PAGE_COMPONENTS = {
 };
 
 function App() {
-  const { activePage, addToast } = useUIStore();
+  const { activePage, addToast, nextPage, prevPage } = useUIStore();
   const { loadData: loadMeds, initialized: medsInitialized, medications, doses } = useMedicationStore();
   const { loadData: loadWeight, entries: weightEntries } = useWeightStore();
   const { loadData: loadVials, initialized: vialsInitialized, vials } = useVialStore();
   const { loadSettings, initialized: settingsInitialized, settings } = useSettingsStore();
+  const { loadData: loadSideEffects, initialized: sideEffectsInitialized } = useSideEffectsStore();
   const [restorePrompt, setRestorePrompt] = useState(false);
 
-  const initialized = medsInitialized && settingsInitialized && vialsInitialized;
+  const initialized = medsInitialized && settingsInitialized && vialsInitialized && sideEffectsInitialized;
+
+  // Swipe navigation
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
 
   useEffect(() => {
     const init = async () => {
@@ -46,14 +52,14 @@ function App() {
         if (useMedicationStore.getState().medications.length === 0) {
           await loadMeds();
         }
-        await Promise.all([loadWeight(), loadVials(), loadSettings()]);
+        await Promise.all([loadWeight(), loadVials(), loadSettings(), loadSideEffects()]);
       } catch (err) {
         console.error('App initialization failed:', err);
         addToast('Failed to initialize app data', 'error');
       }
     };
     init();
-  }, [loadMeds, loadWeight, loadVials, loadSettings, addToast]);
+  }, [loadMeds, loadWeight, loadVials, loadSettings, loadSideEffects, addToast]);
 
   useEffect(() => {
     if (!initialized) return;
@@ -95,6 +101,7 @@ function App() {
       await loadWeight();
       await loadVials();
       await loadSettings();
+      await loadSideEffects();
       addToast('Data restored from backup!', 'success');
     } catch {
       addToast('Failed to restore backup', 'error');
@@ -112,7 +119,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-surface-950 text-white font-sans overflow-x-hidden">
-      <main className="max-w-lg mx-auto relative">
+      <main className="max-w-lg mx-auto relative" onTouchStart={(e) => { touchStartX.current = e.changedTouches[0].screenX; touchStartY.current = e.changedTouches[0].screenY; }} onTouchEnd={(e) => { const deltaX = e.changedTouches[0].screenX - touchStartX.current; const deltaY = e.changedTouches[0].screenY - touchStartY.current; if (Math.abs(deltaX) > 80 && Math.abs(deltaX) > Math.abs(deltaY)) { if (deltaX < 0) nextPage(); else prevPage(); } }}>
         {restorePrompt && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center px-5 bg-black/70 backdrop-blur-sm">
             <div className="bg-surface-800 border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl">

@@ -62,7 +62,7 @@ export function generatePDF(
 
     autoTable(doc, {
       startY: yPos,
-      head: [['Date', 'Medication', 'Dosage', 'Injection Site']],
+      head: [['Date', 'Medication', 'Dosage', 'Injection Site', 'Side Effects']],
       body: doses
         .sort((a, b) => b.dateTime - a.dateTime)
         .map((d) => [
@@ -70,6 +70,7 @@ export function generatePDF(
           medMap[d.medicationId] || 'Unknown',
           `${d.dosage} ${d.unit}`,
           d.injectionSite.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+          d.sideEffects?.join(', ') || '-',
         ]),
       theme: 'grid',
       headStyles: { fillColor: [20, 184, 166], textColor: 255 },

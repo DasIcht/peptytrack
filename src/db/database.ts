@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Medication, Dose, WeightEntry, Vial } from '../types';
+import type { Medication, Dose, WeightEntry, Vial, CustomSideEffects } from '../types';
 import { MEDICATION_LIBRARY } from './seed';
 import { uuid } from '../lib/uuid';
 
@@ -9,15 +9,17 @@ class PeptyTrackDB extends Dexie {
   weightEntries!: Table<WeightEntry, string>;
   vials!: Table<Vial, string>;
   settings!: Table<{ id: string; value: unknown }, string>;
+  customSideEffects!: Table<CustomSideEffects, string>;
 
   constructor() {
     super('PeptyTrackDB');
-    this.version(2).stores({
+    this.version(3).stores({
       medications: 'id, activeIngredient, createdAt',
       doses: 'id, medicationId, vialId, dateTime, createdAt',
       weightEntries: 'id, dateTime, createdAt',
       vials: 'id, medicationId, createdAt',
       settings: 'id',
+      customSideEffects: 'medicationId',
     });
   }
 }

@@ -54,14 +54,18 @@ peptyTrack/
 │   │   ├── medicationStore.ts # Medications + doses + computed getters
 │   │   ├── medicationStore.test.ts
 │   │   ├── weightStore.ts     # Weight entries + trend calculations
-│   │   ├── uiStore.ts         # Page nav, modals, toast queue, log-dose preselection
+│   │   ├── uiStore.ts         # Page nav, modals, toast queue, log-dose preselection, swipe nav
 │   │   ├── settingsStore.ts   # App preferences (weight unit, notification master switch)
 │   │   ├── settingsStore.test.ts
 │   │   ├── vialStore.ts       # Vial CRUD + computed remaining tracking
-│   │   └── vialStore.test.ts
+│   │   ├── vialStore.test.ts
+│   │   ├── sideEffectsStore.ts # Per-medication custom side effects CRUD + persistence
+│   │   └── sideEffectsStore.test.ts
 │   ├── lib/                   # Core business logic — PURE FUNCTIONS preferred
 │   │   ├── halfLifeEngine.ts      # Pharmacokinetic accumulation model
 │   │   ├── halfLifeEngine.test.ts # 15 unit tests
+│   │   ├── sideEffects.ts         # Curated GLP-1 side effects + smart ordering
+│   │   ├── sideEffects.test.ts    # 8 unit tests
 │   │   ├── notifications.ts       # Browser notification permission + scheduling
 │   │   ├── pdfExport.ts           # PDF report generation
 │   │   ├── cloudSync.ts           # Google Drive / Dropbox OAuth scaffolding
@@ -72,10 +76,13 @@ peptyTrack/
 │   │   ├── Modal.tsx          # Generic modal wrapper (rendered by App.tsx)
 │   │   ├── ConfirmDialog.tsx  # Styled confirmation dialog for destructive actions
 │   │   ├── ConfirmDialog.test.tsx
+│   │   ├── SideEffectChips.tsx # Tap-to-toggle side effect chips + custom add
+│   │   ├── SideEffectChips.test.tsx
+│   │   ├── CircularProgress.tsx # Animated SVG circular progress with color-coded rings
 │   │   └── Toast.tsx          # Toast notification system
 │   └── pages/                 # Full-page route components
 │       ├── Dashboard.tsx      # Home: stats, medication cards, quick actions
-│       ├── LogDose.tsx        # Dose logging with injection site picker, vial selection, auto-calculated injection volume (ml + U-100 units)
+│       ├── LogDose.tsx        # Dose logging with injection site picker, vial selection, side effects chips, auto-calculated injection volume (ml + U-100 units)
 │       ├── MedicationChart.tsx# Dual-axis medication level + weight chart
 │       ├── WeightTracker.tsx  # Weight logging with date picker + history
 │       ├── Medications.tsx    # Medication management — add from library/custom, enable/disable
@@ -151,6 +158,8 @@ Navigation is handled by `uiStore.activePage` (string enum). `App.tsx` maps page
 Navigation: `useUIStore().setPage('key')`  
 Preselect medication for logging: `useUIStore().setLogDoseMedId(med.id)` then `setPage('log')`
 
+> **Swipe Navigation:** The main content area supports touch swipe gestures. Swipe left to advance to the next tab, swipe right to go back. Implemented via `touchstart`/`touchend` handlers on the `<main>` element in `App.tsx` using `uiStore.nextPage()` / `uiStore.prevPage()`.
+
 ---
 
 ## 5. Data Model
@@ -197,6 +206,7 @@ export interface Dose {
   injectionSite: InjectionSite;
   dateTime: number;            // Unix timestamp of dose
   notes: string;
+  sideEffects?: string[];       // Logged side effects for this dose
   createdAt: number;
 }
 
@@ -205,6 +215,13 @@ export type InjectionSite =
   | 'abdomen-lower-left' | 'abdomen-lower-right'
   | 'thigh-left' | 'thigh-right'
   | 'arm-left' | 'arm-right';
+
+export type RotationStrategy = 'sequential' | 'quadrant' | 'lru';
+
+export interface CustomSideEffects {
+  medicationId: string;
+  labels: string[];
+}
 
 export interface WeightEntry {
   id: string;
@@ -216,9 +233,11 @@ export interface WeightEntry {
 }
 
 export interface AppSettings {
-  weightUnit: 'kg' | 'lb';                 // Default for weight entries
-  medicationUnit: 'mg' | 'mcg' | 'units';  // Default for custom meds and vials
-  notificationsEnabled: boolean;           // Master switch for dose reminders
+  weightUnit: 'kg' | 'lb';
+  medicationUnit: 'mg' | 'mcg' | 'units';
+  notificationsEnabled: boolean;
+  injectionRotationStrategy: RotationStrategy;
+  injectionRotationSites: InjectionSite[];
 }
 ```
 
@@ -230,6 +249,7 @@ export interface AppSettings {
 | `weightEntries` | `id` | `dateTime`, `createdAt` |
 | `vials` | `id` | `medicationId`, `createdAt` |
 | `settings` | `id` | — |
+| `customSideEffects` | `medicationId` | — |
 
 ### 5.3 Seeding Logic
 `seedDatabaseIfEmpty()` in `database.ts` handles first-launch seeding:
@@ -287,6 +307,8 @@ export interface AppSettings {
 | Action | Description |
 |--------|-------------|
 | `setPage(page)` | Navigate |
+| `nextPage()` | Swipe left → next tab in PAGE_ORDER |
+| `prevPage()` | Swipe right → previous tab in PAGE_ORDER |
 | `setLogDoseMedId(id)` | Preselect med for dose logging |
 | `openModal(content)` | Show modal |
 | `closeModal()` | Hide modal |
@@ -310,7 +332,21 @@ export interface AppSettings {
 | `getTimeUntilNextDose(med, doses)` | Human-readable countdown |
 | `allMedicationLevelsAtTime(meds, doses, timestamp)` | All meds at once |
 
-### 7.2 Notification System (`lib/notifications.ts`)
+### 7.2 Side Effects Library (`lib/sideEffects.ts`)
+
+| Function | Purpose |
+|----------|---------|
+| `getSideEffectsByRarity()` | Return 22 standard GLP-1 side effects sorted by frequency |
+| `getSideEffectsOrderedForMedication(medId, doses, customEffects)` | Smart ordering: previously selected first, then standard by rarity, then custom |
+
+### 7.6 Injection Rotation (`lib/injectionRotation.ts`)
+
+| Function | Purpose |
+|----------|---------|
+| `getNextInjectionSite(doses, strategy, activeSites)` | Returns next `InjectionSite` based on strategy |
+| `getLastUsedSite(doses)` | Most recent injection site across all doses |
+
+### 7.3 Notification System (`lib/notifications.ts`)
 - Uses `window.Notification` (not service worker — **background reminders don't work when app is closed**).
 - Polls every 60s via `setInterval` in `App.tsx`.
 - Reminders stored in `localStorage` under `pepty-reminders`.
@@ -336,7 +372,7 @@ export interface AppSettings {
 | `listDropboxFiles(token, path)` | Dropbox |
 | `downloadFromDropbox(token, path)` | Dropbox |
 
-### 7.5 Auto-Backup (`lib/autoBackup.ts`)
+### 7.7 Auto-Backup (`lib/autoBackup.ts`)
 - Exports all data to `localStorage` key `peptytrack-autobackup` on every data change.
 - Restore prompt appears on app start if DB is empty but backup exists.
 
@@ -354,22 +390,40 @@ colors: {
 }
 ```
 
-### 8.2 Common UI Patterns
+### 8.2 Premium Design System Utilities (global.css)
+```css
+/* Glass-morphism card with elevated shadow */
+.card-premium  → glass + shadow-elevated + hover lift
+
+/* Input with focus glow ring */
+.input-premium → bg-surface-900/50 + focus glow (primary-500/15)
+
+/* Tactile button with press scale */
+.btn-tactile   → active:scale-[0.96] + bouncy easing
+
+/* Staggered children entrance animation */
+.stagger-children > * → slideUpStagger with progressive delays
+```
+
+### 8.3 Common UI Patterns
 ```tsx
-// Card container
-<div className="rounded-2xl border border-white/5 bg-surface-800/50 p-4">
+// Premium card container
+<div className="card-premium p-5">
 
 // Interactive button
-<button className="py-2.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-sm font-medium transition-all active:scale-[0.98]">
+<button className="btn-tactile py-2.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-sm font-medium transition-all">
 
 // Form input
-<input className="w-full bg-surface-900 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-primary-500/50">
+<input className="input-premium w-full py-3.5">
 
 // Danger action
 <button className="hover:bg-red-500/10 text-red-400">
 
 // Section header
-<h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+<h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">
+
+// Gradient title
+<h1 className="text-gradient">PeptyTrack</h1>
 ```
 
 ### 8.3 Layout Constraints
@@ -387,16 +441,21 @@ colors: {
 | Test File | Coverage |
 |-----------|----------|
 | `halfLifeEngine.test.ts` | 15 tests — concentration decay, accumulation, series generation, next dose timing |
-| `database.test.ts` | 16 tests — CRUD, queries, sorting, seed deduplication & idempotency, vial storage |
+| `sideEffects.test.ts` | 8 tests — rarity ordering, per-medication smart sorting, deduplication |
+| `database.test.ts` | 22 tests — CRUD, queries, sorting, seed deduplication & idempotency, vial storage, customSideEffects |
 | `medicationStore.test.ts` | 5 tests — enable/disable, persistence, custom med creation, dose update |
 | `settingsStore.test.ts` | 4 tests — default settings, persist/reload, getSetting, merge with defaults |
 | `vialStore.test.ts` | 10 tests — CRUD, remaining computation, filtering, last used, remaining override |
+| `sideEffectsStore.test.ts` | 7 tests — CRUD, persistence, deduplication, per-med isolation |
 | `ConfirmDialog.test.tsx` | 7 tests — rendering, confirm/cancel actions, danger styling, modal close |
+| `SideEffectChips.test.tsx` | 6 tests — rendering, toggle selection, custom add |
+| `injectionRotation.test.ts` | 12 tests — sequential, quadrant, LRU strategies, activeSites subset |
 
 ### 9.1 Testing Patterns
 - Use `fake-indexeddb` for IndexedDB mocking in tests.
 - Reset seed promise guard before DB tests: `_resetSeedPromiseForTests()`.
 - Test both state updates AND persistence.
+- Zustand v5 replaces the entire state object on `set()`. Always re-read state with `useStore.getState()` after async actions instead of caching a reference.
 
 ---
 
@@ -562,5 +621,7 @@ npx netlify deploy --prod --dir=dist
 
 ---
 
-> **Last Updated:** 2026-05-06  
-> **Document Version:** 1.1
+| 2026-05-08 | Premium redesign of LogDose page: gradient hero header, grouped glass cards, circular vial progress indicator (CircularProgress), tactile dosage pills, visual injection site zones with emoji indicators, icon-integrated date/time inputs, expandable notes card, animated side effects chips, gradient submit button with success state, timeline-style dose history with staggered entrance. Added premium design system utilities (card-premium, input-premium, btn-tactile, stagger-animations) to global.css and tailwind.config.js. |
+
+> **Last Updated:** 2026-05-08  
+> **Document Version:** 1.3

@@ -3,6 +3,8 @@ import { uuid } from '../lib/uuid';
 
 export type PageId = 'dashboard' | 'log' | 'chart' | 'weight' | 'medications' | 'vials' | 'settings';
 
+const PAGE_ORDER: PageId[] = ['dashboard', 'log', 'chart', 'weight', 'medications', 'vials', 'settings'];
+
 interface Toast {
   id: string;
   message: string;
@@ -17,6 +19,8 @@ interface UIState {
   toasts: Toast[];
 
   setPage: (page: PageId) => void;
+  nextPage: () => void;
+  prevPage: () => void;
   setLogDoseMedId: (id: string | null) => void;
   openModal: (content: React.ReactNode) => void;
   closeModal: () => void;
@@ -32,6 +36,14 @@ export const useUIStore = create<UIState>((set) => ({
   toasts: [],
 
   setPage: (page) => set({ activePage: page }),
+  nextPage: () => set((state) => {
+    const idx = PAGE_ORDER.indexOf(state.activePage);
+    return { activePage: idx < PAGE_ORDER.length - 1 ? PAGE_ORDER[idx + 1] : state.activePage };
+  }),
+  prevPage: () => set((state) => {
+    const idx = PAGE_ORDER.indexOf(state.activePage);
+    return { activePage: idx > 0 ? PAGE_ORDER[idx - 1] : state.activePage };
+  }),
   setLogDoseMedId: (id) => set({ logDoseMedId: id }),
   openModal: (content) => set({ isModalOpen: true, modalContent: content }),
   closeModal: () => set({ isModalOpen: false, modalContent: null }),

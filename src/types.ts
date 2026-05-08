@@ -38,6 +38,8 @@ export type InjectionSite =
   | 'arm-left'
   | 'arm-right';
 
+export type RotationStrategy = 'sequential' | 'quadrant' | 'lru';
+
 export interface Dose {
   id: string;
   medicationId: string;
@@ -47,7 +49,13 @@ export interface Dose {
   injectionSite: InjectionSite;
   dateTime: number;
   notes: string;
+  sideEffects?: string[];
   createdAt: number;
+}
+
+export interface CustomSideEffects {
+  medicationId: string;
+  labels: string[];
 }
 
 export interface Vial {
@@ -76,6 +84,8 @@ export interface AppSettings {
   weightUnit: 'kg' | 'lb';
   medicationUnit: 'mg' | 'mcg' | 'units';
   notificationsEnabled: boolean;
+  injectionRotationStrategy: RotationStrategy;
+  injectionRotationSites: InjectionSite[];
 }
 
 export interface MedLevelPoint {

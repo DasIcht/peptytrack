@@ -81,6 +81,7 @@ export const useMedicationStore = create<MedicationState>((set, get) => ({
   logDose: async (dose) => {
     const newDose: Dose = {
       ...dose,
+      sideEffects: dose.sideEffects ?? [],
       id: uuid(),
       createdAt: Date.now(),
     };

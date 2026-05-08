@@ -6,6 +6,17 @@ const DEFAULT_SETTINGS: AppSettings = {
   weightUnit: 'kg',
   medicationUnit: 'mg',
   notificationsEnabled: true,
+  injectionRotationStrategy: 'sequential',
+  injectionRotationSites: [
+    'abdomen-upper-left',
+    'abdomen-upper-right',
+    'abdomen-lower-left',
+    'abdomen-lower-right',
+    'thigh-left',
+    'thigh-right',
+    'arm-left',
+    'arm-right',
+  ],
 };
 
 interface SettingsState {

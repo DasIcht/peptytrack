@@ -72,14 +72,17 @@ peptyTrack/
 │   │   └── autoBackup.ts          # localStorage auto-backup + restore helpers
 │   │
 │   ├── components/            # Reusable UI components
-│   │   ├── BottomNav.tsx      # Fixed bottom tab bar (6 tabs)
+│   │   ├── BottomNav.tsx      # Fixed bottom tab bar (7 tabs)
 │   │   ├── MedicationCard.tsx # Dashboard medication card with level gauge
 │   │   ├── Modal.tsx          # Generic modal wrapper
+│   │   ├── ConfirmDialog.tsx  # Styled confirmation dialog for destructive actions
+│   │   ├── SideEffectChips.tsx # Tap-to-toggle side effect chips + custom add
+│   │   ├── CircularProgress.tsx # Animated SVG circular progress indicator
 │   │   └── Toast.tsx          # Toast notification system
 │   │
 │   └── pages/                 # Full-page route components
 │       ├── Dashboard.tsx      # Home — stats, medication cards, quick actions
-│       ├── LogDose.tsx        # Dose logging with injection site picker, vial selection, auto-calculated injection volume (ml + U-100 units)
+│       ├── LogDose.tsx        # Premium dose logging: glass-morphism cards, circular vial progress, tactile dosage pills, visual injection site zones, expandable notes, animated side effects, timeline-style dose history
 │       ├── MedicationChart.tsx# Dual-axis medication level + weight chart
 │       ├── WeightTracker.tsx  # Weight logging with date picker + history
 │       ├── Medications.tsx    # Medication management — add from library/custom, enable/disable
@@ -124,7 +127,13 @@ interface Dose {
   injectionSite: string;       // e.g., "abdomen-upper-left"
   dateTime: number;            // Unix timestamp of dose
   notes: string;
+  sideEffects?: string[];       // Logged side effects for this dose
   createdAt: number;
+}
+
+interface CustomSideEffects {
+  medicationId: string;         // PK → medications.id
+  labels: string[];             // User-defined side effect labels
 }
 
 interface Vial {
@@ -159,6 +168,7 @@ interface WeightEntry {
 | `weightEntries` | `id` | `dateTime`, `createdAt` |
 | `vials` | `id` | `medicationId`, `createdAt` |
 | `settings` | `id` | — |
+| `customSideEffects` | `medicationId` | — |
 
 ### 4.3 Seeding Logic
 
@@ -181,8 +191,9 @@ interface WeightEntry {
 | `medicationStore` | Medication + dose CRUD (incl. dose update/delete), computed levels | `medications[]`, `doses[]`, `initialized` |
 | `weightStore` | Weight entry CRUD (incl. update/delete), trend calculation | `entries[]` |
 | `uiStore` | Navigation, modals, toast queue, log-dose preselection | `activePage`, `logDoseMedId`, `toasts[]`, `modalConfig` |
-| `settingsStore` | App preferences (weightUnit, medicationUnit, notificationsEnabled) | `settings` |
+| `settingsStore` | App preferences (weightUnit, medicationUnit, notificationsEnabled, injectionRotationStrategy, injectionRotationSites) | `settings` |
 | `vialStore` | Vial CRUD + computed remaining tracking | `vials[]`, `initialized` |
+| `sideEffectsStore` | Per-medication custom side effects CRUD + persistence | `customEffects: Record<string, string[]>`, `initialized` |
 
 ### 5.2 Store Pattern
 
@@ -232,6 +243,8 @@ Navigation is handled by `uiStore.activePage` (string enum). `App.tsx` maps page
 
 Navigation triggers via `useUIStore().setPage('key')`.
 
+> **Swipe Navigation:** The main content area supports touch swipe gestures. Swipe left to advance to the next tab, swipe right to go back. Implemented via `touchstart`/`touchend` handlers on the `<main>` element in `App.tsx` using `uiStore.nextPage()` / `uiStore.prevPage()`.
+
 ---
 
 ## 7. Core Libraries & Algorithms
@@ -271,6 +284,32 @@ Navigation triggers via `useUIStore().setPage('key')`.
 - Backup: exports all IndexedDB data to JSON → uploads to cloud
 - Restore: downloads JSON → imports back into IndexedDB
 
+### 7.5 Side Effects Library (`lib/sideEffects.ts`)
+
+**Purpose:** Curated GLP-1 side effects library with intelligent per-medication ordering.
+
+**Standard Library:** 22 clinically-categorized side effects organized by rarity (very-common → very-rare).
+
+**Key Functions:**
+- `getSideEffectsByRarity()` — Returns all standard effects sorted by frequency
+- `getSideEffectsOrderedForMedication(medicationId, doses, customEffects)` — Smart ordering:
+  1. Previously selected effects for this medication (alphabetical)
+  2. Remaining standard effects (by rarity, most common first)
+  3. Custom user-defined effects (alphabetical)
+
+### 7.6 Injection Rotation (`lib/injectionRotation.ts`)
+
+**Purpose:** Compute the next injection site based on global rotation strategy.
+
+**Strategies:**
+- `sequential` — Fixed-order cycle through active sites
+- `quadrant` — Cycles abdomen → thighs → arms (quadrant-prioritized)
+- `lru` — Least-recently-used site (global across all doses)
+
+**Key Functions:**
+- `getNextInjectionSite(doses, strategy, activeSites)` — Returns next `InjectionSite`
+- `getLastUsedSite(doses)` — Most recent injection site across all doses
+
 ---
 
 ## 8. Data Flow
@@ -294,9 +333,11 @@ User taps a medication card on Dashboard
   └─> LogDose.tsx
       └─> Preselects medication from uiStore.logDoseMedId (cleared after read)
       └─> User picks vial (optional), dosage, site, date/time
+      └─> Injection site auto-rotates based on global strategy (sequential/quadrant/LRU)
+      └─> Side effects chip grid (tap to toggle) with "+ Add Custom" option
       └─> Vial remaining is displayed in real time
       └─> Submit → medicationStore.logDose(dose) or updateDose(id, updates)
-          └─> Persists to IndexedDB (db.doses.add / update), includes vialId
+          └─> Persists to IndexedDB (db.doses.add / update), includes vialId + sideEffects
           └─> Updates Zustand state
           └─> Toast: "Dose logged!" / "Dose updated!"
           └─> Triggers notification reschedule
@@ -366,6 +407,10 @@ App.tsx
 | `settingsStore.test.ts` | 4 tests — default settings, persist/reload, getSetting, merge with defaults |
 | `vialStore.test.ts` | 10 tests — CRUD, remaining computation, filtering, last used, remaining override |
 | `ConfirmDialog.test.tsx` | 7 tests — rendering, confirm/cancel actions, danger styling, modal close |
+| `sideEffects.test.ts` | 8 tests — rarity ordering, per-medication smart sorting, deduplication |
+| `sideEffectsStore.test.ts` | 7 tests — CRUD, persistence, deduplication, per-med isolation |
+| `SideEffectChips.test.tsx` | 6 tests — rendering, toggle selection, custom add |
+| `injectionRotation.test.ts` | 12 tests — sequential, quadrant, LRU strategies, activeSites subset |
 
 **Run tests:** `npm run test`
 
@@ -454,7 +499,7 @@ npm run test       # Runs unit tests
 | 2026-04-29 | Medications tab: inline full edit mode (name, brand, ingredient, dosages, unit, frequency, half-life, color, reminder) via pencil icon |
 | 2026-04-29 | Added auto-backup to localStorage on every data change with restore prompt on empty DB startup |
 | 2026-04-29 | Deployed to Netlify at https://peptytrack.netlify.app with permanent URL and auto-update support |
-| 2026-05-05 | Created `settingsStore.ts` — persisted weightUnit, medicationUnit, notificationsEnabled to IndexedDB |
+| 2026-05-05 | Created `settingsStore.ts` — persisted weightUnit, medicationUnit, notificationsEnabled, injectionRotationStrategy, injectionRotationSites to IndexedDB |
 | 2026-05-05 | Settings page: added Preferences section with weight unit toggle and notification master switch |
 | 2026-05-05 | WeightTracker: default unit now driven by `settingsStore.weightUnit` |
 | 2026-05-05 | App: reminder polling gated behind `settings.notificationsEnabled`; settings loaded on init |
@@ -463,3 +508,6 @@ npm run test       # Runs unit tests
 | 2026-05-05 | Added `settingsStore.test.ts` (4 tests) and `ConfirmDialog.test.tsx` (7 tests) |
 | 2026-05-05 | Configured `vitest.config.ts` with jsdom environment and jest-dom matchers setup |
 | 2026-05-06 | Backup/restore now includes settings (version 3). "Clear All Data" now clears vials and settings. Import reloads all stores. |
+| 2026-05-07 | Added touch swipe navigation between tabs. Added structured side effects logging with curated GLP-1 library, custom side effects, and smart per-medication ordering. Updated IndexedDB schema to v3 (`customSideEffects` table). Bumped cloud backup to v4. Added Side Effects column to PDF export. |
+| 2026-05-07 | Added injection site rotation: 3 strategies (sequential, quadrant, LRU), user-selectable active sites (min 2), auto-defaults in LogDose. Settings persist in IndexedDB and included in backup v4. |
+| 2026-05-08 | Premium redesign of LogDose: gradient hero header, grouped glass-morphism cards, `CircularProgress` vial indicator, tactile dosage pills, visual injection site zones with emoji, icon-integrated inputs, expandable notes card, animated side effects chips, gradient submit button, timeline-style dose history. Added `card-premium`, `input-premium`, `btn-tactile`, and stagger animations to global.css and tailwind.config.js. |

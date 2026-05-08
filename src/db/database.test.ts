@@ -47,6 +47,7 @@ describe('Database CRUD', () => {
     await db.weightEntries.clear();
     await db.vials.clear();
     await db.settings.clear();
+    await db.customSideEffects.clear();
   });
 
   describe('medications', () => {
@@ -159,6 +160,58 @@ describe('Database CRUD', () => {
       const results = await db.vials.where('medicationId').equals('test-1').toArray();
       expect(results).toHaveLength(1);
       expect(results[0].name).toBe('Vial #1');
+    });
+  });
+
+  describe('customSideEffects', () => {
+    it('can add and retrieve custom side effects', async () => {
+      await db.customSideEffects.put({ medicationId: 'med1', labels: ['Itchy palms'] });
+      const result = await db.customSideEffects.get('med1');
+      expect(result).toBeDefined();
+      expect(result!.labels).toEqual(['Itchy palms']);
+    });
+
+    it('can update custom side effects', async () => {
+      await db.customSideEffects.put({ medicationId: 'med1', labels: ['Itchy palms'] });
+      await db.customSideEffects.put({ medicationId: 'med1', labels: ['Itchy palms', 'Dry mouth'] });
+      const result = await db.customSideEffects.get('med1');
+      expect(result!.labels).toEqual(['Itchy palms', 'Dry mouth']);
+    });
+
+    it('can query custom side effects by medicationId', async () => {
+      await db.customSideEffects.bulkAdd([
+        { medicationId: 'med1', labels: ['A'] },
+        { medicationId: 'med2', labels: ['B'] },
+      ]);
+      const results = await db.customSideEffects.where('medicationId').equals('med1').toArray();
+      expect(results).toHaveLength(1);
+      expect(results[0].labels).toEqual(['A']);
+    });
+  });
+
+  describe('customSideEffects', () => {
+    it('can add and retrieve custom side effects', async () => {
+      await db.customSideEffects.put({ medicationId: 'med1', labels: ['Itchy palms'] });
+      const result = await db.customSideEffects.get('med1');
+      expect(result).toBeDefined();
+      expect(result!.labels).toEqual(['Itchy palms']);
+    });
+
+    it('can update custom side effects', async () => {
+      await db.customSideEffects.put({ medicationId: 'med1', labels: ['Itchy palms'] });
+      await db.customSideEffects.put({ medicationId: 'med1', labels: ['Itchy palms', 'Dry mouth'] });
+      const result = await db.customSideEffects.get('med1');
+      expect(result!.labels).toEqual(['Itchy palms', 'Dry mouth']);
+    });
+
+    it('can query custom side effects by medicationId', async () => {
+      await db.customSideEffects.bulkAdd([
+        { medicationId: 'med1', labels: ['A'] },
+        { medicationId: 'med2', labels: ['B'] },
+      ]);
+      const results = await db.customSideEffects.where('medicationId').equals('med1').toArray();
+      expect(results).toHaveLength(1);
+      expect(results[0].labels).toEqual(['A']);
     });
   });
 

@@ -7,7 +7,7 @@ PeptyTrack is a fully functional, open-source alternative to paid GLP-1 tracking
 ## Features
 
 ### Core Tracking
-- **Dose Logging** — Log injections with dosage, date/time, injection site (abdomen, thigh, arm with quadrant selection), and optional vial association
+- **Premium Dose Logging** — Beautiful glass-morphism UI with grouped cards, animated circular vial progress, tactile dosage pills, visual injection site zones, expandable notes, animated side effects chips, and a timeline-style dose history. Auto-calculates injection volume (ml + U-100 units) and supports automatic injection site rotation
 - **Medication Level Visualization** — Real-time estimated medication concentration chart based on pharmacokinetic half-life modeling
 - **Weight Tracking** — Log daily weights with trend analysis and interactive charts
 - **Multiple Medications** — Track several GLP-1 drugs simultaneously with independent schedules
@@ -30,11 +30,15 @@ PeptyTrack is a fully functional, open-source alternative to paid GLP-1 tracking
 - **Modal Confirmation Dialogs** — Styled, non-blocking confirmation dialogs for all destructive actions (delete dose, delete weight, delete medication, clear all data)
 - **Configurable Reminders** — Set per-medication reminder hours before next dose; master on/off switch
 - **PDF Reports** — Generate doctor-ready reports with medication history, dose logs, and weight trends
+- **Side Effects Logging** — Tap-to-log curated GLP-1 side effects (22 clinically categorized by rarity). Smart ordering prioritizes previously-selected effects per medication
+- **Custom Side Effects** — Add your own side effects not in the standard library; they persist and appear alongside standard effects
+- **Injection Site Rotation** — Auto-rotate injection sites with 3 strategies (Sequential, Quadrant, Least-Used). Pick which sites to include in rotation (min 2)
 - **Data Backup/Restore** — Export/import JSON backups; auto-backup on every change with restore prompt
 - **PWA Offline Support** — Install as a standalone app, works without internet
 - **Edit Everything** — Modify medications, dose entries, and weight entries after logging
 - **Multi-Med Chart** — View all enabled medications simultaneously with legend toggling
 - **Custom Medications** — Add any medication not in the built-in library
+- **Swipe Navigation** — Swipe left/right to switch between tabs on mobile
 
 ## Tech Stack
 
@@ -65,12 +69,16 @@ The project includes unit and component tests using **Vitest** with **jsdom** en
 
 | Suite | Tests | Focus |
 |-------|-------|-------|
-| `database.test.ts` | 16 | Dexie CRUD, vial storage, settings persistence, seed deduplication |
+| `database.test.ts` | 22 | Dexie CRUD, vial storage, settings persistence, seed deduplication, customSideEffects |
 | `medicationStore.test.ts` | 5 | Enable/disable toggle, custom meds, dose updates |
 | `settingsStore.test.ts` | 4 | Default settings, persist/reload, getSetting |
 | `halfLifeEngine.test.ts` | 15 | Concentration decay, dose accumulation, next dose timing |
 | `vialStore.test.ts` | 10 | CRUD, remaining computation, filtering, last used, remaining override |
 | `ConfirmDialog.test.tsx` | 7 | Rendering, confirm/cancel actions, danger styling |
+| `sideEffects.test.ts` | 8 | Side effect rarity ordering, per-medication smart sorting, deduplication |
+| `sideEffectsStore.test.ts` | 7 | CRUD, persistence, deduplication, per-med isolation |
+| `SideEffectChips.test.tsx` | 8 | Rendering, toggle selection, custom add, expand/collapse |
+| `injectionRotation.test.ts` | 12 | Sequential, quadrant, LRU strategies, activeSites subset |
 
 **Run all tests:**
 ```bash

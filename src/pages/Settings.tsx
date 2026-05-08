@@ -10,7 +10,8 @@ import { requestNotificationPermission } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import {
   Bell, FileText, Download, Upload,
-  Trash2, ChevronRight, Shield, Scale, ToggleLeft, ToggleRight, Pill
+  Trash2, ChevronRight, Shield, Scale, ToggleLeft, ToggleRight, Pill,
+  RotateCw, MapPin
 } from 'lucide-react';
 
 export function Settings() {
@@ -207,6 +208,97 @@ export function Settings() {
               <ToggleLeft size={22} className="text-slate-500" />
             )}
           </button>
+        </div>
+      </div>
+
+      {/* Injection Rotation */}
+      <div className="mb-6">
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Injection Rotation</h2>
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
+          {/* Strategy Selector */}
+          <div className="px-4 py-3.5 border-b border-white/5">
+            <div className="flex items-center gap-3 mb-2">
+              <RotateCw size={18} className="text-primary-400" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-white">Rotation Strategy</p>
+                <p className="text-xs text-slate-400">How the next injection site is chosen</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {(['sequential', 'quadrant', 'lru'] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => updateSetting('injectionRotationStrategy', s)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    settings.injectionRotationStrategy === s
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-surface-700 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {s === 'sequential' && 'Sequential'}
+                  {s === 'quadrant' && 'Quadrant'}
+                  {s === 'lru' && 'Least Used'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Active Sites */}
+          <div className="px-4 py-3.5">
+            <div className="flex items-center gap-3 mb-2">
+              <MapPin size={18} className="text-primary-400" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-white">Active Sites</p>
+                <p className="text-xs text-slate-400">
+                  Select at least 2 sites to rotate between
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              {([
+                { id: 'abdomen-upper-left', label: 'Abdomen — Upper Left' },
+                { id: 'abdomen-upper-right', label: 'Abdomen — Upper Right' },
+                { id: 'abdomen-lower-left', label: 'Abdomen — Lower Left' },
+                { id: 'abdomen-lower-right', label: 'Abdomen — Lower Right' },
+                { id: 'thigh-left', label: 'Thigh — Left' },
+                { id: 'thigh-right', label: 'Thigh — Right' },
+                { id: 'arm-left', label: 'Upper Arm — Left' },
+                { id: 'arm-right', label: 'Upper Arm — Right' },
+              ] as const).map((site) => {
+                const checked = settings.injectionRotationSites.includes(site.id);
+                return (
+                  <label
+                    key={site.id}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors ${
+                      checked
+                        ? 'bg-primary-600/15 text-primary-300 border border-primary-500/30'
+                        : 'bg-surface-700/50 text-slate-500 border border-white/5'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        const next = checked
+                          ? settings.injectionRotationSites.filter((s) => s !== site.id)
+                          : [...settings.injectionRotationSites, site.id];
+                        if (next.length >= 2) {
+                          updateSetting('injectionRotationSites', next as typeof settings.injectionRotationSites);
+                        } else {
+                          addToast('At least 2 sites must be selected', 'error');
+                        }
+                      }}
+                      className="accent-primary-500 w-3.5 h-3.5"
+                    />
+                    {site.label}
+                  </label>
+                );
+              })}
+            </div>
+            {settings.injectionRotationSites.length < 2 && (
+              <p className="text-xs text-red-400 mt-2">⚠ Select at least 2 sites to enable rotation.</p>
+            )}
+          </div>
         </div>
       </div>
 

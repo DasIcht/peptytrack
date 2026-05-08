@@ -28,3 +28,10 @@ dist-ssr
 
 # Reverse-engineering artifacts
 shotsy/
+
+# Analysis documents
+gap_analysis.md
+
+# Competitor app artifacts
+otherApps/
+
