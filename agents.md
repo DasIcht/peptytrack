@@ -82,7 +82,7 @@ peptyTrack/
 │   │   └── Toast.tsx          # Toast notification system
 │   └── pages/                 # Full-page route components
 │       ├── Dashboard.tsx      # Home: stats, medication cards, quick actions
-│       ├── LogDose.tsx        # Dose logging with injection site picker, vial selection, side effects chips, auto-calculated injection volume (ml + U-100 units)
+│       ├── LogDose.tsx        # Dual-mode dose logging: Quick Log (3-tap fast flow) and Full Log (complete form). Features visual body-zone injection site strip, compact vial summary, and full vial dashboard with circular progress
 │       ├── MedicationChart.tsx# Dual-axis medication level + weight chart
 │       ├── WeightTracker.tsx  # Weight logging with date picker + history
 │       ├── Medications.tsx    # Medication management — add from library/custom, enable/disable
@@ -403,7 +403,21 @@ colors: {
 
 /* Staggered children entrance animation */
 .stagger-children > * → slideUpStagger with progressive delays
-```
+
+/* Mode toggle segmented control */
+.mode-toggle → pill switcher with primary gradient active state
+.mode-toggle-btn → individual mode button with smooth transitions
+
+/* Body zone horizontal strip */
+.zone-strip → horizontal scroll with snap points, hidden scrollbar
+.zone-card → compact zone button with emoji + label, active glow state
+
+/* Zone expansion panel */
+.zone-expand → max-height transition for in-place zone expansion
+
+/* Quick log compact vial summary */
+.vial-summary → single-line vial info with color-coded remaining amount
+
 
 ### 8.3 Common UI Patterns
 ```tsx
@@ -622,6 +636,8 @@ npx netlify deploy --prod --dir=dist
 ---
 
 | 2026-05-08 | Premium redesign of LogDose page: gradient hero header, grouped glass cards, circular vial progress indicator (CircularProgress), tactile dosage pills, visual injection site zones with emoji indicators, icon-integrated date/time inputs, expandable notes card, animated side effects chips, gradient submit button with success state, timeline-style dose history with staggered entrance. Added premium design system utilities (card-premium, input-premium, btn-tactile, stagger-animations) to global.css and tailwind.config.js. |
+| 2026-05-08 | Dual-mode Quick Log / Full Log redesign: segmented mode toggle (persisted in localStorage), Quick Log shows only medication + compact vial summary + dosage + injection site zone strip (defaults date/time to now), Full Log shows complete form with circular vial dashboard. Injection site redesigned as horizontal scrollable body-zone strip (Abdomen/Thigh/Upper Arm) with in-place expansion for specific sites. Added zone-strip, zone-card, mode-toggle, vial-summary utilities to global.css and tailwind.config.js. Added 17 LogDose unit tests. |
+| 2026-05-08 | Compact refinements: dosage pills reduced to single horizontal row (h-9, text-xs, no-wrap with hidden scrollbar); vial section restructured into 2-column grid layout (dropdown left, selected vial summary right) in both Quick and Full Log modes. Added no-scrollbar utility to global.css and tailwind.config.js. |
 
 > **Last Updated:** 2026-05-08  
-> **Document Version:** 1.3
+> **Document Version:** 1.4

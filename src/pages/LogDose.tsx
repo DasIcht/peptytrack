@@ -26,6 +26,8 @@ import {
   Check,
   ChevronUp,
   ArrowLeft,
+  Zap,
+  List,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -45,6 +47,9 @@ const SITE_ZONES: { key: string; label: string; emoji: string; sites: InjectionS
   { key: 'thigh', label: 'Thigh', emoji: '🦵', sites: ['thigh-left', 'thigh-right'] },
   { key: 'arm', label: 'Upper Arm', emoji: '💪', sites: ['arm-left', 'arm-right'] },
 ];
+
+const LOG_MODE_KEY = 'pepty-log-mode';
+type LogMode = 'quick' | 'full';
 
 function useAnimatedNumber(target: number, duration = 600) {
   const [display, setDisplay] = useState(0);
@@ -95,6 +100,16 @@ export function LogDose() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
 
+  // Dual-mode state
+  const [logMode, setLogMode] = useState<LogMode>(() => {
+    const saved = localStorage.getItem(LOG_MODE_KEY) as LogMode | null;
+    return saved === 'full' ? 'full' : 'quick';
+  });
+  const [switchingMode, setSwitchingMode] = useState(false);
+
+  // Injection site zone expansion
+  const [expandedZone, setExpandedZone] = useState<string | null>(null);
+
   const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -120,6 +135,13 @@ export function LogDose() {
       setInjectionSite(nextSite);
     }
   }, [selectedMedId, editingDoseId]);
+
+  // When editing, always open in full mode
+  useEffect(() => {
+    if (editingDoseId) {
+      setLogMode('full');
+    }
+  }, [editingDoseId]);
 
   const selectedMed = medications.find((m) => m.id === selectedMedId);
 
@@ -186,6 +208,7 @@ export function LogDose() {
     setNotesExpanded(false);
     setSelectedSideEffects([]);
     setSubmitSuccess(false);
+    setExpandedZone(null);
   };
 
   const handleEdit = (dose: Dose) => {
@@ -206,7 +229,20 @@ export function LogDose() {
     setNotes(dose.notes);
     setNotesExpanded(!!dose.notes);
     setSelectedSideEffects(dose.sideEffects ?? []);
+    // Determine which zone to expand based on the dose's injection site
+    const zone = SITE_ZONES.find((z) => z.sites.includes(dose.injectionSite));
+    setExpandedZone(zone?.key || null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleModeChange = (mode: LogMode) => {
+    if (mode === logMode) return;
+    setSwitchingMode(true);
+    setTimeout(() => {
+      setLogMode(mode);
+      localStorage.setItem(LOG_MODE_KEY, mode);
+      setSwitchingMode(false);
+    }, 200);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -214,7 +250,10 @@ export function LogDose() {
     if (!selectedMed || !dosage) return;
 
     setSubmitting(true);
-    const dateTime = new Date(`${date}T${time}`).getTime();
+    // In quick mode, use current date/time if not explicitly set
+    const dateTime = logMode === 'quick' && !editingDoseId
+      ? Date.now()
+      : new Date(`${date}T${time}`).getTime();
 
     try {
       if (editingDoseId) {
@@ -281,10 +320,20 @@ export function LogDose() {
 
   const doseExceedsRemaining = selectedVial && dosage && parseFloat(dosage) > remainingPeptide;
 
+  // Determine which zone is currently selected
+  const selectedZone = SITE_ZONES.find((z) => z.sites.includes(injectionSite));
+
+  // Active zones based on settings
+  const activeZones = SITE_ZONES.filter(
+    (z) => z.sites.some((s) => settings.injectionRotationSites.includes(s))
+  );
+
+  const isQuick = logMode === 'quick' && !editingDoseId;
+
   return (
     <div className="min-h-full pb-28 px-5 pt-6" ref={formRef}>
       {/* Hero Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
           {editingDoseId && (
             <button
@@ -323,115 +372,221 @@ export function LogDose() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6 stagger-children">
-        {/* Medication + Vial Grouped Card */}
-        <div className="card-premium p-5 space-y-4">
-          {/* Medication Select */}
-          <div>
-            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-widest">
-              <PillIcon size={12} className="text-primary-400" />
-              Medication
-            </label>
-            <div className="relative">
-              <select
-                value={selectedMedId}
-                onChange={(e) => {
-                  setSelectedMedId(e.target.value);
-                  setSelectedVialId('');
-                  setDosage('');
-                  setCustomDosage(false);
-                  setSelectedSideEffects([]);
-                }}
-                disabled={!!editingDoseId}
-                className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-4 py-3.5 text-white text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all disabled:opacity-50"
-              >
-                {medsWithDoses.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name} — {m.brand}</option>
-                ))}
-              </select>
-              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            </div>
+      {/* Mode Toggle — hidden when editing */}
+      {!editingDoseId && (
+        <div className="mode-toggle mb-6">
+          <button
+            type="button"
+            onClick={() => handleModeChange('quick')}
+            className={`mode-toggle-btn ${isQuick ? 'active' : ''}`}
+          >
+            <span className="flex items-center justify-center gap-1.5">
+              <Zap size={12} />
+              Quick Log
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleModeChange('full')}
+            className={`mode-toggle-btn ${!isQuick ? 'active' : ''}`}
+          >
+            <span className="flex items-center justify-center gap-1.5">
+              <List size={12} />
+              Full Log
+            </span>
+          </button>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className={`flex flex-col gap-5 mode-content ${switchingMode ? 'switching' : ''}`}>
+        {/* Medication Select */}
+        <div className="card-premium p-5">
+          <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-widest">
+            <PillIcon size={12} className="text-primary-400" />
+            Medication
+          </label>
+          <div className="relative">
+            <select
+              value={selectedMedId}
+              onChange={(e) => {
+                setSelectedMedId(e.target.value);
+                setSelectedVialId('');
+                setDosage('');
+                setCustomDosage(false);
+                setSelectedSideEffects([]);
+                setExpandedZone(null);
+              }}
+              disabled={!!editingDoseId}
+              className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-4 py-3.5 text-white text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all disabled:opacity-50"
+            >
+              {medsWithDoses.map((m) => (
+                <option key={m.id} value={m.id}>{m.name} — {m.brand}</option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           </div>
+        </div>
 
-          {/* Vial Select */}
-          {selectedMed && vialsForMed.length > 0 && (
-            <div>
-              <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-widest">
-                <FlaskConical size={12} className="text-primary-400" />
-                Vial
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedVialId}
-                  onChange={(e) => setSelectedVialId(e.target.value)}
-                  className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-4 py-3.5 text-white text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
-                >
-                  <option value="">No vial — generic dose</option>
-                  {vialsForMed.map((v) => {
-                    const rem = getVialRemaining(v.id, doses);
-                    return (
-                      <option key={v.id} value={v.id}>
-                        {v.name} — {rem.toFixed(2)} {v.peptideUnit} remaining
-                      </option>
-                    );
-                  })}
-                </select>
-                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              </div>
-            </div>
-          )}
-
-          {/* Vial Dashboard */}
-          {selectedVial && (
-            <div className="rounded-xl border border-primary-500/10 bg-primary-500/[0.03] p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <CircularProgress
-                  percentage={vialPercentage}
-                  size={64}
-                  strokeWidth={5}
-                  label={selectedVial.name}
-                  sublabel={`${remainingPeptide.toFixed(2)} ${selectedVial.peptideUnit}`}
-                />
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-white tabular-nums">
-                    {animatedRemaining.toFixed(2)}
+        {/* Vial — Quick Log: compact summary; Full Log: select + dashboard */}
+        {selectedMed && vialsForMed.length > 0 && (
+          <div className="card-premium p-5">
+            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-widest">
+              <FlaskConical size={12} className="text-primary-400" />
+              Vial
+            </label>
+            {isQuick ? (
+              // Quick Log: 2-column layout — dropdown left, summary right
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="relative">
+                    <select
+                      value={selectedVialId}
+                      onChange={(e) => setSelectedVialId(e.target.value)}
+                      className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-3 py-3 text-white text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
+                    >
+                      <option value="">No vial</option>
+                      {vialsForMed.map((v) => {
+                        const rem = getVialRemaining(v.id, doses);
+                        return (
+                          <option key={v.id} value={v.id}>
+                            {v.name} — {rem.toFixed(2)} {v.peptideUnit}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
-                  <div className="text-xs text-slate-400">
-                    {selectedVial.peptideUnit} remaining
-                  </div>
-                  {selectedVial.bacWaterAmount > 0 && concentrationPerMl > 0 && (
-                    <div className="text-[11px] text-slate-500 mt-0.5">
-                      ≈ {animatedRemainingMl.toFixed(2)} ml
+                  {selectedVial ? (
+                    <div className="vial-summary justify-between">
+                      <span className="vial-name truncate">{selectedVial.name}</span>
+                      <span className="vial-remaining whitespace-nowrap">
+                        <span className={
+                          vialPercentage < 25 ? 'low' : vialPercentage < 50 ? 'medium' : 'high'
+                        }>
+                          {remainingPeptide.toFixed(2)}
+                        </span>
+                        {' '}{selectedVial.peptideUnit}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="vial-summary justify-center text-slate-500 text-xs">
+                      Select a vial
                     </div>
                   )}
                 </div>
+                {doseExceedsRemaining && (
+                  <div className="flex items-center gap-2 text-amber-400 text-xs bg-amber-500/5 border border-amber-500/10 rounded-lg px-3 py-2">
+                    <AlertTriangle size={14} className="flex-shrink-0" />
+                    This dose exceeds the remaining amount.
+                  </div>
+                )}
+                {dosage && parseFloat(dosage) > 0 && concentrationPerMl > 0 && (
+                  <div className="rounded-lg border border-white/5 bg-surface-900/40 p-3 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary-500/10 flex items-center justify-center flex-shrink-0">
+                      <Syringe size={18} className="text-primary-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm text-white">
+                        Inject <strong className="text-primary-300">{animatedInjectMl.toFixed(2)} ml</strong>
+                      </div>
+                      <div className="text-xs text-slate-400">
+                        {Math.round((parseFloat(dosage) / concentrationPerMl) * 100)} units (U-100)
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-
-              {doseExceedsRemaining && (
-                <div className="flex items-center gap-2 text-amber-400 text-xs bg-amber-500/5 border border-amber-500/10 rounded-lg px-3 py-2">
-                  <AlertTriangle size={14} className="flex-shrink-0" />
-                  This dose exceeds the remaining amount in the vial.
-                </div>
-              )}
-
-              {dosage && parseFloat(dosage) > 0 && concentrationPerMl > 0 && (
-                <div className="rounded-lg border border-white/5 bg-surface-900/40 p-3 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary-500/10 flex items-center justify-center flex-shrink-0">
-                    <Syringe size={18} className="text-primary-400" />
+            ) : (
+              // Full Log: 2-column top row (dropdown + summary), dashboard below
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="relative">
+                    <select
+                      value={selectedVialId}
+                      onChange={(e) => setSelectedVialId(e.target.value)}
+                      className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-3 py-3.5 text-white text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
+                    >
+                      <option value="">No vial — generic dose</option>
+                      {vialsForMed.map((v) => {
+                        const rem = getVialRemaining(v.id, doses);
+                        return (
+                          <option key={v.id} value={v.id}>
+                            {v.name} — {rem.toFixed(2)} {v.peptideUnit}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-sm text-white">
-                      Inject <strong className="text-primary-300">{animatedInjectMl.toFixed(2)} ml</strong>
+                  {selectedVial ? (
+                    <div className="vial-summary justify-between">
+                      <span className="vial-name truncate">{selectedVial.name}</span>
+                      <span className="vial-remaining whitespace-nowrap">
+                        <span className={
+                          vialPercentage < 25 ? 'low' : vialPercentage < 50 ? 'medium' : 'high'
+                        }>
+                          {remainingPeptide.toFixed(2)}
+                        </span>
+                        {' '}{selectedVial.peptideUnit}
+                      </span>
                     </div>
-                    <div className="text-xs text-slate-400">
-                      {Math.round((parseFloat(dosage) / concentrationPerMl) * 100)} units (U-100) · {concentrationPerMl.toFixed(2)} {selectedVial.peptideUnit}/ml
+                  ) : (
+                    <div className="vial-summary justify-center text-slate-500 text-xs">
+                      Select a vial
                     </div>
-                  </div>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+                {selectedVial && (
+                  <div className="rounded-xl border border-primary-500/10 bg-primary-500/[0.03] p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <CircularProgress
+                        percentage={vialPercentage}
+                        size={64}
+                        strokeWidth={5}
+                        label={selectedVial.name}
+                        sublabel={`${remainingPeptide.toFixed(2)} ${selectedVial.peptideUnit}`}
+                      />
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-white tabular-nums">
+                          {animatedRemaining.toFixed(2)}
+                        </div>
+                        <div className="text-xs text-slate-400">
+                          {selectedVial.peptideUnit} remaining
+                        </div>
+                        {selectedVial.bacWaterAmount > 0 && concentrationPerMl > 0 && (
+                          <div className="text-[11px] text-slate-500 mt-0.5">
+                            ≈ {animatedRemainingMl.toFixed(2)} ml
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {doseExceedsRemaining && (
+                      <div className="flex items-center gap-2 text-amber-400 text-xs bg-amber-500/5 border border-amber-500/10 rounded-lg px-3 py-2">
+                        <AlertTriangle size={14} className="flex-shrink-0" />
+                        This dose exceeds the remaining amount in the vial.
+                      </div>
+                    )}
+                    {dosage && parseFloat(dosage) > 0 && concentrationPerMl > 0 && (
+                      <div className="rounded-lg border border-white/5 bg-surface-900/40 p-3 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary-500/10 flex items-center justify-center flex-shrink-0">
+                          <Syringe size={18} className="text-primary-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-sm text-white">
+                            Inject <strong className="text-primary-300">{animatedInjectMl.toFixed(2)} ml</strong>
+                          </div>
+                          <div className="text-xs text-slate-400">
+                            {Math.round((parseFloat(dosage) / concentrationPerMl) * 100)} units (U-100) · {concentrationPerMl.toFixed(2)} {selectedVial.peptideUnit}/ml
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Dosage */}
         {selectedMed && (
@@ -441,16 +596,16 @@ export function LogDose() {
               Dosage ({selectedMed.unit})
             </label>
             {!customDosage ? (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                 {selectedMed.dosageOptions.map((d) => (
                   <button
                     key={d}
                     type="button"
                     onClick={() => setDosage(String(d))}
-                    className={`btn-tactile min-w-[3.5rem] h-12 px-4 rounded-xl text-sm font-semibold transition-all ${
+                    className={`btn-tactile flex-shrink-0 h-9 px-3 rounded-lg text-xs font-semibold transition-all ${
                       dosage === String(d)
-                        ? 'bg-primary-600 text-white shadow-lg shadow-primary-900/40 scale-105 ring-2 ring-primary-400/30'
-                        : 'bg-surface-900/50 border border-white/8 text-slate-300 hover:border-white/15 hover:bg-surface-800 hover:shadow-md'
+                        ? 'bg-primary-600 text-white shadow-md shadow-primary-900/30 ring-1 ring-primary-400/30'
+                        : 'bg-surface-900/50 border border-white/8 text-slate-300 hover:border-white/15 hover:bg-surface-800'
                     }`}
                   >
                     {d}
@@ -459,7 +614,7 @@ export function LogDose() {
                 <button
                   type="button"
                   onClick={() => { setCustomDosage(true); setDosage(''); }}
-                  className="btn-tactile min-w-[3.5rem] h-12 px-4 rounded-xl text-sm font-semibold bg-surface-900/50 border border-dashed border-white/10 text-slate-500 hover:text-slate-300 hover:border-white/20 transition-all"
+                  className="btn-tactile flex-shrink-0 h-9 px-3 rounded-lg text-xs font-semibold bg-surface-900/50 border border-dashed border-white/10 text-slate-500 hover:text-slate-300 hover:border-white/20 transition-all"
                 >
                   Custom
                 </button>
@@ -472,13 +627,13 @@ export function LogDose() {
                   value={dosage}
                   onChange={(e) => setDosage(e.target.value)}
                   placeholder={`Enter dosage in ${selectedMed.unit}`}
-                  className="flex-1 input-premium py-3.5"
+                  className="flex-1 input-premium py-2.5 text-sm"
                   autoFocus
                 />
                 <button
                   type="button"
                   onClick={() => { setCustomDosage(false); setDosage(''); }}
-                  className="btn-tactile px-4 py-2 rounded-xl text-xs font-medium bg-surface-800 border border-white/10 text-slate-400 hover:text-white"
+                  className="btn-tactile px-3 py-2 rounded-lg text-xs font-medium bg-surface-800 border border-white/10 text-slate-400 hover:text-white"
                 >
                   Presets
                 </button>
@@ -487,7 +642,7 @@ export function LogDose() {
           </div>
         )}
 
-        {/* Injection Site */}
+        {/* Injection Site — 2-Column: Zone Selector | Site Grid */}
         <div className="card-premium p-5">
           <div className="flex items-center justify-between mb-3">
             <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
@@ -502,115 +657,155 @@ export function LogDose() {
             )}
           </div>
 
-          <div className="space-y-3">
-            {SITE_ZONES.map((zone) => {
-              const zoneSites = zone.sites.filter((s) => settings.injectionRotationSites.includes(s));
-              if (zoneSites.length === 0) return null;
-              return (
-                <div key={zone.key}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-base">{zone.emoji}</span>
-                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">{zone.label}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {zoneSites.map((siteId) => {
-                      const site = INJECTION_SITES.find((s) => s.id === siteId)!;
-                      const isSelected = injectionSite === siteId;
-                      return (
-                        <button
-                          key={siteId}
-                          type="button"
-                          onClick={() => setInjectionSite(siteId)}
-                          className={`btn-tactile flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition-all ${
-                            isSelected
-                              ? 'bg-primary-600/15 border border-primary-500/40 text-primary-300 shadow-[0_0_12px_rgba(20,184,166,0.12)]'
-                              : 'bg-surface-900/50 border border-white/5 text-slate-400 hover:border-white/15 hover:bg-surface-800'
-                          }`}
-                        >
-                          {isSelected && <Check size={12} className="text-primary-400 flex-shrink-0" />}
-                          <span>{site.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Date & Time */}
-        <div className="card-premium p-5">
-          <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-3 uppercase tracking-widest">
-            <Calendar size={12} className="text-primary-400" />
-            Date & Time
-          </label>
           <div className="grid grid-cols-2 gap-3">
-            <div className="relative">
-              <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full input-premium pl-9 py-3.5"
-              />
+            {/* Left: Zone Selector */}
+            <div className="flex flex-col gap-1.5">
+              {activeZones.map((zone) => {
+                const isActive = selectedZone?.key === zone.key;
+                return (
+                  <button
+                    key={zone.key}
+                    type="button"
+                    onClick={() => {
+                      setExpandedZone(zone.key);
+                      if (!zone.sites.includes(injectionSite)) {
+                        const firstActive = zone.sites.find((s) => settings.injectionRotationSites.includes(s));
+                        if (firstActive) setInjectionSite(firstActive);
+                      }
+                    }}
+                    className={`btn-tactile flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all ${
+                      isActive
+                        ? 'bg-primary-600/15 border border-primary-500/40 text-primary-300 shadow-[0_0_12px_rgba(20,184,166,0.12)]'
+                        : 'bg-surface-900/50 border border-white/5 text-slate-400 hover:border-white/15 hover:bg-surface-800'
+                    }`}
+                  >
+                    <span className="text-base leading-none">{zone.emoji}</span>
+                    <span className="text-[11px] font-semibold">{zone.label}</span>
+                  </button>
+                );
+              })}
             </div>
-            <div className="relative">
-              <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-              <input
-                type="time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="w-full input-premium pl-9 py-3.5"
-              />
+
+            {/* Right: Site Grid */}
+            <div className="bg-surface-900/30 rounded-xl border border-white/5 p-2">
+              <div className="grid grid-cols-2 gap-1.5 h-full">
+                {(() => {
+                  const zone = activeZones.find((z) => z.key === expandedZone) || activeZones[0];
+                  if (!zone) return null;
+                  const zoneSites = zone.sites.filter((s) => settings.injectionRotationSites.includes(s));
+                  return zoneSites.map((siteId) => {
+                    const site = INJECTION_SITES.find((s) => s.id === siteId)!;
+                    const isSelected = injectionSite === siteId;
+                    return (
+                      <button
+                        key={siteId}
+                        type="button"
+                        onClick={() => setInjectionSite(siteId)}
+                        className={`btn-tactile flex items-center justify-center gap-1 px-1.5 py-2 rounded-lg text-[10px] font-semibold text-center transition-all ${
+                          isSelected
+                            ? 'bg-primary-600/20 border border-primary-500/50 text-primary-300 shadow-[0_0_8px_rgba(20,184,166,0.12)]'
+                            : 'bg-surface-800/50 border border-white/5 text-slate-500 hover:border-white/15 hover:bg-surface-700 hover:text-slate-300'
+                        }`}
+                      >
+                        {isSelected && <Check size={10} className="text-primary-400 flex-shrink-0" />}
+                        <span className="truncate">{site.label}</span>
+                      </button>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          </div>
+
+          {/* Current Selection Summary */}
+          <div className="mt-3 pt-3 border-t border-white/5">
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <MapPin size={12} className="text-primary-400" />
+              <span>Selected:</span>
+              <span className="text-white font-medium capitalize">
+                {selectedZone?.label} · {INJECTION_SITES.find((s) => s.id === injectionSite)?.label}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Notes */}
-        <div className="card-premium p-5">
-          <button
-            type="button"
-            onClick={() => setNotesExpanded((p) => !p)}
-            className="w-full flex items-center justify-between"
-          >
-            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-widest cursor-pointer">
-              <FileText size={12} className="text-primary-400" />
-              Notes {notes && <span className="text-primary-400 text-[10px]">({notes.length})</span>}
-            </label>
-            {notesExpanded ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
-          </button>
-          <div
-            className={`overflow-hidden transition-all duration-300 ease-out ${
-              notesExpanded ? 'max-h-48 opacity-100 mt-3' : 'max-h-0 opacity-0'
-            }`}
-          >
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Any side effects, observations..."
-              rows={3}
-              className="w-full input-premium resize-none"
-            />
-            <div className="text-right text-[10px] text-slate-600 mt-1">
-              {notes.length} / 500
+        {/* Full Log Only Sections */}
+        {!isQuick && (
+          <>
+            {/* Date & Time */}
+            <div className="card-premium p-5">
+              <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-3 uppercase tracking-widest">
+                <Calendar size={12} className="text-primary-400" />
+                Date & Time
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="relative">
+                  <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full input-premium pl-9 py-3.5"
+                  />
+                </div>
+                <div className="relative">
+                  <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                  <input
+                    type="time"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                    className="w-full input-premium pl-9 py-3.5"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Side Effects */}
-        <div className="card-premium p-5">
-          <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-3 uppercase tracking-widest">
-            Side Effects
-            <span className="text-slate-600 font-normal normal-case">(tap to log)</span>
-          </label>
-          <SideEffectChips
-            sideEffects={orderedSideEffects}
-            selected={selectedSideEffects}
-            onToggle={toggleSideEffect}
-            onAddCustom={handleAddCustom}
-          />
-        </div>
+            {/* Notes */}
+            <div className="card-premium p-5">
+              <button
+                type="button"
+                onClick={() => setNotesExpanded((p) => !p)}
+                className="w-full flex items-center justify-between"
+              >
+                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-widest cursor-pointer">
+                  <FileText size={12} className="text-primary-400" />
+                  Notes {notes && <span className="text-primary-400 text-[10px]">({notes.length})</span>}
+                </label>
+                {notesExpanded ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
+              </button>
+              <div
+                className={`overflow-hidden transition-all duration-300 ease-out ${
+                  notesExpanded ? 'max-h-48 opacity-100 mt-3' : 'max-h-0 opacity-0'
+                }`}
+              >
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Any side effects, observations..."
+                  rows={3}
+                  className="w-full input-premium resize-none"
+                />
+                <div className="text-right text-[10px] text-slate-600 mt-1">
+                  {notes.length} / 500
+                </div>
+              </div>
+            </div>
+
+            {/* Side Effects */}
+            <div className="card-premium p-5">
+              <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-3 uppercase tracking-widest">
+                Side Effects
+                <span className="text-slate-600 font-normal normal-case">(tap to log)</span>
+              </label>
+              <SideEffectChips
+                sideEffects={orderedSideEffects}
+                selected={selectedSideEffects}
+                onToggle={toggleSideEffect}
+                onAddCustom={handleAddCustom}
+              />
+            </div>
+          </>
+        )}
 
         {/* Submit + Cancel */}
         <div className="flex gap-3 pt-2">
