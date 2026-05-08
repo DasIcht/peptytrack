@@ -208,7 +208,7 @@ export function MedicationChart() {
       {chartData.length > 0 && (
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-4">
           <ResponsiveContainer width="100%" height={350}>
-            <AreaChart data={chartData} margin={{ top: 5, right: 40, left: -20, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 {medications.map((med) => (
                   <linearGradient key={med.id} id={`grad_${med.id}`} x1="0" y1="0" x2="0" y2="1">
@@ -236,17 +236,19 @@ export function MedicationChart() {
                 label={false}
                 tickFormatter={(v: number) => v.toFixed(2)}
               />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                domain={[weightRange.min, weightRange.max]}
-                stroke="rgba(255,255,255,0.15)"
-                tick={{ fill: '#94a3b8', fontSize: 10 }}
-                axisLine={false}
-                tickLine={false}
-                label={false}
-                tickFormatter={(v: number) => v.toFixed(2)}
-              />
+              {chartData.some((p) => p.weight !== null) && (
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  domain={[weightRange.min, weightRange.max]}
+                  stroke="rgba(255,255,255,0.15)"
+                  tick={{ fill: '#94a3b8', fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                  label={false}
+                  tickFormatter={(v: number) => v.toFixed(2)}
+                />
+              )}
               <Legend
                 onClick={handleLegendClick}
                 wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }}
