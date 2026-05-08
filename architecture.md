@@ -82,7 +82,7 @@ peptyTrack/
 │   │
 │   └── pages/                 # Full-page route components
 │       ├── Dashboard.tsx      # Home — stats, medication cards, quick actions
-│       ├── LogDose.tsx        # Premium dose logging: glass-morphism cards, circular vial progress, tactile dosage pills, visual injection site zones, expandable notes, animated side effects, timeline-style dose history
+│       ├── LogDose.tsx        # Dual-mode dose logging: Quick Log (compact 3-tap flow) and Full Log (complete form). 2-column vial layout (dropdown + summary). Compact single-row dosage pills. 2-column injection site selector (zone list | site grid). Circular vial progress, expandable notes, animated side effects, timeline-style dose history
 │       ├── MedicationChart.tsx# Dual-axis medication level + weight chart
 │       ├── WeightTracker.tsx  # Weight logging with date picker + history
 │       ├── Medications.tsx    # Medication management — add from library/custom, enable/disable
@@ -511,3 +511,4 @@ npm run test       # Runs unit tests
 | 2026-05-07 | Added touch swipe navigation between tabs. Added structured side effects logging with curated GLP-1 library, custom side effects, and smart per-medication ordering. Updated IndexedDB schema to v3 (`customSideEffects` table). Bumped cloud backup to v4. Added Side Effects column to PDF export. |
 | 2026-05-07 | Added injection site rotation: 3 strategies (sequential, quadrant, LRU), user-selectable active sites (min 2), auto-defaults in LogDose. Settings persist in IndexedDB and included in backup v4. |
 | 2026-05-08 | Premium redesign of LogDose: gradient hero header, grouped glass-morphism cards, `CircularProgress` vial indicator, tactile dosage pills, visual injection site zones with emoji, icon-integrated inputs, expandable notes card, animated side effects chips, gradient submit button, timeline-style dose history. Added `card-premium`, `input-premium`, `btn-tactile`, and stagger animations to global.css and tailwind.config.js. |
+| 2026-05-08 | Dual-mode Quick Log / Full Log redesign: segmented mode toggle persisted in localStorage. Quick Log shows medication + 2-column vial (dropdown + summary) + compact single-row dosage pills + 2-column injection site selector + submit. Full Log adds date/time, notes, side effects, full vial dashboard with CircularProgress. Injection site redesigned as 2-column layout: left = zone buttons, right = 2×2 site grid. Added `mode-toggle`, `zone-strip`, `zone-card`, `vial-summary`, `no-scrollbar` utilities. Added 17 LogDose unit tests. |

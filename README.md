@@ -7,7 +7,11 @@ PeptyTrack is a fully functional, open-source alternative to paid GLP-1 tracking
 ## Features
 
 ### Core Tracking
-- **Premium Dose Logging** — Beautiful glass-morphism UI with grouped cards, animated circular vial progress, tactile dosage pills, visual injection site zones, expandable notes, animated side effects chips, and a timeline-style dose history. Auto-calculates injection volume (ml + U-100 units) and supports automatic injection site rotation
+- **Dual-Mode Quick Log / Full Log** — Quick Log for routine 3-tap logging (medication, vial, dosage, injection site). Full Log for complete entry with date/time, notes, side effects, and full vial dashboard. Mode preference persists between sessions
+- **2-Column Vial Layout** — Dropdown selector on the left, selected vial summary (name + color-coded remaining) on the right. Full Log adds CircularProgress dashboard below
+- **Compact Single-Row Dosage** — Small horizontal-scroll pill buttons (h-9, text-xs) that never wrap — always one line
+- **2-Column Injection Site Selector** — Left column shows body zones (Abdomen, Thigh, Upper Arm), right column shows a 2×2 grid of sites for the selected zone. Both fit in half the vertical space
+- **Premium Dose Logging UI** — Glass-morphism cards, gradient hero header, animated circular vial progress, expandable notes, animated side effects chips, and timeline-style dose history. Auto-calculates injection volume (ml + U-100 units) and supports automatic injection site rotation
 - **Medication Level Visualization** — Real-time estimated medication concentration chart based on pharmacokinetic half-life modeling
 - **Weight Tracking** — Log daily weights with trend analysis and interactive charts
 - **Multiple Medications** — Track several GLP-1 drugs simultaneously with independent schedules
@@ -79,6 +83,7 @@ The project includes unit and component tests using **Vitest** with **jsdom** en
 | `sideEffectsStore.test.ts` | 7 | CRUD, persistence, deduplication, per-med isolation |
 | `SideEffectChips.test.tsx` | 8 | Rendering, toggle selection, custom add, expand/collapse |
 | `injectionRotation.test.ts` | 12 | Sequential, quadrant, LRU strategies, activeSites subset |
+| `LogDose.test.tsx` | 17 | Dual-mode Quick/Full rendering, mode toggle persistence, zone strip, site selection, form submission, dose warnings |
 
 **Run all tests:**
 ```bash
