@@ -60,7 +60,9 @@ peptyTrack/
 │   │   ├── vialStore.ts       # Vial CRUD + computed remaining tracking
 │   │   ├── vialStore.test.ts
 │   │   ├── sideEffectsStore.ts # Per-medication custom side effects CRUD + persistence
-│   │   └── sideEffectsStore.test.ts
+│   │   ├── sideEffectsStore.test.ts
+│   │   ├── symptomLogStore.ts # Independent symptom entries CRUD
+│   │   └── symptomLogStore.test.ts
 │   ├── lib/                   # Core business logic — PURE FUNCTIONS preferred
 │   │   ├── halfLifeEngine.ts      # Pharmacokinetic accumulation model
 │   │   ├── halfLifeEngine.test.ts # 15 unit tests
@@ -206,7 +208,22 @@ export interface Dose {
   injectionSite: InjectionSite;
   dateTime: number;            // Unix timestamp of dose
   notes: string;
-  sideEffects?: string[];       // Logged side effects for this dose
+  sideEffects?: SideEffectLog[]; // Logged side effects with severity
+  createdAt: number;
+}
+
+export type SideEffectSeverity = 'mild' | 'moderate' | 'severe';
+
+export interface SideEffectLog {
+  label: string;
+  severity: SideEffectSeverity;
+}
+
+export interface SymptomLog {
+  id: string;
+  medicationId: string;
+  dateTime: number;
+  symptoms: SideEffectLog[];
   createdAt: number;
 }
 
@@ -238,6 +255,17 @@ export interface AppSettings {
   notificationsEnabled: boolean;
   injectionRotationStrategy: RotationStrategy;
   injectionRotationSites: InjectionSite[];
+  titrationWizardEnabled: boolean;
+  severeSideEffectThreshold: number;
+}
+
+export interface TitrationMetrics {
+  timeProgressPercent: number;
+  symptomScore: number;
+  weightLossRateKgPerWeek: number;
+  daysRemaining: number;
+  hasWeightData: boolean;
+  hasSymptomData: boolean;
 }
 ```
 
@@ -250,6 +278,7 @@ export interface AppSettings {
 | `vials` | `id` | `medicationId`, `createdAt` |
 | `settings` | `id` | — |
 | `customSideEffects` | `medicationId` | — |
+| `symptomLogs` | `id` | `medicationId`, `dateTime`, `createdAt` |
 
 ### 5.3 Seeding Logic
 `seedDatabaseIfEmpty()` in `database.ts` handles first-launch seeding:
@@ -462,8 +491,9 @@ colors: {
 | `vialStore.test.ts` | 10 tests — CRUD, remaining computation, filtering, last used, remaining override |
 | `sideEffectsStore.test.ts` | 7 tests — CRUD, persistence, deduplication, per-med isolation |
 | `ConfirmDialog.test.tsx` | 7 tests — rendering, confirm/cancel actions, danger styling, modal close |
-| `SideEffectChips.test.tsx` | 6 tests — rendering, toggle selection, custom add |
+| `SideEffectChips.test.tsx` | 8 tests — rendering, toggle selection, custom add, expand/collapse, severity cycling |
 | `injectionRotation.test.ts` | 12 tests — sequential, quadrant, LRU strategies, activeSites subset |
+| `titrationAnalytics.test.ts` | 7 tests — time-based step-up (log-derived), severity-weighted hold, rapid weight loss detection, severe threshold warning, missing data detection |
 
 ### 9.1 Testing Patterns
 - Use `fake-indexeddb` for IndexedDB mocking in tests.
@@ -638,6 +668,8 @@ npx netlify deploy --prod --dir=dist
 | 2026-05-08 | Premium redesign of LogDose page: gradient hero header, grouped glass cards, circular vial progress indicator (CircularProgress), tactile dosage pills, visual injection site zones with emoji indicators, icon-integrated date/time inputs, expandable notes card, animated side effects chips, gradient submit button with success state, timeline-style dose history with staggered entrance. Added premium design system utilities (card-premium, input-premium, btn-tactile, stagger-animations) to global.css and tailwind.config.js. |
 | 2026-05-08 | Dual-mode Quick Log / Full Log redesign: segmented mode toggle (persisted in localStorage), Quick Log shows only medication + compact vial summary + dosage + injection site zone strip (defaults date/time to now), Full Log shows complete form with circular vial dashboard. Injection site redesigned as horizontal scrollable body-zone strip (Abdomen/Thigh/Upper Arm) with in-place expansion for specific sites. Added zone-strip, zone-card, mode-toggle, vial-summary utilities to global.css and tailwind.config.js. Added 17 LogDose unit tests. |
 | 2026-05-08 | Compact refinements: dosage pills reduced to single horizontal row (h-9, text-xs, no-wrap with hidden scrollbar); vial section restructured into 2-column grid layout (dropdown left, selected vial summary right) in both Quick and Full Log modes. Added no-scrollbar utility to global.css and tailwind.config.js. |
+| 2026-05-09 | Implemented Side Effect Severity tracking (Mild/Moderate/Severe) with weighted titration analytics (Mild=1, Mod=2, Sev=3). Tapping symptom chips now cycles severity. Added independent symptom logging decoupled from dose entries. Updated IndexedDB to v5, backup to v5. Updated PDF report to include independent logs and severity formatting. |
+| 2026-05-10 | Integrated Titration Wizard: global toggle with medical disclaimer, configurable severe threshold, per-medication protocol management. Log Dose UI optimized for readability: Date/Time moved under medication, Side Effects moved under injection sites. Recommended dosage highlighting with ZAP icon. Interactive titration charts (Spider, Gauges, Timeline) added to Medication Chart tab with rotate functionality. Analytics improved with log-derived dose start dates, 4-week weight lookback, and 0% readiness triggers for missing logs. |
 
-> **Last Updated:** 2026-05-08  
-> **Document Version:** 1.4
+> **Last Updated:** 2026-05-10  
+> **Document Version:** 1.7

@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Medication, Dose, WeightEntry, Vial, CustomSideEffects } from '../types';
+import type { Medication, Dose, WeightEntry, Vial, CustomSideEffects, Protocol, SymptomLog } from '../types';
 import { MEDICATION_LIBRARY } from './seed';
 import { uuid } from '../lib/uuid';
 
@@ -10,6 +10,8 @@ class PeptyTrackDB extends Dexie {
   vials!: Table<Vial, string>;
   settings!: Table<{ id: string; value: unknown }, string>;
   customSideEffects!: Table<CustomSideEffects, string>;
+  protocols!: Table<Protocol, string>;
+  symptomLogs!: Table<SymptomLog, string>;
 
   constructor() {
     super('PeptyTrackDB');
@@ -20,6 +22,21 @@ class PeptyTrackDB extends Dexie {
       vials: 'id, medicationId, createdAt',
       settings: 'id',
       customSideEffects: 'medicationId',
+    });
+    this.version(4).stores({
+      protocols: 'id, medicationId',
+    });
+    this.version(5).stores({
+      symptomLogs: 'id, medicationId, dateTime',
+    }).upgrade(tx => {
+      return tx.table('doses').toCollection().modify(dose => {
+        if (dose.sideEffects && dose.sideEffects.length > 0 && typeof dose.sideEffects[0] === 'string') {
+          dose.sideEffects = (dose.sideEffects as unknown as string[]).map(label => ({
+            label,
+            severity: 'mild'
+          }));
+        }
+      });
     });
   }
 }

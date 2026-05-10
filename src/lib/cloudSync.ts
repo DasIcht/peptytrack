@@ -1,5 +1,5 @@
 import { db, getSettings } from '../db/database';
-import type { Medication, Dose, WeightEntry, Vial, CustomSideEffects } from '../types';
+import type { Medication, Dose, WeightEntry, Vial, CustomSideEffects, Protocol, SymptomLog } from '../types';
 
 interface BackupData {
   version: number;
@@ -10,9 +10,11 @@ interface BackupData {
   vials: Vial[];
   settings: Record<string, unknown>;
   customSideEffects: CustomSideEffects[];
+  protocols: Protocol[];
+  symptomLogs: SymptomLog[];
 }
 
-const BACKUP_VERSION = 4;
+const BACKUP_VERSION = 5;
 
 /**
  * Export all data as a JSON blob for download or cloud upload.
@@ -24,6 +26,8 @@ export async function exportData(): Promise<BackupData> {
   const vials = await db.vials.toArray();
   const settings = await getSettings();
   const customSideEffects = await db.customSideEffects.toArray();
+  const protocols = await db.protocols.toArray();
+  const symptomLogs = await db.symptomLogs.toArray();
 
   return {
     version: BACKUP_VERSION,
@@ -34,6 +38,8 @@ export async function exportData(): Promise<BackupData> {
     vials,
     settings,
     customSideEffects,
+    protocols,
+    symptomLogs,
   };
 }
 
@@ -55,17 +61,19 @@ export function downloadBackupJSON(data: BackupData): void {
  * Import data from JSON backup, replacing all current data.
  */
 export async function importData(data: BackupData): Promise<void> {
-  if (data.version !== BACKUP_VERSION && data.version !== 3 && data.version !== 2 && data.version !== 1) {
+  if (data.version !== BACKUP_VERSION && data.version !== 4 && data.version !== 3 && data.version !== 2 && data.version !== 1) {
     throw new Error(`Unsupported backup version: ${data.version}`);
   }
 
-  await db.transaction('rw', [db.medications, db.doses, db.weightEntries, db.vials, db.settings, db.customSideEffects], async () => {
+  await db.transaction('rw', [db.medications, db.doses, db.weightEntries, db.vials, db.settings, db.customSideEffects, db.protocols, db.symptomLogs], async () => {
     await db.medications.clear();
     await db.doses.clear();
     await db.weightEntries.clear();
     await db.vials.clear();
     await db.settings.clear();
     await db.customSideEffects.clear();
+    await db.protocols.clear();
+    await db.symptomLogs.clear();
 
     if (data.medications.length) await db.medications.bulkAdd(data.medications);
     if (data.doses.length) await db.doses.bulkAdd(data.doses);
@@ -79,6 +87,8 @@ export async function importData(data: BackupData): Promise<void> {
     if (data.customSideEffects?.length) {
       await db.customSideEffects.bulkAdd(data.customSideEffects);
     }
+    if (data.protocols?.length) await db.protocols.bulkAdd(data.protocols);
+    if (data.symptomLogs?.length) await db.symptomLogs.bulkAdd(data.symptomLogs);
   });
 }
 

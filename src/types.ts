@@ -40,6 +40,11 @@ export type InjectionSite =
 
 export type RotationStrategy = 'sequential' | 'quadrant' | 'lru';
 
+export interface SideEffectLog {
+  label: string;
+  severity: 'mild' | 'moderate' | 'severe';
+}
+
 export interface Dose {
   id: string;
   medicationId: string;
@@ -49,7 +54,15 @@ export interface Dose {
   injectionSite: InjectionSite;
   dateTime: number;
   notes: string;
-  sideEffects?: string[];
+  sideEffects?: SideEffectLog[];
+  createdAt: number;
+}
+
+export interface SymptomLog {
+  id: string;
+  medicationId: string;
+  dateTime: number;
+  symptoms: SideEffectLog[];
   createdAt: number;
 }
 
@@ -86,10 +99,31 @@ export interface AppSettings {
   notificationsEnabled: boolean;
   injectionRotationStrategy: RotationStrategy;
   injectionRotationSites: InjectionSite[];
+  titrationWizardEnabled: boolean;
+  severeSideEffectThreshold: number;
 }
 
 export interface MedLevelPoint {
   timestamp: number;
   level: number;
   doseEvents?: { medicationId: string; dosage: number }[];
+}
+
+export interface ProtocolStep {
+  id: string;
+  dosage: number;
+  durationWeeks: number;
+}
+
+export interface Protocol {
+  id: string;
+  medicationId: string;
+  name: string;
+  steps: ProtocolStep[];
+  currentStepIndex: number;
+  startDate: number | null;
+  currentStepStartDate: number | null;
+  autoAdvance: boolean;
+  chartStyle?: 'spider' | 'gauges' | 'timeline';
+  createdAt: number;
 }

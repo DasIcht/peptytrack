@@ -4,6 +4,8 @@ import { useWeightStore } from '../stores/weightStore';
 import { useVialStore } from '../stores/vialStore';
 import { useUIStore } from '../stores/uiStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useSymptomLogStore } from '../stores/symptomLogStore';
+import { useProtocolStore } from '../stores/protocolStore';
 import { exportData, downloadBackupJSON, importData } from '../lib/cloudSync';
 import { generatePDF, downloadPDF } from '../lib/pdfExport';
 import { requestNotificationPermission } from '../lib/notifications';
@@ -11,12 +13,13 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import {
   Bell, FileText, Download, Upload,
   Trash2, ChevronRight, Shield, Scale, ToggleLeft, ToggleRight, Pill,
-  RotateCw, MapPin
+  RotateCw, MapPin, Wand2
 } from 'lucide-react';
 
 export function Settings() {
   const { medications, doses } = useMedicationStore();
   const { entries: weightEntries } = useWeightStore();
+  const { logs: symptomLogs } = useSymptomLogStore();
   const { addToast, openModal } = useUIStore();
   const { settings, updateSetting } = useSettingsStore();
 
@@ -33,7 +36,7 @@ export function Settings() {
   }, [settings.notificationsEnabled]);
 
   const handleExportPDF = async () => {
-    const doc = generatePDF(medications, doses, weightEntries);
+    const doc = generatePDF(medications, doses, weightEntries, symptomLogs);
     downloadPDF(doc);
     addToast('PDF report downloaded', 'success');
   };
@@ -96,10 +99,15 @@ export function Settings() {
                 await db.weightEntries.clear();
                 await db.vials.clear();
                 await db.settings.clear();
+                await db.customSideEffects.clear();
+                await db.protocols.clear();
+                await db.symptomLogs.clear();
                 await useMedicationStore.getState().loadData();
                 await useWeightStore.getState().loadData();
                 await useVialStore.getState().loadData();
                 await useSettingsStore.getState().loadSettings();
+                await useSymptomLogStore.getState().loadData();
+                await useProtocolStore.getState().loadData();
                 addToast('All data cleared', 'info');
               }}
             />
@@ -107,6 +115,25 @@ export function Settings() {
         }}
       />
     );
+  };
+
+  const handleTitrationWizardToggle = (enable: boolean) => {
+    if (enable) {
+      openModal(
+        <ConfirmDialog
+          title="Medical Disclaimer"
+          message="The Titration Wizard provides dosage and scheduling recommendations based on standard protocols. It is intended for informational purposes only and does NOT constitute medical advice. Always consult your healthcare provider before making any changes to your medication regimen."
+          confirmLabel="I Understand & Accept"
+          cancelLabel="Decline"
+          onConfirm={() => {
+            updateSetting('titrationWizardEnabled', true);
+            addToast('Titration Wizard enabled', 'success');
+          }}
+        />
+      );
+    } else {
+      updateSetting('titrationWizardEnabled', false);
+    }
   };
 
   return (
@@ -299,6 +326,61 @@ export function Settings() {
               <p className="text-xs text-red-400 mt-2">⚠ Select at least 2 sites to enable rotation.</p>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Titration Wizard */}
+      <div className="mb-6">
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Titration Wizard</h2>
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
+          {/* Toggle */}
+          <button
+            onClick={() => handleTitrationWizardToggle(!settings.titrationWizardEnabled)}
+            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors border-b border-white/5"
+          >
+            <div className="flex items-center gap-3">
+              <Wand2 size={18} className="text-accent-400" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-white">Enable Wizard</p>
+                <p className="text-xs text-slate-400">
+                  Step-up recommendations and safety warnings
+                </p>
+              </div>
+            </div>
+            {settings.titrationWizardEnabled ? (
+              <ToggleRight size={22} className="text-accent-400" />
+            ) : (
+              <ToggleLeft size={22} className="text-slate-500" />
+            )}
+          </button>
+
+          {/* Severe Side Effect Threshold */}
+          {settings.titrationWizardEnabled && (
+            <div className="flex items-center justify-between px-4 py-3.5">
+              <div className="flex items-center gap-3">
+                <Shield size={18} className="text-red-400" />
+                <div className="text-left">
+                  <p className="text-sm font-medium text-white">Severe Side Effect Threshold</p>
+                  <p className="text-xs text-slate-400">
+                    Points required to trigger a medical warning (Mild=1, Mod=2, Sev=3)
+                  </p>
+                </div>
+              </div>
+              <input
+                type="number"
+                min={3}
+                max={20}
+                value={settings.severeSideEffectThreshold}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val) && val >= 3) {
+                    updateSetting('severeSideEffectThreshold', val);
+                  }
+                }}
+                className="w-16 bg-surface-900 border border-white/10 rounded-lg px-2 py-1 text-white text-sm text-center focus:outline-none focus:border-primary-500"
+              />
+            </div>
+          )}
         </div>
       </div>
 

@@ -79,9 +79,12 @@ export function getSideEffectsOrderedForMedication(
 
   for (const dose of doses) {
     if (dose.medicationId !== medicationId) continue;
-    for (const label of dose.sideEffects ?? []) {
-      previouslySelected.add(label);
-      allLabels.add(label);
+    for (const se of dose.sideEffects ?? []) {
+      const label = typeof se === 'string' ? se : se.label;
+      if (label) {
+        previouslySelected.add(label);
+        allLabels.add(label);
+      }
     }
   }
 

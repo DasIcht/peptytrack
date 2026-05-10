@@ -34,8 +34,9 @@ PeptyTrack is a fully functional, open-source alternative to paid GLP-1 tracking
 - **Modal Confirmation Dialogs** — Styled, non-blocking confirmation dialogs for all destructive actions (delete dose, delete weight, delete medication, clear all data)
 - **Configurable Reminders** — Set per-medication reminder hours before next dose; master on/off switch
 - **PDF Reports** — Generate doctor-ready reports with medication history, dose logs, and weight trends
-- **Side Effects Logging** — Tap-to-log curated GLP-1 side effects (22 clinically categorized by rarity). Smart ordering prioritizes previously-selected effects per medication
-- **Custom Side Effects** — Add your own side effects not in the standard library; they persist and appear alongside standard effects
+- **Side Effects Logging** — Tap-to-log curated GLP-1 side effects (22 clinically categorized by rarity). Smart ordering prioritizes previously-selected effects per medication. **Severity Tracking** (Mild/Moderate/Severe) with color-coded visual indicators and tactile cycling (tap to cycle severity).
+- **Independent Symptom Logs** — Log symptoms independently from dose entries (e.g., between doses). Accessible via the Quick Log screen when dosage is empty.
+- **Severity-Weighted Titration** — Evaluation engine uses a point-based system (Mild=1, Moderate=2, Severe=3) to recommend holding current dose if total severity score > 3 in the last 14 days.
 - **Injection Site Rotation** — Auto-rotate injection sites with 3 strategies (Sequential, Quadrant, Least-Used). Pick which sites to include in rotation (min 2)
 - **Data Backup/Restore** — Export/import JSON backups; auto-backup on every change with restore prompt
 - **PWA Offline Support** — Install as a standalone app, works without internet
@@ -43,6 +44,7 @@ PeptyTrack is a fully functional, open-source alternative to paid GLP-1 tracking
 - **Multi-Med Chart** — View all enabled medications simultaneously with legend toggling
 - **Custom Medications** — Add any medication not in the built-in library
 - **Swipe Navigation** — Swipe left/right to switch between tabs on mobile
+- **Titration Wizard** — Automated protocol management with dose step-up recommendations. Features a **Severe Side Effect Warning System** (configurable point threshold) with high-priority UI alerts. Medical disclaimer confirmation flow. Interactive **Titration Charts** (Spider Radar, Gauges, Timeline) for visualizing readiness parameters (Time Progress, Symptom Tolerance, Weight Stability). Automatically detects dose start dates from history logs and monitors for data gaps (drops readiness to 0% if weight or symptom logs are missing for the required period).
 
 ## Tech Stack
 
@@ -84,6 +86,8 @@ The project includes unit and component tests using **Vitest** with **jsdom** en
 | `SideEffectChips.test.tsx` | 8 | Rendering, toggle selection, custom add, expand/collapse |
 | `injectionRotation.test.ts` | 12 | Sequential, quadrant, LRU strategies, activeSites subset |
 | `LogDose.test.tsx` | 17 | Dual-mode Quick/Full rendering, mode toggle persistence, zone strip, site selection, form submission, dose warnings |
+| `titrationAnalytics.test.ts` | 4 | Time-based step-up, severity-weighted hold, rapid weight loss detection, severe threshold warning |
+| `symptomLogStore.test.ts` | 5 | CRUD, independent logging persistence, medication filtering |
 
 **Run all tests:**
 ```bash

@@ -1,12 +1,13 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { Medication, Dose, WeightEntry } from '../types';
+import type { Medication, Dose, WeightEntry, SymptomLog } from '../types';
 import { format } from 'date-fns';
 
 export function generatePDF(
   medications: Medication[],
   doses: Dose[],
-  weightEntries: WeightEntry[]
+  weightEntries: WeightEntry[],
+  symptomLogs: SymptomLog[]
 ): jsPDF {
   const doc = new jsPDF();
   let yPos = 20;
@@ -47,6 +48,8 @@ export function generatePDF(
   });
   yPos = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
 
+  const medMap = Object.fromEntries(medications.map((m) => [m.id, m.name]));
+
   // Dose History
   if (doses.length > 0) {
     if (yPos > 240) {
@@ -58,8 +61,6 @@ export function generatePDF(
     doc.text('Dose History', 14, yPos);
     yPos += 10;
 
-    const medMap = Object.fromEntries(medications.map((m) => [m.id, m.name]));
-
     autoTable(doc, {
       startY: yPos,
       head: [['Date', 'Medication', 'Dosage', 'Injection Site', 'Side Effects']],
@@ -70,7 +71,36 @@ export function generatePDF(
           medMap[d.medicationId] || 'Unknown',
           `${d.dosage} ${d.unit}`,
           d.injectionSite.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-          d.sideEffects?.join(', ') || '-',
+          d.sideEffects?.map(se => typeof se === 'string' ? se : `${se.label} (${se.severity})`).join(', ') || '-',
+        ]),
+      theme: 'grid',
+      headStyles: { fillColor: [20, 184, 166], textColor: 255 },
+      styles: { fontSize: 9 },
+      margin: { left: 14, right: 14 },
+    });
+    yPos = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
+  }
+
+  // Independent Symptom History
+  if (symptomLogs.length > 0) {
+    if (yPos > 240) {
+      doc.addPage();
+      yPos = 20;
+    }
+    doc.setFontSize(14);
+    doc.setTextColor(20, 184, 166);
+    doc.text('Independent Symptom Logs', 14, yPos);
+    yPos += 10;
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Date', 'Medication', 'Symptoms Reported']],
+      body: symptomLogs
+        .sort((a, b) => b.dateTime - a.dateTime)
+        .map((l) => [
+          format(new Date(l.dateTime), 'PP p'),
+          medMap[l.medicationId] || 'Unknown',
+          l.symptoms.map(se => typeof se === 'string' ? se : `${se.label} (${se.severity})`).join(', ') || '-',
         ]),
       theme: 'grid',
       headStyles: { fillColor: [20, 184, 166], textColor: 255 },

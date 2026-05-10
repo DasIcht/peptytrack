@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useMedicationStore } from '../stores/medicationStore';
+import { useProtocolStore } from '../stores/protocolStore';
 import { useUIStore } from '../stores/uiStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { uuid } from '../lib/uuid';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { TitrationWizard } from '../components/TitrationWizard';
 import { MEDICATION_LIBRARY } from '../db/seed';
 import type { Frequency } from '../types';
-import { Pill, Trash2, Edit3, Clock, ChevronRight, X, Plus, Save } from 'lucide-react';
+import { Pill, Trash2, Edit3, Clock, ChevronRight, X, Plus, Save, Activity } from 'lucide-react';
 
 const COLOR_PRESETS = [
   '#14b8a6', '#f59e0b', '#8b5cf6', '#ec4899',
@@ -35,6 +37,7 @@ function useCustomFormDefaults() {
 
 export function Medications() {
   const { medications, deleteMedication, updateMedication, enableMedication, loadData } = useMedicationStore();
+  const { protocols } = useProtocolStore();
   const { addToast, openModal } = useUIStore();
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -51,6 +54,7 @@ interface EditForm {
 }
   const [editForm, setEditForm] = useState<EditForm>({});
   const [showAddModal, setShowAddModal] = useState(false);
+  const [wizardMedId, setWizardMedId] = useState<string | null>(null);
   const [addMode, setAddMode] = useState<'library' | 'custom'>('library');
   const { customForm, setCustomForm, defaultUnit } = useCustomFormDefaults();
 
@@ -59,6 +63,14 @@ interface EditForm {
     setCustomForm((f) => ({ ...f, unit: defaultUnit }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultUnit]);
+
+  // Close wizard if disabled globally
+  const { settings } = useSettingsStore();
+  useEffect(() => {
+    if (!settings.titrationWizardEnabled) {
+      setWizardMedId(null);
+    }
+  }, [settings.titrationWizardEnabled]);
 
   const handleDelete = (id: string) => {
     openModal(
@@ -234,6 +246,7 @@ interface EditForm {
       <div className="flex flex-col gap-3">
         {medications.map((med) => {
           const isEditing = editingId === med.id;
+          const activeProtocol = protocols.find(p => p.medicationId === med.id);
 
           return (
             <div
@@ -412,10 +425,25 @@ interface EditForm {
                       <p className="text-xs font-medium text-white">{med.dosageOptions.join(', ')} {med.unit}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-400 mb-3">
-                    <Clock size={14} />
-                    Reminder: {med.reminderHoursBefore}h before dose
+                  <div className="flex items-center justify-between text-xs text-slate-400 mb-3">
+                    <div className="flex items-center gap-2">
+                      <Clock size={14} />
+                      Reminder: {med.reminderHoursBefore}h before dose
+                    </div>
+                    {settings.titrationWizardEnabled && activeProtocol && (
+                      <span className="flex items-center gap-1 text-primary-400 font-medium">
+                        <Activity size={12} /> Protocol Step {activeProtocol.currentStepIndex + 1}
+                      </span>
+                    )}
                   </div>
+                  {settings.titrationWizardEnabled && (
+                    <button
+                      onClick={() => setWizardMedId(med.id)}
+                      className="w-full py-2 rounded-xl border border-white/10 bg-surface-900/50 hover:bg-surface-800 text-slate-300 text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+                    >
+                      <Activity size={14} /> Manage Titration Protocol
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -630,6 +658,19 @@ interface EditForm {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Titration Wizard Modal */}
+      {wizardMedId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setWizardMedId(null)} />
+          <TitrationWizard
+            medicationId={wizardMedId}
+            medicationUnit={medications.find(m => m.id === wizardMedId)?.unit || 'mg'}
+            medicationName={medications.find(m => m.id === wizardMedId)?.name || ''}
+            onClose={() => setWizardMedId(null)}
+          />
         </div>
       )}
     </div>

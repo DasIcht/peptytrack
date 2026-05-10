@@ -48,6 +48,7 @@ describe('Database CRUD', () => {
     await db.vials.clear();
     await db.settings.clear();
     await db.customSideEffects.clear();
+    await db.symptomLogs.clear();
   });
 
   describe('medications', () => {

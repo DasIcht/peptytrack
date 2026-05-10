@@ -17,6 +17,8 @@ const DEFAULT_SETTINGS: AppSettings = {
     'arm-left',
     'arm-right',
   ],
+  titrationWizardEnabled: false,
+  severeSideEffectThreshold: 5,
 };
 
 interface SettingsState {

@@ -1,7 +1,7 @@
 # PeptyTrack — Architecture Document
 
 > **Purpose:** This document describes the overall architecture, data flow, component relationships, and known outstanding items for the PeptyTrack GLP-1 medication tracker PWA.
-> **Last Updated:** 2026-05-06
+> **Last Updated:** 2026-05-10
 
 ---
 
@@ -118,16 +118,42 @@ interface Medication {
   createdAt: number;           // Unix timestamp
 }
 
-interface Dose {
-  id: string;
-  medicationId: string;        // FK → medications.id
-  vialId?: string;             // FK → vials.id (optional vial link)
-  dosage: number;              // Amount taken
-  unit: string;                // mg | mcg
-  injectionSite: string;       // e.g., "abdomen-upper-left"
-  dateTime: number;            // Unix timestamp of dose
   notes: string;
-  sideEffects?: string[];       // Logged side effects for this dose
+  sideEffects?: SideEffectLog[]; // Logged side effects with severity
+  createdAt: number;
+}
+
+interface ProtocolStep {
+  id: string;
+  dosage: number;
+  durationWeeks: number;
+}
+
+interface Protocol {
+  id: string;
+  medicationId: string;
+  name: string;
+  steps: ProtocolStep[];
+  currentStepIndex: number;
+  startDate: number | null;
+  currentStepStartDate: number | null;
+  autoAdvance: boolean;
+  chartStyle?: 'spider' | 'gauges' | 'timeline';
+  createdAt: number;
+}
+
+type SideEffectSeverity = 'mild' | 'moderate' | 'severe';
+
+interface SideEffectLog {
+  label: string;
+  severity: SideEffectSeverity;
+}
+
+interface SymptomLog {
+  id: string;
+  medicationId: string;
+  dateTime: number;
+  symptoms: SideEffectLog[];
   createdAt: number;
 }
 
@@ -149,13 +175,23 @@ interface Vial {
   createdAt: number;
 }
 
-interface WeightEntry {
-  id: string;
-  weight: number;
-  unit: 'kg' | 'lb';
-  dateTime: number;
-  notes: string;
-  createdAt: number;
+interface AppSettings {
+  weightUnit: 'kg' | 'lb';
+  medicationUnit: 'mg' | 'mcg' | 'units';
+  notificationsEnabled: boolean;
+  injectionRotationStrategy: RotationStrategy;
+  injectionRotationSites: InjectionSite[];
+  titrationWizardEnabled: boolean;
+  severeSideEffectThreshold: number;
+}
+
+interface TitrationMetrics {
+  timeProgressPercent: number;
+  symptomScore: number;
+  weightLossRateKgPerWeek: number;
+  daysRemaining: number;
+  hasWeightData: boolean;
+  hasSymptomData: boolean;
 }
 ```
 
@@ -169,6 +205,7 @@ interface WeightEntry {
 | `vials` | `id` | `medicationId`, `createdAt` |
 | `settings` | `id` | — |
 | `customSideEffects` | `medicationId` | — |
+| `symptomLogs` | `id` | `medicationId`, `dateTime`, `createdAt` |
 
 ### 4.3 Seeding Logic
 
@@ -194,6 +231,8 @@ interface WeightEntry {
 | `settingsStore` | App preferences (weightUnit, medicationUnit, notificationsEnabled, injectionRotationStrategy, injectionRotationSites) | `settings` |
 | `vialStore` | Vial CRUD + computed remaining tracking | `vials[]`, `initialized` |
 | `sideEffectsStore` | Per-medication custom side effects CRUD + persistence | `customEffects: Record<string, string[]>`, `initialized` |
+| `symptomLogStore` | Independent symptom entry CRUD (decoupled from doses) | `logs[]`, `initialized` |
+| `protocolStore` | Titration protocol CRUD + step tracking | `protocols[]`, `initialized` |
 
 ### 5.2 Store Pattern
 
@@ -310,6 +349,27 @@ Navigation triggers via `useUIStore().setPage('key')`.
 - `getNextInjectionSite(doses, strategy, activeSites)` — Returns next `InjectionSite`
 - `getLastUsedSite(doses)` — Most recent injection site across all doses
 
+### 7.7 Titration Analytics (`lib/titrationAnalytics.ts`)
+
+**Purpose:** Evaluate readiness for dose step-up based on protocol, side effects, and weight trends.
+
+**Logic:**
+- **Weighted Severity:** Side effects are assigned points: Mild=1, Moderate=2, Severe=3. Strings are treated as 'mild'.
+- **Log-Derived Start Dates:** The system identifies the actual start date of the current dosage level from dose history logs, ensuring "Time Progress" is accurate even if protocol dates were set nominally.
+- **Monitored Windows:** Weight trends are calculated over the last **4 weeks**. Symptom scores are calculated over the last **2 weeks**.
+- **Data Integrity:** "Weight Stability" requires at least **2 weight logs** in the last 4 weeks. "Symptom Tolerance" requires at least **1 dose or symptom log** in the last 2 weeks. If data is missing, the corresponding readiness metric drops to **0%**.
+- **Safety Warnings:** A high-priority red banner appears in the Log Dose flow if the symptom score reaches `settings.severeSideEffectThreshold` (default: 5).
+- **Auto-Advance:** Optionally advances protocol steps on successful dose log if recommendation is "step-up".
+
+### 7.8 Titration Charts (`src/components/TitrationDecisionChart.tsx`)
+
+**Purpose:** Visual visualization of titration readiness parameters.
+
+**Styles:**
+- `spider` — Radar chart showing Time Progress, Symptom Tolerance, and Weight Stability.
+- `gauges` — Three circular progress rings for key metrics.
+- `timeline` — Bar chart of symptom scores over the last 14 days.
+
 ---
 
 ## 8. Data Flow
@@ -321,6 +381,7 @@ App.tsx mounts
   └─> medicationStore.loadData() → Loads medications + doses from IndexedDB
   └─> weightStore.loadData()     → Loads weight entries from IndexedDB
   └─> vialStore.loadData()       → Loads vials from IndexedDB
+  └─> symptomLogStore.loadData() → Loads independent symptom logs
   └─> settingsStore.loadSettings() → Loads app preferences
   └─> Reminder polling starts (60s interval)
 ```
@@ -484,6 +545,9 @@ npm run test       # Runs unit tests
 | 2026-04-29 | Initial architecture document |
 | 2026-04-29 | Added `enabled` field to Medication; Dashboard filters by enabled |
 | 2026-05-06 | Added vial support: `Vial` type, `vialStore`, schema v2, vial selector in LogDose, inline vial management in Medications page |
+| 2026-05-07 | Updated IndexedDB to schema v3 (`customSideEffects` table). |
+| 2026-05-07 | Updated IndexedDB to schema v4 (vials and settings included in cloud backup). |
+| 2026-05-09 | Updated IndexedDB to schema v5 (`symptomLogs` table, `doses.sideEffects` migration to objects). |
 | 2026-04-29 | Added date/time picker to WeightTracker |
 | 2026-04-29 | Merged weight data into MedicationChart (dual-axis) |
 | 2026-04-29 | Fixed seeding deduplication by `templateId` |
@@ -512,3 +576,5 @@ npm run test       # Runs unit tests
 | 2026-05-07 | Added injection site rotation: 3 strategies (sequential, quadrant, LRU), user-selectable active sites (min 2), auto-defaults in LogDose. Settings persist in IndexedDB and included in backup v4. |
 | 2026-05-08 | Premium redesign of LogDose: gradient hero header, grouped glass-morphism cards, `CircularProgress` vial indicator, tactile dosage pills, visual injection site zones with emoji, icon-integrated inputs, expandable notes card, animated side effects chips, gradient submit button, timeline-style dose history. Added `card-premium`, `input-premium`, `btn-tactile`, and stagger animations to global.css and tailwind.config.js. |
 | 2026-05-08 | Dual-mode Quick Log / Full Log redesign: segmented mode toggle persisted in localStorage. Quick Log shows medication + 2-column vial (dropdown + summary) + compact single-row dosage pills + 2-column injection site selector + submit. Full Log adds date/time, notes, side effects, full vial dashboard with CircularProgress. Injection site redesigned as 2-column layout: left = zone buttons, right = 2×2 site grid. Added `mode-toggle`, `zone-strip`, `zone-card`, `vial-summary`, `no-scrollbar` utilities. Added 17 LogDose unit tests. |
+| 2026-05-09 | Implemented Side Effect Severity tracking (Mild/Moderate/Severe) with weighted titration analytics (Mild=1, Mod=2, Sev=3). Tapping symptom chips now cycles severity. Added independent symptom logging decoupled from dose entries. Updated IndexedDB to v5, backup to v5. Updated PDF report to include independent logs and severity formatting. |
+| 2026-05-10 | Integrated Titration Wizard: global toggle with medical disclaimer, configurable severe threshold, per-medication protocol management. Log Dose UI optimized for readability: Date/Time moved under medication, Side Effects moved under injection sites. Recommended dosage highlighting with ZAP icon. Interactive titration charts (Spider, Gauges, Timeline) added to Medication Chart tab with rotate functionality. |

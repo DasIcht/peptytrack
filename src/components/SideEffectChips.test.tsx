@@ -24,13 +24,13 @@ describe('SideEffectChips', () => {
     render(
       <SideEffectChips
         sideEffects={sideEffects}
-        selected={['Headache']}
+        selected={[{ label: 'Headache', severity: 'moderate' }]}
         onToggle={() => {}}
         onAddCustom={() => {}}
       />
     );
     const headacheBtn = screen.getByText('Headache').closest('button');
-    expect(headacheBtn).toHaveClass('bg-primary-600/15');
+    expect(headacheBtn).toHaveClass('bg-amber-600/20');
   });
 
   it('calls onToggle when a chip is clicked', () => {
@@ -44,7 +44,7 @@ describe('SideEffectChips', () => {
       />
     );
     fireEvent.click(screen.getByText('Nausea'));
-    expect(onToggle).toHaveBeenCalledWith('Nausea');
+    expect(onToggle).toHaveBeenCalledWith('Nausea', 'mild');
   });
 
   it('reveals an input when Add Custom is clicked', () => {
@@ -57,7 +57,7 @@ describe('SideEffectChips', () => {
       />
     );
     fireEvent.click(screen.getByText('Add Custom'));
-    expect(screen.getByPlaceholderText('New side effect...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('New symptom...')).toBeInTheDocument();
   });
 
   it('calls onAddCustom when custom input is submitted', () => {
@@ -71,7 +71,7 @@ describe('SideEffectChips', () => {
       />
     );
     fireEvent.click(screen.getByText('Add Custom'));
-    const input = screen.getByPlaceholderText('New side effect...');
+    const input = screen.getByPlaceholderText('New symptom...');
     fireEvent.change(input, { target: { value: 'Itchy palms' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(onAddCustom).toHaveBeenCalledWith('Itchy palms');
@@ -88,7 +88,7 @@ describe('SideEffectChips', () => {
       />
     );
     fireEvent.click(screen.getByText('Add Custom'));
-    const input = screen.getByPlaceholderText('New side effect...');
+    const input = screen.getByPlaceholderText('New symptom...');
     fireEvent.change(input, { target: { value: '   ' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(onAddCustom).not.toHaveBeenCalled();

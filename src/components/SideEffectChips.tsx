@@ -1,12 +1,21 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Check, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
+import type { SideEffectLog, SideEffectSeverity } from '../types';
 
 interface SideEffectChipsProps {
   sideEffects: string[];
-  selected: string[];
-  onToggle: (label: string) => void;
+  selected: SideEffectLog[];
+  onToggle: (label: string, severity?: SideEffectSeverity) => void;
   onAddCustom: (label: string) => void;
 }
+
+const SEVERITY_ORDER: (SideEffectSeverity | null)[] = ['mild', 'moderate', 'severe', null];
+
+const SEVERITY_STYLES: Record<SideEffectSeverity, string> = {
+  mild: 'bg-primary-600/20 border-primary-500/50 text-primary-300 shadow-primary-900/10',
+  moderate: 'bg-amber-600/20 border-amber-500/50 text-amber-300 shadow-amber-900/10',
+  severe: 'bg-red-600/20 border-red-500/50 text-red-300 shadow-red-900/10',
+};
 
 export function SideEffectChips({ sideEffects, selected, onToggle, onAddCustom }: SideEffectChipsProps) {
   const [adding, setAdding] = useState(false);
@@ -39,6 +48,18 @@ export function SideEffectChips({ sideEffects, selected, onToggle, onAddCustom }
     }
   };
 
+  const handleCycle = (label: string) => {
+    const current = selected.find(s => s.label === label);
+    const currentIndex = current ? SEVERITY_ORDER.indexOf(current.severity) : -1;
+    const nextSeverity = SEVERITY_ORDER[currentIndex + 1];
+
+    if (nextSeverity === null) {
+      onToggle(label); // Remove
+    } else {
+      onToggle(label, nextSeverity); // Set next
+    }
+  };
+
   const displayEffects = expanded ? sideEffects : sideEffects.slice(0, 6);
   const canExpand = sideEffects.length > 6;
 
@@ -46,20 +67,26 @@ export function SideEffectChips({ sideEffects, selected, onToggle, onAddCustom }
     <div>
       <div className="flex flex-wrap gap-2">
         {displayEffects.map((label) => {
-          const isSelected = selected.includes(label);
+          const activeLog = selected.find(s => s.label === label);
+          const isSelected = !!activeLog;
+          const severityClass = activeLog ? SEVERITY_STYLES[activeLog.severity] : 'bg-surface-900/50 border-white/5 text-slate-400 hover:border-white/15 hover:bg-surface-800';
+
           return (
             <button
               key={label}
               type="button"
-              onClick={() => onToggle(label)}
-              className={`btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                isSelected
-                  ? 'bg-primary-600/15 border border-primary-500/40 text-primary-300 shadow-[0_0_8px_rgba(20,184,166,0.1)]'
-                  : 'bg-surface-900/50 border border-white/5 text-slate-400 hover:border-white/15 hover:bg-surface-800 hover:shadow-sm'
-              }`}
+              onClick={() => handleCycle(label)}
+              className={`btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${severityClass}`}
             >
-              {isSelected && <Check size={11} className="text-primary-400" />}
+              {activeLog?.severity === 'mild' && <Check size={11} className="text-primary-400" />}
+              {activeLog?.severity === 'moderate' && <AlertCircle size={11} className="text-amber-400" />}
+              {activeLog?.severity === 'severe' && <AlertCircle size={11} className="text-red-400 font-bold" />}
               {label}
+              {activeLog && (
+                <span className="text-[10px] opacity-60 uppercase font-bold ml-0.5">
+                  {activeLog.severity.slice(0, 3)}
+                </span>
+              )}
             </button>
           );
         })}
@@ -73,7 +100,7 @@ export function SideEffectChips({ sideEffects, selected, onToggle, onAddCustom }
               onChange={(e) => setCustomLabel(e.target.value)}
               onKeyDown={handleKeyDown}
               onBlur={handleAdd}
-              placeholder="New side effect..."
+              placeholder="New symptom..."
               className="w-40 bg-surface-900/50 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
             />
           </div>

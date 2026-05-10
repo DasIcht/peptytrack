@@ -4,6 +4,10 @@ import { useVialStore } from '../stores/vialStore';
 import { useUIStore } from '../stores/uiStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useSideEffectsStore } from '../stores/sideEffectsStore';
+import { useProtocolStore } from '../stores/protocolStore';
+import { useWeightStore } from '../stores/weightStore';
+import { useSymptomLogStore } from '../stores/symptomLogStore';
+import { evaluateTitration, type TitrationRecommendation } from '../lib/titrationAnalytics';
 import { scheduleReminder } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { SideEffectChips } from '../components/SideEffectChips';
@@ -28,6 +32,7 @@ import {
   ArrowLeft,
   Zap,
   List,
+  Activity as ActivityIcon,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -83,6 +88,9 @@ export function LogDose() {
   const { addToast, logDoseMedId, setLogDoseMedId } = useUIStore();
   const { settings } = useSettingsStore();
   const { customEffects, addCustomSideEffect } = useSideEffectsStore();
+  const { protocols, updateProtocol } = useProtocolStore();
+  const { entries: weightEntries } = useWeightStore();
+  const { logSymptom, logs: symptomLogs } = useSymptomLogStore();
 
   const initialMedId = logDoseMedId || medications[0]?.id || '';
   const [selectedMedId, setSelectedMedId] = useState(initialMedId);
@@ -95,10 +103,13 @@ export function LogDose() {
   const [time, setTime] = useState(format(new Date(), 'HH:mm'));
   const [notes, setNotes] = useState('');
   const [notesExpanded, setNotesExpanded] = useState(false);
-  const [selectedSideEffects, setSelectedSideEffects] = useState<string[]>([]);
+  const [selectedSideEffects, setSelectedSideEffects] = useState<SideEffectLog[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
+
+  const [titrationAlert, setTitrationAlert] = useState<TitrationRecommendation | null>(null);
+  const [didStepUp, setDidStepUp] = useState(false);
 
   // Dual-mode state
   const [logMode, setLogMode] = useState<LogMode>(() => {
@@ -144,21 +155,46 @@ export function LogDose() {
   }, [editingDoseId]);
 
   const selectedMed = medications.find((m) => m.id === selectedMedId);
+  const activeProtocol = protocols.find(p => p.medicationId === selectedMedId);
+
+  useEffect(() => {
+    if (settings.titrationWizardEnabled && activeProtocol && !editingDoseId) {
+      const recommendation = evaluateTitration(activeProtocol, doses, symptomLogs, weightEntries);
+      if (recommendation.ready) {
+        setTitrationAlert(recommendation);
+      } else {
+        setTitrationAlert(null);
+      }
+    } else {
+      setTitrationAlert(null);
+    }
+  }, [activeProtocol, doses, symptomLogs, weightEntries, selectedMedId, editingDoseId]);
+
+  useEffect(() => {
+    // We no longer auto-select the dosage. The recommended dosage will be highlighted in the UI.
+  }, [activeProtocol, selectedMedId, editingDoseId, selectedMed]);
 
   const orderedSideEffects = selectedMedId
     ? getSideEffectsOrderedForMedication(selectedMedId, doses, customEffects[selectedMedId] ?? [])
     : [];
 
-  const toggleSideEffect = (label: string) => {
-    setSelectedSideEffects((prev) =>
-      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
-    );
+  const toggleSideEffect = (label: string, severity?: SideEffectSeverity) => {
+    setSelectedSideEffects((prev) => {
+      const existing = prev.find(s => s.label === label);
+      if (!severity) {
+        return prev.filter(s => s.label !== label);
+      }
+      if (existing) {
+        return prev.map(s => s.label === label ? { ...s, severity } : s);
+      }
+      return [...prev, { label, severity }];
+    });
   };
 
   const handleAddCustom = async (label: string) => {
     if (!selectedMedId) return;
     await addCustomSideEffect(selectedMedId, label);
-    setSelectedSideEffects((prev) => [...prev, label]);
+    setSelectedSideEffects((prev) => [...prev, { label, severity: 'mild' }]);
   };
 
   const medsWithDoses = medications.filter(
@@ -213,6 +249,7 @@ export function LogDose() {
     setSelectedSideEffects([]);
     setSubmitSuccess(false);
     setExpandedZone(null);
+    setDidStepUp(false);
   };
 
   const handleEdit = (dose: Dose) => {
@@ -251,7 +288,13 @@ export function LogDose() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedMed || !dosage) return;
+    if (!selectedMed) return;
+
+    // Must have either dosage OR symptoms
+    if (!dosage && selectedSideEffects.length === 0) {
+      addToast('Please enter a dosage or select symptoms', 'error');
+      return;
+    }
 
     setSubmitting(true);
     // In quick mode, use current date/time if not explicitly set
@@ -260,40 +303,62 @@ export function LogDose() {
       : new Date(`${date}T${time}`).getTime();
 
     try {
-      if (editingDoseId) {
-        await updateDose(editingDoseId, {
+      if (dosage) {
+        // Logging a dose
+        if (editingDoseId) {
+          await updateDose(editingDoseId, {
+            medicationId: selectedMed.id,
+            vialId: selectedVialId || undefined,
+            dosage: parseFloat(dosage),
+            unit: selectedMed.unit,
+            injectionSite,
+            dateTime,
+            notes,
+            sideEffects: selectedSideEffects,
+          });
+          addToast('Dose updated!', 'success');
+        } else {
+          await logDose({
+            medicationId: selectedMed.id,
+            vialId: selectedVialId || undefined,
+            dosage: parseFloat(dosage),
+            unit: selectedMed.unit,
+            injectionSite,
+            dateTime,
+            notes,
+            sideEffects: selectedSideEffects,
+          });
+          const createdAt = Date.now();
+          scheduleReminder(selectedMed, [...doses, {
+            id: '', medicationId: selectedMed.id, vialId: selectedVialId || undefined,
+            dosage: parseFloat(dosage), unit: selectedMed.unit, injectionSite, dateTime, notes, sideEffects: selectedSideEffects, createdAt
+          }]);
+          
+          if (activeProtocol) {
+            if (didStepUp || (activeProtocol.autoAdvance && titrationAlert?.recommendation === 'step-up')) {
+              await updateProtocol(activeProtocol.id, {
+                currentStepIndex: activeProtocol.currentStepIndex + 1,
+                currentStepStartDate: Date.now()
+              });
+            }
+          }
+          
+          addToast('Dose logged successfully!', 'success');
+        }
+      } else if (selectedSideEffects.length > 0) {
+        // Independent symptom logging
+        await logSymptom({
           medicationId: selectedMed.id,
-          vialId: selectedVialId || undefined,
-          dosage: parseFloat(dosage),
-          unit: selectedMed.unit,
-          injectionSite,
           dateTime,
-          notes,
-          sideEffects: selectedSideEffects,
+          symptoms: selectedSideEffects,
         });
-        addToast('Dose updated!', 'success');
-      } else {
-        await logDose({
-          medicationId: selectedMed.id,
-          vialId: selectedVialId || undefined,
-          dosage: parseFloat(dosage),
-          unit: selectedMed.unit,
-          injectionSite,
-          dateTime,
-          notes,
-          sideEffects: selectedSideEffects,
-        });
-        const createdAt = Date.now();
-        scheduleReminder(selectedMed, [...doses, {
-          id: '', medicationId: selectedMed.id, vialId: selectedVialId || undefined,
-          dosage: parseFloat(dosage), unit: selectedMed.unit, injectionSite, dateTime, notes, sideEffects: selectedSideEffects, createdAt
-        }]);
-        addToast('Dose logged successfully!', 'success');
+        addToast('Symptoms logged!', 'success');
       }
       setSubmitSuccess(true);
       setTimeout(() => resetForm(), 600);
-    } catch {
-      addToast(editingDoseId ? 'Failed to update dose' : 'Failed to log dose', 'error');
+    } catch (err) {
+      console.error(err);
+      addToast(editingDoseId ? 'Failed to update dose' : 'Failed to save log', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -435,6 +500,48 @@ export function LogDose() {
         </div>
       )}
 
+      {titrationAlert && (
+        <div className={`mb-4 p-4 rounded-xl border ${titrationAlert.warningLevel === 'severe' ? 'bg-red-500/10 border-red-500/30 text-red-400' : titrationAlert.recommendation === 'hold' ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-primary-500/10 border-primary-500/20 text-primary-300'} flex flex-col gap-2 animate-slide-up`}>
+           <div className="flex items-center gap-2 font-bold text-sm">
+              {titrationAlert.warningLevel === 'severe' ? <AlertTriangle size={18} className="text-red-500 animate-pulse" /> : <Zap size={16} />}
+              {titrationAlert.warningLevel === 'severe' ? 'Medical Warning' : 'Titration Advice'}
+           </div>
+           <p className={`text-xs leading-relaxed ${titrationAlert.warningLevel === 'severe' ? 'font-medium' : 'opacity-90'}`}>{titrationAlert.reason}</p>
+           
+           {titrationAlert.recommendation === 'step-up' && !didStepUp && (
+             <div className="flex gap-2 mt-2">
+               <button 
+                 type="button"
+                 className="px-4 py-2.5 bg-primary-600 text-white rounded-lg text-xs font-bold hover:bg-primary-500 transition-colors flex-1 shadow-lg shadow-primary-900/20"
+                 onClick={() => {
+                    if (!activeProtocol) return;
+                    const nextStep = activeProtocol.steps[activeProtocol.currentStepIndex + 1];
+                    setDosage(String(nextStep.dosage));
+                    setCustomDosage(!selectedMed?.dosageOptions.includes(nextStep.dosage));
+                    setDidStepUp(true);
+                 }}
+               >
+                 Advance to {activeProtocol?.steps[activeProtocol.currentStepIndex + 1]?.dosage} {selectedMed?.unit}
+               </button>
+               <button 
+                 type="button"
+                 className="px-4 py-2.5 bg-surface-800 text-white rounded-lg text-xs font-medium hover:bg-surface-700 border border-white/10 flex-1 transition-colors"
+                 onClick={() => {
+                    setTitrationAlert(null);
+                 }}
+               >
+                 Stay on Current Dose
+               </button>
+             </div>
+           )}
+           {titrationAlert.recommendation === 'hold' && activeProtocol?.autoAdvance && titrationAlert.warningLevel !== 'severe' && (
+              <div className="text-[10px] mt-1 opacity-70 italic">
+                 Auto-advance is temporarily paused based on this recommendation.
+              </div>
+           )}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className={`flex flex-col ${isQuick ? 'gap-2.5' : 'gap-5'} mode-content ${switchingMode ? 'switching' : ''}`}>
         {/* Medication Select */}
         <div className="card-premium p-5">
@@ -463,6 +570,29 @@ export function LogDose() {
             <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           </div>
         </div>
+
+        {/* Date & Time (Full Log) */}
+        {!isQuick && (
+          <div className="card-premium p-4" aria-label="Date & Time">
+            <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2 px-1 sr-only">Date & Time</div>
+            <div className="flex items-center gap-2">
+              <Calendar size={14} className="text-primary-400" />
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="flex-1 input-premium px-2 py-1.5 text-xs bg-surface-900/50"
+              />
+              <Clock size={14} className="text-primary-400 ml-2" />
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="flex-1 input-premium px-2 py-1.5 text-xs bg-surface-900/50"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Vial — Quick Log: compact summary; Full Log: select + dashboard */}
         {selectedMed && vialsForMed.length > 0 && (
@@ -633,20 +763,25 @@ export function LogDose() {
             </label>
             {!customDosage ? (
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                {selectedMed.dosageOptions.map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setDosage(String(d))}
-                    className={`btn-tactile flex-shrink-0 h-9 px-3 rounded-lg text-xs font-semibold transition-all ${
-                      dosage === String(d)
-                        ? 'bg-primary-600 text-white shadow-md shadow-primary-900/30 ring-1 ring-primary-400/30'
-                        : 'bg-surface-900/50 border border-white/8 text-slate-300 hover:border-white/15 hover:bg-surface-800'
-                    }`}
-                  >
-                    {d}
-                  </button>
-                ))}
+                {selectedMed.dosageOptions.map((d) => {
+                  const isRecommended = settings.titrationWizardEnabled && activeProtocol && activeProtocol.steps[activeProtocol.currentStepIndex]?.dosage === d;
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setDosage(String(d))}
+                      className={`btn-tactile flex-shrink-0 h-9 px-3 rounded-lg text-xs font-semibold transition-all ${
+                        dosage === String(d)
+                          ? 'bg-primary-600 text-white shadow-md shadow-primary-900/30 ring-1 ring-primary-400/30'
+                          : isRecommended
+                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)] ring-1 ring-amber-500/20'
+                          : 'bg-surface-900/50 border border-white/8 text-slate-300 hover:border-white/15 hover:bg-surface-800'
+                      }`}
+                    >
+                      {d} {isRecommended && <Zap size={10} className="inline ml-1 mb-0.5" />}
+                    </button>
+                  );
+                })}
                 <button
                   type="button"
                   onClick={() => { setCustomDosage(true); setDosage(''); }}
@@ -673,6 +808,21 @@ export function LogDose() {
                 >
                   Presets
                 </button>
+              </div>
+            )}
+
+            {isQuick && (
+              <div className="mt-6 pt-6 border-t border-white/5">
+                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-3 uppercase tracking-widest">
+                  <ActivityIcon size={12} className="text-primary-400" />
+                  Symptoms
+                </label>
+                <SideEffectChips
+                  sideEffects={orderedSideEffects}
+                  selected={selectedSideEffects}
+                  onToggle={toggleSideEffect}
+                  onAddCustom={handleAddCustom}
+                />
               </div>
             )}
           </div>
@@ -793,32 +943,19 @@ export function LogDose() {
         {/* Full Log Only Sections */}
         {!isQuick && (
           <>
-            {/* Date & Time */}
+            {/* Side Effects */}
             <div className="card-premium p-5">
               <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-3 uppercase tracking-widest">
-                <Calendar size={12} className="text-primary-400" />
-                Date & Time
+                <ActivityIcon size={12} className="text-primary-400" />
+                Side Effects
+                <span className="text-slate-600 font-normal normal-case ml-1">(tap to log)</span>
               </label>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="relative">
-                  <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full input-premium pl-9 py-3.5"
-                  />
-                </div>
-                <div className="relative">
-                  <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-                  <input
-                    type="time"
-                    value={time}
-                    onChange={(e) => setTime(e.target.value)}
-                    className="w-full input-premium pl-9 py-3.5"
-                  />
-                </div>
-              </div>
+              <SideEffectChips
+                sideEffects={orderedSideEffects}
+                selected={selectedSideEffects}
+                onToggle={toggleSideEffect}
+                onAddCustom={handleAddCustom}
+              />
             </div>
 
             {/* Notes */}
@@ -851,20 +988,6 @@ export function LogDose() {
                 </div>
               </div>
             </div>
-
-            {/* Side Effects */}
-            <div className="card-premium p-5">
-              <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-3 uppercase tracking-widest">
-                Side Effects
-                <span className="text-slate-600 font-normal normal-case">(tap to log)</span>
-              </label>
-              <SideEffectChips
-                sideEffects={orderedSideEffects}
-                selected={selectedSideEffects}
-                onToggle={toggleSideEffect}
-                onAddCustom={handleAddCustom}
-              />
-            </div>
           </>
         )}
 
@@ -872,10 +995,14 @@ export function LogDose() {
         <div className="flex gap-3 pt-2">
           <button
             type="submit"
-            disabled={!selectedMed || !dosage || submitting}
+            disabled={(!dosage && selectedSideEffects.length === 0) || submitting || submitSuccess}
             className={`btn-tactile flex-1 ${isQuick ? 'py-2.5' : 'py-4'} rounded-xl font-semibold text-sm transition-all shadow-lg ${
               submitSuccess
                 ? 'bg-emerald-600 text-white shadow-emerald-900/30'
+                : editingDoseId
+                ? 'bg-amber-600 text-white shadow-amber-900/30'
+                : !dosage && selectedSideEffects.length > 0
+                ? 'bg-primary-700 text-white shadow-primary-900/30'
                 : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white shadow-primary-900/30'
             } disabled:bg-slate-700 disabled:text-slate-500 disabled:shadow-none`}
           >
@@ -890,8 +1017,15 @@ export function LogDose() {
                   <Spinner />
                   {editingDoseId ? 'Updating...' : 'Logging...'}
                 </>
+              ) : editingDoseId ? (
+                'Update Dose'
+              ) : !dosage && selectedSideEffects.length > 0 ? (
+                <>
+                  <ActivityIcon size={18} />
+                  Log Symptoms
+                </>
               ) : (
-                editingDoseId ? 'Update Dose' : 'Log Dose'
+                'Log Dose'
               )}
             </span>
           </button>
@@ -972,10 +1106,17 @@ export function LogDose() {
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {dose.sideEffects.map((ef) => (
                               <span
-                                key={ef}
-                                className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary-500/10 text-primary-400 text-[10px] font-medium border border-primary-500/15"
+                                key={ef.label}
+                                className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-medium gap-1 ${
+                                  ef.severity === 'mild'
+                                    ? 'bg-primary-500/10 border-primary-500/20 text-primary-400'
+                                    : ef.severity === 'moderate'
+                                    ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                                    : 'bg-red-500/10 border-red-500/20 text-red-400'
+                                }`}
                               >
-                                {ef}
+                                {ef.label}
+                                <span className="opacity-60 text-[8px] uppercase">{ef.severity.slice(0, 3)}</span>
                               </span>
                             ))}
                           </div>

@@ -5,6 +5,8 @@ import { useWeightStore } from './stores/weightStore';
 import { useVialStore } from './stores/vialStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { useSideEffectsStore } from './stores/sideEffectsStore';
+import { useProtocolStore } from './stores/protocolStore';
+import { useSymptomLogStore } from './stores/symptomLogStore';
 import { checkAndFireReminders } from './lib/notifications';
 import { getAutoBackup, clearAutoBackup, saveAutoBackup } from './lib/autoBackup';
 import { importData, exportData } from './lib/cloudSync';
@@ -37,9 +39,11 @@ function App() {
   const { loadData: loadVials, initialized: vialsInitialized, vials } = useVialStore();
   const { loadSettings, initialized: settingsInitialized, settings } = useSettingsStore();
   const { loadData: loadSideEffects, initialized: sideEffectsInitialized } = useSideEffectsStore();
+  const { loadData: loadProtocols, initialized: protocolsInitialized, protocols } = useProtocolStore();
+  const { loadData: loadSymptomLogs, initialized: symptomLogsInitialized, logs: symptomLogs } = useSymptomLogStore();
   const [restorePrompt, setRestorePrompt] = useState(false);
 
-  const initialized = medsInitialized && settingsInitialized && vialsInitialized && sideEffectsInitialized;
+  const initialized = medsInitialized && settingsInitialized && vialsInitialized && sideEffectsInitialized && protocolsInitialized && symptomLogsInitialized;
 
   // Swipe navigation
   const touchStartX = useRef(0);
@@ -52,14 +56,14 @@ function App() {
         if (useMedicationStore.getState().medications.length === 0) {
           await loadMeds();
         }
-        await Promise.all([loadWeight(), loadVials(), loadSettings(), loadSideEffects()]);
+        await Promise.all([loadWeight(), loadVials(), loadSettings(), loadSideEffects(), loadProtocols(), loadSymptomLogs()]);
       } catch (err) {
         console.error('App initialization failed:', err);
         addToast('Failed to initialize app data', 'error');
       }
     };
     init();
-  }, [loadMeds, loadWeight, loadVials, loadSettings, loadSideEffects, addToast]);
+  }, [loadMeds, loadWeight, loadVials, loadSettings, loadSideEffects, loadProtocols, loadSymptomLogs, addToast]);
 
   useEffect(() => {
     if (!initialized) return;
@@ -72,17 +76,17 @@ function App() {
   // Auto-backup whenever data changes
   useEffect(() => {
     if (!initialized) return;
-    const totalItems = medications.length + doses.length + weightEntries.length + vials.length;
+    const totalItems = medications.length + doses.length + weightEntries.length + vials.length + protocols.length + symptomLogs.length;
     if (totalItems === 0) return;
     exportData().then((data) => {
       saveAutoBackup(JSON.stringify(data));
     });
-  }, [initialized, medications.length, doses.length, weightEntries.length, vials.length]);
+  }, [initialized, medications.length, doses.length, weightEntries.length, vials.length, protocols.length, symptomLogs.length]);
 
   // Prompt to restore if DB is empty but localStorage backup exists
   useEffect(() => {
     if (!initialized) return;
-    const totalItems = medications.length + doses.length + weightEntries.length + vials.length;
+    const totalItems = medications.length + doses.length + weightEntries.length + vials.length + protocols.length + symptomLogs.length;
     if (totalItems > 0) return;
     const backup = getAutoBackup();
     if (backup) {
@@ -90,7 +94,7 @@ function App() {
       const t = setTimeout(() => setRestorePrompt(true), 0);
       return () => clearTimeout(t);
     }
-  }, [initialized, medications.length, doses.length, weightEntries.length]);
+  }, [initialized, medications.length, doses.length, weightEntries.length, vials.length, protocols.length]);
 
   const handleRestore = async () => {
     const backup = getAutoBackup();
@@ -102,6 +106,7 @@ function App() {
       await loadVials();
       await loadSettings();
       await loadSideEffects();
+      await loadProtocols();
       addToast('Data restored from backup!', 'success');
     } catch {
       addToast('Failed to restore backup', 'error');

@@ -7,6 +7,11 @@ import {
 } from 'recharts';
 import { format, subDays } from 'date-fns';
 import { medicationLevelAtTime } from '../lib/halfLifeEngine';
+import { useProtocolStore } from '../stores/protocolStore';
+import { useSettingsStore } from '../stores/settingsStore';
+import { useSymptomLogStore } from '../stores/symptomLogStore';
+import { TitrationDecisionChart } from '../components/TitrationDecisionChart';
+import { RefreshCw, Activity } from 'lucide-react';
 
 const TIME_RANGES = [
   { label: '7 Days', days: 7 },
@@ -40,8 +45,20 @@ export function MedicationChart() {
   );
   const doses = useMedicationStore(useShallow((state) => state.doses));
   const { entries: weightEntries } = useWeightStore();
+  const { logs: symptomLogs } = useSymptomLogStore();
+  const { protocols } = useProtocolStore();
+  const { settings } = useSettingsStore();
+
   const [rangeDays, setRangeDays] = useState(30);
   const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set());
+  const [titrationChartIndex, setTitrationChartIndex] = useState(0);
+
+  const activeProtocols = useMemo(() => {
+    return protocols.filter(p => medications.some(m => m.id === p.medicationId));
+  }, [protocols, medications]);
+
+  const currentProtocol = activeProtocols.length > 0 ? activeProtocols[titrationChartIndex % activeProtocols.length] : null;
+  const currentProtocolMed = currentProtocol ? medications.find(m => m.id === currentProtocol.medicationId) : null;
 
   // eslint-disable-next-line react-hooks/purity
   const now = useMemo(() => Date.now(), []);
@@ -323,6 +340,38 @@ export function MedicationChart() {
           <p className="text-[10px] text-slate-500 mt-2 text-center">
             Dots indicate logged doses. Click legend items to toggle visibility.
           </p>
+        </div>
+      )}
+
+      {/* Titration Decision Parameters */}
+      {settings.titrationWizardEnabled && activeProtocols.length > 0 && currentProtocol && currentProtocolMed && (
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Activity size={18} className="text-primary-400" />
+                Titration Parameters
+              </h2>
+              <p className="text-xs text-slate-400">{currentProtocolMed.name}</p>
+            </div>
+            {activeProtocols.length > 1 && (
+              <button
+                onClick={() => setTitrationChartIndex(prev => prev + 1)}
+                className="btn-tactile p-2 rounded-lg bg-surface-800 text-slate-400 hover:text-white border border-white/5"
+              >
+                <RefreshCw size={16} />
+              </button>
+            )}
+          </div>
+          <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-4">
+            <TitrationDecisionChart
+              protocol={currentProtocol}
+              doses={doses}
+              symptomLogs={symptomLogs}
+              weightEntries={weightEntries}
+              severeThreshold={settings.severeSideEffectThreshold || 5}
+            />
+          </div>
         </div>
       )}
     </div>
