@@ -40,9 +40,11 @@ export type InjectionSite =
 
 export type RotationStrategy = 'sequential' | 'quadrant' | 'lru';
 
+export type SideEffectSeverity = 'mild' | 'moderate' | 'severe';
+
 export interface SideEffectLog {
   label: string;
-  severity: 'mild' | 'moderate' | 'severe';
+  severity: SideEffectSeverity;
 }
 
 export interface Dose {

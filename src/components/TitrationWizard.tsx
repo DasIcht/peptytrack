@@ -3,7 +3,7 @@ import { useProtocolStore } from '../stores/protocolStore';
 import { useUIStore } from '../stores/uiStore';
 import { uuid } from '../lib/uuid';
 import type { ProtocolStep } from '../types';
-import { Plus, Trash2, Calendar, Syringe, Settings2, Play, Square, PieChart, Activity, LineChart } from 'lucide-react';
+import { Plus, Trash2, Calendar, Syringe, Settings2, Play, Square, PieChart } from 'lucide-react';
 
 interface TitrationWizardProps {
   medicationId: string;

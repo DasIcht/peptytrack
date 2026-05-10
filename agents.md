@@ -71,7 +71,8 @@ peptyTrack/
 │   │   ├── notifications.ts       # Browser notification permission + scheduling
 │   │   ├── pdfExport.ts           # PDF report generation
 │   │   ├── cloudSync.ts           # Google Drive / Dropbox OAuth scaffolding
-│   │   └── autoBackup.ts          # localStorage auto-backup helpers
+│   │   ├── autoBackup.ts          # localStorage auto-backup helpers
+│   │   └── titrationAnalytics.ts  # Logic for dose step-up readiness and safety scoring
 │   ├── components/            # Reusable UI components
 │   │   ├── BottomNav.tsx      # Fixed bottom tab bar (6 tabs)
 │   │   ├── MedicationCard.tsx # Dashboard card with level gauge + countdown
@@ -81,6 +82,8 @@ peptyTrack/
 │   │   ├── SideEffectChips.tsx # Tap-to-toggle side effect chips + custom add
 │   │   ├── SideEffectChips.test.tsx
 │   │   ├── CircularProgress.tsx # Animated SVG circular progress with color-coded rings
+│   │   ├── TitrationWizard.tsx # Protocol management wizard with interactive steps
+│   │   ├── TitrationDecisionChart.tsx # Radar/Gauge/Timeline visualizations for titration readiness
 │   │   └── Toast.tsx          # Toast notification system
 │   └── pages/                 # Full-page route components
 │       ├── Dashboard.tsx      # Home: stats, medication cards, quick actions
@@ -665,11 +668,13 @@ npx netlify deploy --prod --dir=dist
 
 ---
 
+## 16. Change Log
+
 | 2026-05-08 | Premium redesign of LogDose page: gradient hero header, grouped glass cards, circular vial progress indicator (CircularProgress), tactile dosage pills, visual injection site zones with emoji indicators, icon-integrated date/time inputs, expandable notes card, animated side effects chips, gradient submit button with success state, timeline-style dose history with staggered entrance. Added premium design system utilities (card-premium, input-premium, btn-tactile, stagger-animations) to global.css and tailwind.config.js. |
 | 2026-05-08 | Dual-mode Quick Log / Full Log redesign: segmented mode toggle (persisted in localStorage), Quick Log shows only medication + compact vial summary + dosage + injection site zone strip (defaults date/time to now), Full Log shows complete form with circular vial dashboard. Injection site redesigned as horizontal scrollable body-zone strip (Abdomen/Thigh/Upper Arm) with in-place expansion for specific sites. Added zone-strip, zone-card, mode-toggle, vial-summary utilities to global.css and tailwind.config.js. Added 17 LogDose unit tests. |
 | 2026-05-08 | Compact refinements: dosage pills reduced to single horizontal row (h-9, text-xs, no-wrap with hidden scrollbar); vial section restructured into 2-column grid layout (dropdown left, selected vial summary right) in both Quick and Full Log modes. Added no-scrollbar utility to global.css and tailwind.config.js. |
 | 2026-05-09 | Implemented Side Effect Severity tracking (Mild/Moderate/Severe) with weighted titration analytics (Mild=1, Mod=2, Sev=3). Tapping symptom chips now cycles severity. Added independent symptom logging decoupled from dose entries. Updated IndexedDB to v5, backup to v5. Updated PDF report to include independent logs and severity formatting. |
-| 2026-05-10 | Integrated Titration Wizard: global toggle with medical disclaimer, configurable severe threshold, per-medication protocol management. Log Dose UI optimized for readability: Date/Time moved under medication, Side Effects moved under injection sites. Recommended dosage highlighting with ZAP icon. Interactive titration charts (Spider, Gauges, Timeline) added to Medication Chart tab with rotate functionality. Analytics improved with log-derived dose start dates, 4-week weight lookback, and 0% readiness triggers for missing logs. |
+| 2026-05-10 | Integrated Titration Wizard: global toggle with medical disclaimer, configurable severe threshold, per-medication protocol management. Log Dose UI optimized for readability: Date/Time moved under medication, Side Effects moved under injection sites. Recommended dosage highlighting with ZAP icon. Interactive titration charts (Spider, Gauges, Timeline) added to Medication Chart tab with rotate functionality. Analytics improved with log-derived dose start dates, 4-week weight lookback, and 0% readiness triggers for missing logs. Added `TitrationWizard.tsx`, `TitrationDecisionChart.tsx`, and `titrationAnalytics.ts`. |
 
 > **Last Updated:** 2026-05-10  
 > **Document Version:** 1.7

@@ -12,7 +12,7 @@ import { scheduleReminder } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { SideEffectChips } from '../components/SideEffectChips';
 import { CircularProgress } from '../components/CircularProgress';
-import type { Dose, InjectionSite } from '../types';
+import type { Dose, InjectionSite, SideEffectLog, SideEffectSeverity } from '../types';
 import { getSideEffectsOrderedForMedication } from '../lib/sideEffects';
 import { getNextInjectionSite } from '../lib/injectionRotation';
 import {

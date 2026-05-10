@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { db } from '../db/database';
 import { uuid } from '../lib/uuid';
-import type { SymptomLog, SideEffectLog } from '../types';
+import type { SymptomLog } from '../types';
 
 interface SymptomLogState {
   logs: SymptomLog[];

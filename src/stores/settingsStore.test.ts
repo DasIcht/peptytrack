@@ -22,6 +22,8 @@ describe('SettingsStore', () => {
           'arm-left',
           'arm-right',
         ],
+        titrationWizardEnabled: false,
+        severeSideEffectThreshold: 5,
       },
       loading: false,
       initialized: false,
@@ -66,6 +68,8 @@ describe('SettingsStore', () => {
           'arm-left',
           'arm-right',
         ],
+        titrationWizardEnabled: false,
+        severeSideEffectThreshold: 5,
       },
       initialized: false,
     });

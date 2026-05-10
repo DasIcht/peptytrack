@@ -11,8 +11,7 @@ import {
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid,
-  ReferenceLine
+  CartesianGrid
 } from 'recharts';
 import { CircularProgress } from './CircularProgress';
 import type { Protocol, SymptomLog, Dose, WeightEntry } from '../types';
@@ -146,7 +145,7 @@ export function TitrationDecisionChart({
               contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
               itemStyle={{ color: '#14b8a6', fontWeight: 'bold' }}
               labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
-              formatter={(val: number) => [`${val} points`, 'Symptom Score']}
+              formatter={(val: any) => [`${val} points`, 'Symptom Score']}
             />
             <Bar dataKey="score" fill="#14b8a6" radius={[4, 4, 0, 0]} maxBarSize={30} />
           </BarChart>
@@ -166,7 +165,7 @@ export function TitrationDecisionChart({
           <RechartsTooltip
             contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
             itemStyle={{ color: '#14b8a6', fontWeight: 'bold' }}
-            formatter={(val: number) => [`${val.toFixed(0)}%`, 'Readiness']}
+            formatter={(val: any) => [`${Number(val).toFixed(0)}%`, 'Readiness']}
           />
           <Radar
             name="Titration Readiness"

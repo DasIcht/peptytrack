@@ -69,7 +69,8 @@ peptyTrack/
 │   │   ├── notifications.ts       # Browser notification permission + scheduling
 │   │   ├── pdfExport.ts           # PDF report generation (jsPDF)
 │   │   ├── cloudSync.ts           # Google Drive / Dropbox OAuth + backup/restore
-│   │   └── autoBackup.ts          # localStorage auto-backup + restore helpers
+│   │   ├── autoBackup.ts          # localStorage auto-backup + restore helpers
+│   │   └── titrationAnalytics.ts  # Logic for dose step-up readiness and safety scoring
 │   │
 │   ├── components/            # Reusable UI components
 │   │   ├── BottomNav.tsx      # Fixed bottom tab bar (7 tabs)
@@ -78,6 +79,8 @@ peptyTrack/
 │   │   ├── ConfirmDialog.tsx  # Styled confirmation dialog for destructive actions
 │   │   ├── SideEffectChips.tsx # Tap-to-toggle side effect chips + custom add
 │   │   ├── CircularProgress.tsx # Animated SVG circular progress indicator
+│   │   ├── TitrationWizard.tsx # Protocol management wizard with interactive steps
+│   │   ├── TitrationDecisionChart.tsx # Radar/Gauge/Timeline visualizations for titration readiness
 │   │   └── Toast.tsx          # Toast notification system
 │   │
 │   └── pages/                 # Full-page route components
@@ -577,4 +580,4 @@ npm run test       # Runs unit tests
 | 2026-05-08 | Premium redesign of LogDose: gradient hero header, grouped glass-morphism cards, `CircularProgress` vial indicator, tactile dosage pills, visual injection site zones with emoji, icon-integrated inputs, expandable notes card, animated side effects chips, gradient submit button, timeline-style dose history. Added `card-premium`, `input-premium`, `btn-tactile`, and stagger animations to global.css and tailwind.config.js. |
 | 2026-05-08 | Dual-mode Quick Log / Full Log redesign: segmented mode toggle persisted in localStorage. Quick Log shows medication + 2-column vial (dropdown + summary) + compact single-row dosage pills + 2-column injection site selector + submit. Full Log adds date/time, notes, side effects, full vial dashboard with CircularProgress. Injection site redesigned as 2-column layout: left = zone buttons, right = 2×2 site grid. Added `mode-toggle`, `zone-strip`, `zone-card`, `vial-summary`, `no-scrollbar` utilities. Added 17 LogDose unit tests. |
 | 2026-05-09 | Implemented Side Effect Severity tracking (Mild/Moderate/Severe) with weighted titration analytics (Mild=1, Mod=2, Sev=3). Tapping symptom chips now cycles severity. Added independent symptom logging decoupled from dose entries. Updated IndexedDB to v5, backup to v5. Updated PDF report to include independent logs and severity formatting. |
-| 2026-05-10 | Integrated Titration Wizard: global toggle with medical disclaimer, configurable severe threshold, per-medication protocol management. Log Dose UI optimized for readability: Date/Time moved under medication, Side Effects moved under injection sites. Recommended dosage highlighting with ZAP icon. Interactive titration charts (Spider, Gauges, Timeline) added to Medication Chart tab with rotate functionality. |
+| 2026-05-10 | Integrated Titration Wizard: global toggle with medical disclaimer, configurable severe threshold, per-medication protocol management. Log Dose UI optimized for readability: Date/Time moved under medication, Side Effects moved under injection sites. Recommended dosage highlighting with ZAP icon. Interactive titration charts (Spider, Gauges, Timeline) added to Medication Chart tab with rotate functionality. Analytics improved with log-derived dose start dates, 4-week weight lookback, and 0% readiness triggers for missing logs. Added `TitrationWizard.tsx`, `TitrationDecisionChart.tsx`, and `titrationAnalytics.ts`. |

@@ -44,7 +44,8 @@ PeptyTrack is a fully functional, open-source alternative to paid GLP-1 tracking
 - **Multi-Med Chart** — View all enabled medications simultaneously with legend toggling
 - **Custom Medications** — Add any medication not in the built-in library
 - **Swipe Navigation** — Swipe left/right to switch between tabs on mobile
-- **Titration Wizard** — Automated protocol management with dose step-up recommendations. Features a **Severe Side Effect Warning System** (configurable point threshold) with high-priority UI alerts. Medical disclaimer confirmation flow. Interactive **Titration Charts** (Spider Radar, Gauges, Timeline) for visualizing readiness parameters (Time Progress, Symptom Tolerance, Weight Stability). Automatically detects dose start dates from history logs and monitors for data gaps (drops readiness to 0% if weight or symptom logs are missing for the required period).
+- **Titration Wizard** — Automated protocol management with dose step-up recommendations. Features a **Severe Side Effect Warning System** (configurable point threshold) with high-priority UI alerts. Medical disclaimer confirmation flow. Interactive **Titration Charts** (Spider Radar, Gauges, Timeline) for visualizing readiness parameters (Time Progress, Symptom Tolerance, Weight Stability). Automatically detects dose start dates from history logs and monitors for data gaps (drops readiness to 0% if weight or symptom logs are missing for the required period). Recommendations are driven by a safety-first engine that prioritizes symptom tolerance and weight stability over nominal protocol timing.
+- **Interactive Analytics** — Medication Chart tab now includes Titration Analytics visualizations. Users can rotate between Spider (Radar), Gauges, and Timeline views to understand their titration readiness at a glance.
 
 ## Tech Stack
 

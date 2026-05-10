@@ -68,7 +68,6 @@ export function SideEffectChips({ sideEffects, selected, onToggle, onAddCustom }
       <div className="flex flex-wrap gap-2">
         {displayEffects.map((label) => {
           const activeLog = selected.find(s => s.label === label);
-          const isSelected = !!activeLog;
           const severityClass = activeLog ? SEVERITY_STYLES[activeLog.severity] : 'bg-surface-900/50 border-white/5 text-slate-400 hover:border-white/15 hover:bg-surface-800';
 
           return (

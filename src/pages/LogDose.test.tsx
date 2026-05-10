@@ -49,6 +49,8 @@ const defaultSettings = {
     'thigh-left', 'thigh-right',
     'arm-left', 'arm-right',
   ] as InjectionSite[],
+  titrationWizardEnabled: false,
+  severeSideEffectThreshold: 5,
 };
 
 describe('LogDose', () => {
@@ -245,7 +247,7 @@ describe('LogDose', () => {
       useSettingsStore.setState({
         settings: {
           ...defaultSettings,
-          injectionRotationSites: ['abdomen-upper-left', 'abdomen-upper-right'] as InjectionSite[],
+          injectionRotationSites: ['abdomen-upper-left'],
         },
         initialized: true,
       });

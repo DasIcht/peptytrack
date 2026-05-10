@@ -34,7 +34,7 @@ describe('sideEffects library', () => {
           injectionSite: 'abdomen-upper-left',
           dateTime: Date.now(),
           notes: '',
-          sideEffects: ['Headache', 'Nausea'],
+          sideEffects: [{ label: 'Headache', severity: 'mild' }, { label: 'Nausea', severity: 'mild' }],
           createdAt: Date.now(),
         },
       ];
@@ -55,7 +55,7 @@ describe('sideEffects library', () => {
           injectionSite: 'abdomen-upper-left',
           dateTime: Date.now(),
           notes: '',
-          sideEffects: ['Headache'],
+          sideEffects: [{ label: 'Headache', severity: 'mild' }],
           createdAt: Date.now(),
         },
       ];
@@ -81,7 +81,7 @@ describe('sideEffects library', () => {
           injectionSite: 'abdomen-upper-left',
           dateTime: Date.now(),
           notes: '',
-          sideEffects: ['Nausea'],
+          sideEffects: [{ label: 'Nausea', severity: 'mild' }],
           createdAt: Date.now(),
         },
       ];
@@ -101,7 +101,7 @@ describe('sideEffects library', () => {
           injectionSite: 'abdomen-upper-left',
           dateTime: Date.now(),
           notes: '',
-          sideEffects: ['Nausea'],
+          sideEffects: [{ label: 'Nausea', severity: 'mild' }],
           createdAt: Date.now(),
         },
       ];
