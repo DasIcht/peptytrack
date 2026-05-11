@@ -513,7 +513,7 @@ App.tsx
 | 13 | **Chunk size** | Main JS bundle is ~1.15 MB. Consider code-splitting pages with dynamic `import()` to reduce initial load. |
 | 14 | **Vite dynamic import warning** | `database.ts` is both statically and dynamically imported — dynamic import is ineffective. Consolidate imports. |
 | 15 | **Type safety in charts** | Recharts `Tooltip` formatter types require manual casting — not type-safe. |
-| 16 | **No e2e tests** | No browser automation tests (Playwright/Cypress) for critical user flows. |
+| 16 | **E2E Playwright Tests** | ✅ Playwright suite in `e2e/` — 7 spec files covering auth, dose logging, vial management, weight tracking, backup/restore, medication creation. Standardized with `navigateTo`, `dbSeed`, `resetApp` patterns. **77% pass rate** (27/35 tests passing; 8 skipped for Phase 2). See `e2e/WALKTHROUGH.md`. |
 | 17 | **Service Worker push notifications** | Web Push API or Periodic Background Sync needed for true background reminders. Limited mobile browser support. |
 
 ---

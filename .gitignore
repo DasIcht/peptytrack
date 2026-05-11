@@ -35,3 +35,7 @@ gap_analysis.md
 # Competitor app artifacts
 otherApps/
 
+# Playwright
+/playwright-report/
+/test-results/
+

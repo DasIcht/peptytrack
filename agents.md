@@ -29,7 +29,8 @@
 | Dates | date-fns | ^4.1.0 | Date formatting & manipulation |
 | PDF | jsPDF + jspdf-autotable | ^4.2.1 / ^5.0.7 | Doctor report generation |
 | Icons | Lucide React | ^1.14.0 | Iconography |
-| Testing | Vitest + jsdom + fake-indexeddb | ^4.1.5 | Unit testing with IndexedDB mock |
+| Testing (Unit) | Vitest + jsdom + fake-indexeddb | ^4.1.5 | Unit testing with IndexedDB mock |
+| Testing (E2E) | Playwright | ^1.59.1 | Browser automation for critical user flows |
 
 **Unused dependencies to be aware of:** `react-router-dom` is listed in `package.json` but the app uses a custom page router in `App.tsx`, not React Router.
 
@@ -504,6 +505,43 @@ colors: {
 - Test both state updates AND persistence.
 - Zustand v5 replaces the entire state object on `set()`. Always re-read state with `useStore.getState()` after async actions instead of caching a reference.
 
+### 9.2 E2E Testing (Playwright)
+
+**Location:** `e2e/` directory with spec files for comprehensive user journey verification.
+
+| Suite | Tests | Focus |
+|-------|-------|-------|
+| `auth.spec.ts` | 5 | App initialization, navigation, empty state |
+| `log-dose-quick.spec.ts` | 5 | Quick mode vial logging |
+| `log-dose-full.spec.ts` | 6 | Full mode with notes, symptoms, injection sites |
+| `vial-management.spec.ts` | 5 | Vial creation, tracking, dose logging |
+| `weight-tracking.spec.ts` | 7 | Daily weights, trend charts, edit flows |
+| `backup-restore.spec.ts` | 4 | JSON backup/restore, auto-backup |
+| `add-medication.spec.ts` | 3 | Library and custom medication creation |
+
+**Key Patterns:**
+```typescript
+// Navigation - standardized via BottomNav
+await navigateTo(page, 'Log');
+
+// State Seeding - direct IndexedDB seeding
+await dbSeed(page, {
+  medications: [MED],
+  vials: [VIAL],
+  settings: SETTINGS,
+});
+
+// Reset Pattern - clean slate before tests
+await resetApp(page);
+```
+
+**Stability:** ~77% pass rate (27/35 tests passing; 8 skipped for Phase 2). See `e2e/WALKTHROUGH.md`.
+
+**Run E2E tests:**
+```bash
+npx playwright test --project=chromium --reporter=dot
+```
+
 ---
 
 ## 10. How to Add a Feature
@@ -585,7 +623,7 @@ colors: {
 | 18 | **Chunk size** | Main JS bundle ~1.15 MB. Consider dynamic `import()` for pages |
 | 19 | **Vite dynamic import warning** | `database.ts` is both statically and dynamically imported — consolidate |
 | 20 | **Type safety in charts** | Recharts Tooltip formatter types require manual casting |
-| 21 | **No e2e tests** | No browser automation for critical flows |
+| 21 | **E2E test flakiness** | Some Playwright tests skipped due to timing sensitivity. Phase 2 stabilization needed. |
 | 22 | **react-router-dom unused** | Listed in dependencies but custom router used — remove or migrate |
 | 23 | **Service Worker push notifications** | Web Push API or Periodic Background Sync needed for true background reminders. Limited mobile browser support. |
 
@@ -663,7 +701,7 @@ npx netlify deploy --prod --dir=dist
 ### Phase 4: Scale
 12. i18n framework + initial translations
 13. Code splitting with React.lazy
-14. E2E tests with Playwright
+14. ✅ E2E tests with Playwright
 15. Service Worker push notifications
 
 ---

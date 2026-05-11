@@ -95,6 +95,40 @@ The project includes unit and component tests using **Vitest** with **jsdom** en
 npm run test
 ```
 
+## E2E Testing (Playwright)
+
+The project includes Playwright E2E tests for comprehensive user journey verification.
+
+| Suite | Tests | Focus |
+|-------|-------|-------|
+| `auth.spec.ts` | 5 | App initialization, navigation, empty state |
+| `log-dose-quick.spec.ts` | 5 | Quick mode dual-vial logging |
+| `log-dose-full.spec.ts` | 6 | Full mode with notes, symptoms, injection sites |
+| `vial-management.spec.ts` | 5 | Vial creation, tracking, dose logging from vials |
+| `weight-tracking.spec.ts` | 7 | Daily weights, trend charts, edit flows |
+| `backup-restore.spec.ts` | 4 | JSON backup/restore, auto-backup |
+| `add-medication.spec.ts` | 3 | Library and custom medication creation |
+
+**Key Patterns:**
+- `navigateTo(page, 'Log')` — Standardized tab navigation
+- `dbSeed(page, { medications, vials, settings })` — Direct IndexedDB seeding for fast, deterministic setup
+- `resetApp(page)` — Clean slate before each test (localStorage + IndexedDB clear + reload)
+
+**Stability:** ~77% pass rate (27/35 tests passing; 8 skipped for Phase 2). See `e2e/WALKTHROUGH.md`.
+
+**Run E2E tests:**
+```bash
+# Start dev server in background
+npm run dev &
+sleep 3
+
+# Run all E2E tests
+npx playwright test --project=chromium --reporter=dot
+
+# Run individual suite
+npx playwright test e2e/auth.spec.ts --project=chromium --reporter=list
+```
+
 ## Deploy to Netlify
 
 ```bash
