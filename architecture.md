@@ -1,7 +1,7 @@
 # PeptyTrack — Architecture Document
 
 > **Purpose:** This document describes the overall architecture, data flow, component relationships, and known outstanding items for the PeptyTrack GLP-1 medication tracker PWA.
-> **Last Updated:** 2026-05-10
+> **Last Updated:** 2026-05-12
 
 ---
 
@@ -326,6 +326,21 @@ Navigation triggers via `useUIStore().setPage('key')`.
 - Backup: exports all IndexedDB data to JSON → uploads to cloud
 - Restore: downloads JSON → imports back into IndexedDB
 
+### 7.5 Data Migration Engine (`lib/cloudSync.ts`)
+
+**Purpose:** Handle evolution of backup file formats and ensure forward compatibility.
+
+**Key Features:**
+- **Decoupled Versions:** `BACKUP_VERSION` is managed independently of the IndexedDB schema version.
+- **Migration Pipeline:** A sequence of pure transformation functions that upgrade data from version `N` to `N+1`.
+- **Structural Validation:** `validateBackup.ts` performs a lightweight structural check on imported data before writing to IndexedDB.
+- **App Version Tracking:** Backups include `appVersion` (injected from `package.json` via Vite) for traceability.
+
+**Migrations implemented:**
+- `v1-v4`: Ensures missing tables (vials, protocols, symptomLogs, etc.) are initialized as empty arrays.
+- `v4-v5`: Migrates string-based `sideEffects` on doses to the new object format `{label, severity}`.
+- `v5-v6`: Adds `appVersion` metadata.
+
 ### 7.5 Side Effects Library (`lib/sideEffects.ts`)
 
 **Purpose:** Curated GLP-1 side effects library with intelligent per-medication ordering.
@@ -581,3 +596,4 @@ npm run test       # Runs unit tests
 | 2026-05-08 | Dual-mode Quick Log / Full Log redesign: segmented mode toggle persisted in localStorage. Quick Log shows medication + 2-column vial (dropdown + summary) + compact single-row dosage pills + 2-column injection site selector + submit. Full Log adds date/time, notes, side effects, full vial dashboard with CircularProgress. Injection site redesigned as 2-column layout: left = zone buttons, right = 2×2 site grid. Added `mode-toggle`, `zone-strip`, `zone-card`, `vial-summary`, `no-scrollbar` utilities. Added 17 LogDose unit tests. |
 | 2026-05-09 | Implemented Side Effect Severity tracking (Mild/Moderate/Severe) with weighted titration analytics (Mild=1, Mod=2, Sev=3). Tapping symptom chips now cycles severity. Added independent symptom logging decoupled from dose entries. Updated IndexedDB to v5, backup to v5. Updated PDF report to include independent logs and severity formatting. |
 | 2026-05-10 | Integrated Titration Wizard: global toggle with medical disclaimer, configurable severe threshold, per-medication protocol management. Log Dose UI optimized for readability: Date/Time moved under medication, Side Effects moved under injection sites. Recommended dosage highlighting with ZAP icon. Interactive titration charts (Spider, Gauges, Timeline) added to Medication Chart tab with rotate functionality. Analytics improved with log-derived dose start dates, 4-week weight lookback, and 0% readiness triggers for missing logs. Added `TitrationWizard.tsx`, `TitrationDecisionChart.tsx`, and `titrationAnalytics.ts`. |
+| 2026-05-12 | Implemented robust Data Migration Engine for backups. Decoupled `BACKUP_VERSION` from DB schema. Added versioned migration pipeline (v1→v6), structural validation on import, and `appVersion` metadata in exports. Fixed UI bug where `symptomLogStore` and `protocolStore` were not reloaded after data restoration. Injected `VITE_APP_VERSION` from `package.json` into the app environment. |

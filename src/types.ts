@@ -129,3 +129,17 @@ export interface Protocol {
   chartStyle?: 'spider' | 'gauges' | 'timeline';
   createdAt: number;
 }
+
+export interface BackupData {
+  version: number;
+  appVersion?: string;
+  exportedAt: number;
+  medications: Medication[];
+  doses: Dose[];
+  weightEntries: WeightEntry[];
+  vials: Vial[];
+  settings: Record<string, unknown>;
+  customSideEffects: CustomSideEffects[];
+  protocols: Protocol[];
+  symptomLogs: SymptomLog[];
+}

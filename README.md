@@ -38,7 +38,8 @@ PeptyTrack is a fully functional, open-source alternative to paid GLP-1 tracking
 - **Independent Symptom Logs** — Log symptoms independently from dose entries (e.g., between doses). Accessible via the Quick Log screen when dosage is empty.
 - **Severity-Weighted Titration** — Evaluation engine uses a point-based system (Mild=1, Moderate=2, Severe=3) to recommend holding current dose if total severity score > 3 in the last 14 days.
 - **Injection Site Rotation** — Auto-rotate injection sites with 3 strategies (Sequential, Quadrant, Least-Used). Pick which sites to include in rotation (min 2)
-- **Data Backup/Restore** — Export/import JSON backups; auto-backup on every change with restore prompt
+- **Data Backup/Restore** — Export/import JSON backups; auto-backup on every change with restore prompt. Features a **Robust Data Migration Engine** that automatically upgrades old backup files (v1→v6) to the latest format on import.
+- **Structural Validation** — All imports are validated for structural integrity before being written to IndexedDB, preventing data corruption from malformed files.
 - **PWA Offline Support** — Install as a standalone app, works without internet
 - **Edit Everything** — Modify medications, dose entries, and weight entries after logging
 - **Multi-Med Chart** — View all enabled medications simultaneously with legend toggling
@@ -77,6 +78,8 @@ The project includes unit and component tests using **Vitest** with **jsdom** en
 | Suite | Tests | Focus |
 |-------|-------|-------|
 | `database.test.ts` | 22 | Dexie CRUD, vial storage, settings persistence, seed deduplication, customSideEffects |
+| `cloudSync.test.ts` | 4 | Data migration pipeline (v1→v6), export/import round-trips, version rejection |
+| `backupValidation.test.ts` | 7 | Structural integrity checks for backup objects and nested arrays |
 | `medicationStore.test.ts` | 5 | Enable/disable toggle, custom meds, dose updates |
 | `settingsStore.test.ts` | 4 | Default settings, persist/reload, getSetting |
 | `halfLifeEngine.test.ts` | 15 | Concentration decay, dose accumulation, next dose timing |

@@ -405,6 +405,11 @@ export interface TitrationMetrics {
 | `listDropboxFiles(token, path)` | Dropbox |
 | `downloadFromDropbox(token, path)` | Dropbox |
 
+### 7.5 Data Migration Engine (`lib/cloudSync.ts`)
+- **Versioned Migration:** Sequence of functions to upgrade data from v1 to vBACKUP_VERSION.
+- **Structural Validation:** `backupValidation.ts` asserts input data shape before DB write.
+- **Traceability:** Embeds `appVersion` and `exportedAt` in every JSON export.
+
 ### 7.7 Auto-Backup (`lib/autoBackup.ts`)
 - Exports all data to `localStorage` key `peptytrack-autobackup` on every data change.
 - Restore prompt appears on app start if DB is empty but backup exists.
@@ -497,6 +502,8 @@ colors: {
 | `ConfirmDialog.test.tsx` | 7 tests — rendering, confirm/cancel actions, danger styling, modal close |
 | `SideEffectChips.test.tsx` | 8 tests — rendering, toggle selection, custom add, expand/collapse, severity cycling |
 | `injectionRotation.test.ts` | 12 tests — sequential, quadrant, LRU strategies, activeSites subset |
+| `cloudSync.test.ts` | 4 tests — migration pipeline (v1→v6), round-trips, version rejection |
+| `backupValidation.test.ts` | 7 tests — structural integrity checks |
 | `titrationAnalytics.test.ts` | 7 tests — time-based step-up (log-derived), severity-weighted hold, rapid weight loss detection, severe threshold warning, missing data detection |
 
 ### 9.1 Testing Patterns
@@ -713,6 +720,7 @@ npx netlify deploy --prod --dir=dist
 | 2026-05-08 | Compact refinements: dosage pills reduced to single horizontal row (h-9, text-xs, no-wrap with hidden scrollbar); vial section restructured into 2-column grid layout (dropdown left, selected vial summary right) in both Quick and Full Log modes. Added no-scrollbar utility to global.css and tailwind.config.js. |
 | 2026-05-09 | Implemented Side Effect Severity tracking (Mild/Moderate/Severe) with weighted titration analytics (Mild=1, Mod=2, Sev=3). Tapping symptom chips now cycles severity. Added independent symptom logging decoupled from dose entries. Updated IndexedDB to v5, backup to v5. Updated PDF report to include independent logs and severity formatting. |
 | 2026-05-10 | Integrated Titration Wizard: global toggle with medical disclaimer, configurable severe threshold, per-medication protocol management. Log Dose UI optimized for readability: Date/Time moved under medication, Side Effects moved under injection sites. Recommended dosage highlighting with ZAP icon. Interactive titration charts (Spider, Gauges, Timeline) added to Medication Chart tab with rotate functionality. Analytics improved with log-derived dose start dates, 4-week weight lookback, and 0% readiness triggers for missing logs. Added `TitrationWizard.tsx`, `TitrationDecisionChart.tsx`, and `titrationAnalytics.ts`. |
+| 2026-05-12 | Implemented robust Data Migration Engine for backups. Decoupled `BACKUP_VERSION` from DB schema. Added versioned migration pipeline (v1→v6), structural validation on import, and `appVersion` metadata in exports. Fixed UI bug where `symptomLogStore` and `protocolStore` were not reloaded after data restoration. Injected `VITE_APP_VERSION` from `package.json` into the app environment. |
 
-> **Last Updated:** 2026-05-10  
+> **Last Updated:** 2026-05-12  
 > **Document Version:** 1.7

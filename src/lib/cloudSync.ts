@@ -1,20 +1,48 @@
 import { db, getSettings } from '../db/database';
-import type { Medication, Dose, WeightEntry, Vial, CustomSideEffects, Protocol, SymptomLog } from '../types';
+import type { BackupData } from '../types';
+import { validateBackup } from './backupValidation';
 
-interface BackupData {
-  version: number;
-  exportedAt: number;
-  medications: Medication[];
-  doses: Dose[];
-  weightEntries: WeightEntry[];
-  vials: Vial[];
-  settings: Record<string, unknown>;
-  customSideEffects: CustomSideEffects[];
-  protocols: Protocol[];
-  symptomLogs: SymptomLog[];
-}
+const BACKUP_VERSION = 6;
 
-const BACKUP_VERSION = 5;
+/**
+ * Migration pipeline: Each function transforms data from version N to N+1.
+ */
+const migrations: Record<number, (data: any) => any> = {
+  1: (data) => ({
+    ...data,
+    vials: data.vials || [],
+    customSideEffects: data.customSideEffects || [],
+    version: 2
+  }),
+  2: (data) => ({
+    ...data,
+    protocols: data.protocols || [],
+    version: 3
+  }),
+  3: (data) => ({
+    ...data,
+    symptomLogs: data.symptomLogs || [],
+    version: 4
+  }),
+  4: (data) => {
+    // Convert old string sideEffects to object format if needed
+    const doses = (data.doses || []).map((dose: any) => {
+      if (dose.sideEffects && dose.sideEffects.length > 0 && typeof dose.sideEffects[0] === 'string') {
+        return {
+          ...dose,
+          sideEffects: dose.sideEffects.map((label: string) => ({ label, severity: 'mild' }))
+        };
+      }
+      return dose;
+    });
+    return { ...data, doses, version: 5 };
+  },
+  5: (data) => ({
+    ...data,
+    appVersion: data.appVersion || 'unknown',
+    version: 6
+  }),
+};
 
 /**
  * Export all data as a JSON blob for download or cloud upload.
@@ -31,6 +59,7 @@ export async function exportData(): Promise<BackupData> {
 
   return {
     version: BACKUP_VERSION,
+    appVersion: import.meta.env.VITE_APP_VERSION || 'unknown',
     exportedAt: Date.now(),
     medications,
     doses,
@@ -58,14 +87,39 @@ export function downloadBackupJSON(data: BackupData): void {
 }
 
 /**
- * Import data from JSON backup, replacing all current data.
+ * Import data from JSON backup, applying migrations and replacing all current data.
  */
-export async function importData(data: BackupData): Promise<void> {
-  if (data.version !== BACKUP_VERSION && data.version !== 4 && data.version !== 3 && data.version !== 2 && data.version !== 1) {
-    throw new Error(`Unsupported backup version: ${data.version}`);
+export async function importData(data: any): Promise<void> {
+  let migratedData = { ...data };
+  let version = migratedData.version || 1;
+
+  if (version > BACKUP_VERSION) {
+    throw new Error(`Unsupported backup version: ${version}. Please update the app.`);
   }
 
-  await db.transaction('rw', [db.medications, db.doses, db.weightEntries, db.vials, db.settings, db.customSideEffects, db.protocols, db.symptomLogs], async () => {
+  // Run migrations sequentially
+  while (version < BACKUP_VERSION) {
+    const migration = migrations[version];
+    if (!migration) {
+      throw new Error(`Missing migration pathway from version ${version}`);
+    }
+    migratedData = migration(migratedData);
+    version = migratedData.version;
+  }
+
+  // Final structural validation
+  validateBackup(migratedData);
+
+  await db.transaction('rw', [
+    db.medications, 
+    db.doses, 
+    db.weightEntries, 
+    db.vials, 
+    db.settings, 
+    db.customSideEffects, 
+    db.protocols, 
+    db.symptomLogs
+  ], async () => {
     await db.medications.clear();
     await db.doses.clear();
     await db.weightEntries.clear();
@@ -75,20 +129,23 @@ export async function importData(data: BackupData): Promise<void> {
     await db.protocols.clear();
     await db.symptomLogs.clear();
 
-    if (data.medications.length) await db.medications.bulkAdd(data.medications);
-    if (data.doses.length) await db.doses.bulkAdd(data.doses);
-    if (data.weightEntries.length) await db.weightEntries.bulkAdd(data.weightEntries);
-    if (data.vials?.length) await db.vials.bulkAdd(data.vials);
-    if (data.settings && Object.keys(data.settings).length > 0) {
-      for (const [key, value] of Object.entries(data.settings)) {
+    if (migratedData.medications.length) await db.medications.bulkAdd(migratedData.medications);
+    if (migratedData.doses.length) await db.doses.bulkAdd(migratedData.doses);
+    if (migratedData.weightEntries.length) await db.weightEntries.bulkAdd(migratedData.weightEntries);
+    if (migratedData.vials?.length) await db.vials.bulkAdd(migratedData.vials);
+    
+    if (migratedData.settings && Object.keys(migratedData.settings).length > 0) {
+      for (const [key, value] of Object.entries(migratedData.settings)) {
         await db.settings.put({ id: key, value });
       }
     }
-    if (data.customSideEffects?.length) {
-      await db.customSideEffects.bulkAdd(data.customSideEffects);
+    
+    if (migratedData.customSideEffects?.length) {
+      await db.customSideEffects.bulkAdd(migratedData.customSideEffects);
     }
-    if (data.protocols?.length) await db.protocols.bulkAdd(data.protocols);
-    if (data.symptomLogs?.length) await db.symptomLogs.bulkAdd(data.symptomLogs);
+    
+    if (migratedData.protocols?.length) await db.protocols.bulkAdd(migratedData.protocols);
+    if (migratedData.symptomLogs?.length) await db.symptomLogs.bulkAdd(migratedData.symptomLogs);
   });
 }
 

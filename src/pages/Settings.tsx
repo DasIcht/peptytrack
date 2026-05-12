@@ -67,6 +67,8 @@ export function Settings() {
       await useWeightStore.getState().loadData();
       await useVialStore.getState().loadData();
       await useSettingsStore.getState().loadSettings();
+      await useSymptomLogStore.getState().loadData();
+      await useProtocolStore.getState().loadData();
       addToast('Data restored successfully!', 'success');
     } catch (err) {
       addToast(`Import failed: ${err instanceof Error ? err.message : 'Invalid file'}`, 'error');
