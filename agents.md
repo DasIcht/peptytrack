@@ -267,6 +267,8 @@ export interface AppSettings {
 export interface TitrationMetrics {
   timeProgressPercent: number;
   symptomScore: number;
+  isPersistent: boolean;
+  persistentSymptoms: string[];
   weightLossRateKgPerWeek: number;
   daysRemaining: number;
   hasWeightData: boolean;
@@ -723,6 +725,9 @@ npx netlify deploy --prod --dir=dist
 | 2026-05-10 | Integrated Titration Wizard: global toggle with medical disclaimer, configurable severe threshold, per-medication protocol management. Log Dose UI optimized for readability: Date/Time moved under medication, Side Effects moved under injection sites. Recommended dosage highlighting with ZAP icon. Interactive titration charts (Spider, Gauges, Timeline) added to Medication Chart tab with rotate functionality. Analytics improved with log-derived dose start dates, 4-week weight lookback, and 0% readiness triggers for missing logs. Added `TitrationWizard.tsx`, `TitrationDecisionChart.tsx`, and `titrationAnalytics.ts`. |
 | 2026-05-12 | Implemented robust Data Migration Engine for backups. Decoupled `BACKUP_VERSION` from DB schema. Added versioned migration pipeline (v1→v6), structural validation on import, and `appVersion` metadata in exports. Fixed UI bug where `symptomLogStore` and `protocolStore` were not reloaded after data restoration. Injected `VITE_APP_VERSION` from `package.json` into the app environment. |
 | 2026-05-15 | Unified Activity Timeline: Merged independent symptom logs into the primary dose history timeline in LogDose page. Upgraded SymptomLog data model to include notes. Implemented full CRUD for symptoms with distinct visual styling (violet theme). Refactored LogDose editing state to support heterogeneous entities (dose/symptom). Bumped DB schema to v6 and Cloud Backup to v7. |
+| 2026-05-15 | Enhanced Medication Chart: Integrated a new **Symptoms series** into the primary chart. Symptoms are plotted as a dashed violet line representing the aggregate severity score. Hovering over data points now provides detailed tooltips listing the specific symptoms recorded at that time, synchronized across doses and independent logs. |
+| 2026-05-15 | Global Medical Warnings: Implemented `MedicalWarningBanner` component for high-priority safety alerts. Severe titration warnings (point-based symptom score > threshold) are now displayed prominently on both the **Main Dashboard** and the **Logging** tabs. Prioritized safety checks in the titration engine to ensure warnings are visible even if the user is on their final protocol step. |
+| 2026-05-15 | Enhanced Cumulative Symptom Assessment: Refined the titration analytics engine to use a time-weighted "load-based" symptom score with historical decay (0-2 days: 1.0x, 3-7 days: 0.75x, 8-14 days: 0.5x). Implemented **Persistence Detection** to trigger a "Hold" recommendation if any single symptom is recorded in 3 or more entries within a 7-day window, regardless of total score. Updated Medication Chart to synchronize with this safety logic. |
 
-> **Last Updated:** 2026-05-12  
-> **Document Version:** 1.7
+> **Last Updated:** 2026-05-15  
+> **Document Version:** 1.8

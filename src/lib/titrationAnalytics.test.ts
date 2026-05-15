@@ -108,4 +108,42 @@ describe('titrationAnalytics', () => {
     const metrics3 = calculateTitrationMetrics(baseProtocol, doses, [], []);
     expect(metrics3.hasSymptomData).toBe(true);
   });
+
+  it('applies time-based decay to symptom scores', () => {
+    const now = Date.now();
+    const symptomLogs: SymptomLog[] = [
+      // 10 days ago (Historical: 0.5 multiplier)
+      { id: 'l1', medicationId: 'm1', dateTime: now - 10 * 24 * 60 * 60 * 1000, symptoms: [{ label: 'Nausea', severity: 'severe' }], notes: '', createdAt: 0 },
+      // 4 days ago (Recent: 0.75 multiplier)
+      { id: 'l2', medicationId: 'm1', dateTime: now - 4 * 24 * 60 * 60 * 1000, symptoms: [{ label: 'Headache', severity: 'severe' }], notes: '', createdAt: 0 },
+      // 1 day ago (Acute: 1.0 multiplier)
+      { id: 'l3', medicationId: 'm1', dateTime: now - 1 * 24 * 60 * 60 * 1000, symptoms: [{ label: 'Fatigue', severity: 'moderate' }], notes: '', createdAt: 0 }
+    ];
+    // Scores:
+    // l1: 3 * 0.5 = 1.5
+    // l2: 3 * 0.75 = 2.25
+    // l3: 2 * 1.0 = 2.0
+    // Total: 1.5 + 2.25 + 2.0 = 5.75
+    
+    const metrics = calculateTitrationMetrics(baseProtocol, [], symptomLogs, []);
+    expect(metrics.symptomScore).toBe(5.75);
+  });
+
+  it('triggers hold on persistent symptoms (3+ entries in 7 days)', () => {
+    const now = Date.now();
+    const symptomLogs: SymptomLog[] = [
+      { id: 'l1', medicationId: 'm1', dateTime: now - 1 * 24 * 60 * 60 * 1000, symptoms: [{ label: 'Nausea', severity: 'mild' }], notes: '', createdAt: 0 },
+      { id: 'l2', medicationId: 'm1', dateTime: now - 3 * 24 * 60 * 60 * 1000, symptoms: [{ label: 'Nausea', severity: 'mild' }], notes: '', createdAt: 0 },
+      { id: 'l3', medicationId: 'm1', dateTime: now - 5 * 24 * 60 * 60 * 1000, symptoms: [{ label: 'Nausea', severity: 'mild' }], notes: '', createdAt: 0 }
+    ];
+    
+    const res = evaluateTitration(baseProtocol, [], symptomLogs, []);
+    expect(res.recommendation).toBe('hold');
+    expect(res.reason).toContain('Persistent symptoms detected');
+    expect(res.reason).toContain('Nausea');
+    
+    const metrics = calculateTitrationMetrics(baseProtocol, [], symptomLogs, []);
+    expect(metrics.isPersistent).toBe(true);
+    expect(metrics.persistentSymptoms).toContain('Nausea');
+  });
 });

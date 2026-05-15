@@ -11,7 +11,7 @@ import { useProtocolStore } from '../stores/protocolStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useSymptomLogStore } from '../stores/symptomLogStore';
 import { TitrationDecisionChart } from '../components/TitrationDecisionChart';
-import { calculateSideEffectScore } from '../lib/titrationAnalytics';
+import { calculateSideEffectScore, calculateWeightedSymptomScore } from '../lib/titrationAnalytics';
 import { RefreshCw, Activity } from 'lucide-react';
 
 const TIME_RANGES = [
@@ -132,7 +132,7 @@ export function MedicationChart() {
       .sort((a, b) => a.dateTime - b.dateTime);
 
     for (const s of symptomsInRange) {
-      const score = calculateSideEffectScore(s.symptoms);
+      const score = calculateWeightedSymptomScore(s.symptoms, s.dateTime, now);
       const details = s.symptoms.map(se => se.label);
       const existing = data.find((p) => Math.abs(p.date - s.dateTime) < stepMs / 2);
       if (existing) {
@@ -160,7 +160,7 @@ export function MedicationChart() {
     
     for (const d of medDosesInRange) {
       if (!d.sideEffects || d.sideEffects.length === 0) continue;
-      const score = calculateSideEffectScore(d.sideEffects);
+      const score = calculateWeightedSymptomScore(d.sideEffects, d.dateTime, now);
       const details = d.sideEffects.map(se => se.label);
       const existing = data.find((p) => Math.abs(p.date - d.dateTime) < stepMs / 2);
       if (existing) {

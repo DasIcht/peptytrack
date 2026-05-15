@@ -192,6 +192,8 @@ interface AppSettings {
 interface TitrationMetrics {
   timeProgressPercent: number;
   symptomScore: number;
+  isPersistent: boolean;
+  persistentSymptoms: string[];
   weightLossRateKgPerWeek: number;
   daysRemaining: number;
   hasWeightData: boolean;
@@ -374,11 +376,18 @@ Navigation triggers via `useUIStore().setPage('key')`.
 **Purpose:** Evaluate readiness for dose step-up based on protocol, side effects, and weight trends.
 
 **Logic:**
-- **Weighted Severity:** Side effects are assigned points: Mild=1, Moderate=2, Severe=3. Strings are treated as 'mild'.
-- **Log-Derived Start Dates:** The system identifies the actual start date of the current dosage level from dose history logs, ensuring "Time Progress" is accurate even if protocol dates were set nominally.
-- **Monitored Windows:** Weight trends are calculated over the last **4 weeks**. Symptom scores are calculated over the last **2 weeks**.
-- **Data Integrity:** "Weight Stability" requires at least **2 weight logs** in the last 4 weeks. "Symptom Tolerance" requires at least **1 dose or symptom log** in the last 2 weeks. If data is missing, the corresponding readiness metric drops to **0%**.
-- **Safety Warnings:** A high-priority red banner appears in the Log Dose flow if the symptom score reaches `settings.severeSideEffectThreshold` (default: 5).
+- **Weighted Symptom Load:** Side effects are assigned points based on severity (Mild=1, Moderate=2, Severe=3). These points are then **time-weighted** using a decay factor:
+    - **0-2 days ago**: 1.0x (Acute load)
+    - **3-7 days ago**: 0.75x (Recent load)
+    - **8-14 days ago**: 0.5x (Historical load)
+- **Persistence Detection:** Identifies if any *single* symptom (by label) has been logged in 3 or more distinct entries within the last 7 days.
+- **Log-Derived Start Dates:** Identifies the actual start date of the current dosage level from dose history logs for accurate time progress.
+- **Monitored Windows:** Weight trends calculated over 4 weeks; symptom load and persistence calculated over 14 and 7 days respectively.
+- **Safety Recommendations:**
+    - **Hold on Persistence:** Triggers a "Hold" recommendation if persistence is detected, even if total score is low.
+    - **Hold on Score:** Triggers a "Hold" if the total weighted score exceeds 3.
+    - **Hold on Rapid Loss:** Triggers a "Hold" if weight loss exceeds 1kg/week.
+- **Medical Warnings:** A high-priority red banner appears if the symptom score reaches `settings.severeSideEffectThreshold` (default: 5).
 - **Auto-Advance:** Optionally advances protocol steps on successful dose log if recommendation is "step-up".
 
 ### 7.8 Titration Charts (`src/components/TitrationDecisionChart.tsx`)
@@ -601,3 +610,5 @@ npm run test       # Runs unit tests
 | 2026-05-12 | Implemented robust Data Migration Engine for backups. Decoupled `BACKUP_VERSION` from DB schema. Added versioned migration pipeline (v1→v6), structural validation on import, and `appVersion` metadata in exports. Fixed UI bug where `symptomLogStore` and `protocolStore` were not reloaded after data restoration. Injected `VITE_APP_VERSION` from `package.json` into the app environment. |
 | 2026-05-15 | Unified Activity Timeline: Merged independent symptom logs into the primary dose history timeline in LogDose page. Upgraded SymptomLog data model to include notes. Implemented full CRUD for symptoms with distinct visual styling (violet theme). Refactored LogDose editing state to support heterogeneous entities (dose/symptom). Bumped DB schema to v6 and Cloud Backup to v7. |
 | 2026-05-15 | Enhanced Medication Chart: Integrated a new **Symptoms series** into the primary chart. Symptoms are plotted as a dashed violet line representing the aggregate severity score. Hovering over data points now provides detailed tooltips listing the specific symptoms recorded at that time, synchronized across doses and independent logs. |
+| 2026-05-15 | Global Medical Warnings: Implemented `MedicalWarningBanner` component for high-priority safety alerts. Severe titration warnings (point-based symptom score > threshold) are now displayed prominently on both the **Main Dashboard** and the **Logging** tabs. Prioritized safety checks in the titration engine to ensure warnings are visible even if the user is on their final protocol step. |
+| 2026-05-15 | Enhanced Cumulative Symptom Assessment: Refined the titration analytics engine to use a time-weighted "load-based" symptom score with historical decay (0-2 days: 1.0x, 3-7 days: 0.75x, 8-14 days: 0.5x). Implemented **Persistence Detection** to trigger a "Hold" recommendation if any single symptom is recorded in 3 or more entries within a 7-day window, regardless of total score. Updated Medication Chart to synchronize with this safety logic. |

@@ -19,9 +19,49 @@ export function calculateSideEffectScore(sideEffects: SideEffectLog[]): number {
   }, 0);
 }
 
+export function calculateWeightedSymptomScore(sideEffects: SideEffectLog[], dateTime: number, now: number = Date.now()): number {
+  const rawScore = calculateSideEffectScore(sideEffects);
+  const daysAgo = (now - dateTime) / (24 * 60 * 60 * 1000);
+  
+  if (daysAgo <= 2) return rawScore; // Acute
+  if (daysAgo <= 7) return rawScore * 0.75; // Recent
+  if (daysAgo <= 14) return rawScore * 0.5; // Historical
+  return 0;
+}
+
+export function detectPersistentSymptoms(
+  recentDoses: Dose[],
+  recentLogs: SymptomLog[],
+  days: number = 7,
+  threshold: number = 3,
+  now: number = Date.now()
+): string[] {
+  const cutoff = now - days * 24 * 60 * 60 * 1000;
+  const symptomCounts: Record<string, number> = {};
+  
+  const allEntries = [
+    ...recentDoses.filter(d => d.dateTime >= cutoff).map(d => d.sideEffects || []),
+    ...recentLogs.filter(l => l.dateTime >= cutoff).map(l => l.symptoms || [])
+  ];
+
+  allEntries.forEach(symptoms => {
+    // Count each symptom label only once per entry
+    const uniqueLabels = new Set(symptoms.map(s => s.label));
+    uniqueLabels.forEach(label => {
+      symptomCounts[label] = (symptomCounts[label] || 0) + 1;
+    });
+  });
+
+  return Object.entries(symptomCounts)
+    .filter(([_, count]) => count >= threshold)
+    .map(([label]) => label);
+}
+
 export interface TitrationMetrics {
   timeProgressPercent: number;
   symptomScore: number;
+  isPersistent: boolean;
+  persistentSymptoms: string[];
   weightLossRateKgPerWeek: number;
   daysRemaining: number;
   hasWeightData: boolean;
@@ -77,13 +117,18 @@ export function calculateTitrationMetrics(
   const timeProgressPercent = Math.min((timeOnStepMs / durationMs) * 100, 100);
   const daysRemaining = Math.max(0, Math.ceil((durationMs - timeOnStepMs) / (1000 * 60 * 60 * 24)));
 
-  // Symptoms in last 14 days
+  // Symptoms in last 14 days (weighted)
   const fourteenDaysAgo = now - 14 * 24 * 60 * 60 * 1000;
   const recentDoses = doses.filter(d => d.medicationId === protocol.medicationId && d.dateTime >= fourteenDaysAgo);
-  const doseSideEffectScore = recentDoses.reduce((score, d) => score + calculateSideEffectScore(d.sideEffects || []), 0);
   const recentSymptomLogs = symptomLogs.filter(l => l.medicationId === protocol.medicationId && l.dateTime >= fourteenDaysAgo);
-  const symptomLogScore = recentSymptomLogs.reduce((score, l) => score + calculateSideEffectScore(l.symptoms || []), 0);
+  
+  const doseSideEffectScore = recentDoses.reduce((score, d) => score + calculateWeightedSymptomScore(d.sideEffects || [], d.dateTime, now), 0);
+  const symptomLogScore = recentSymptomLogs.reduce((score, l) => score + calculateWeightedSymptomScore(l.symptoms || [], l.dateTime, now), 0);
   const symptomScore = doseSideEffectScore + symptomLogScore;
+
+  // Persistence detection in last 7 days
+  const persistentSymptoms = detectPersistentSymptoms(recentDoses, recentSymptomLogs, 7, 3, now);
+  const isPersistent = persistentSymptoms.length > 0;
 
   // Weight trend over the last 4 weeks to determine overall stability/safety
   let weightLossRateKgPerWeek = 0;
@@ -113,6 +158,8 @@ export function calculateTitrationMetrics(
   return { 
     timeProgressPercent, 
     symptomScore, 
+    isPersistent,
+    persistentSymptoms,
     weightLossRateKgPerWeek, 
     daysRemaining,
     hasWeightData,
@@ -127,24 +174,34 @@ export function evaluateTitration(
   weights: WeightEntry[],
   severeThreshold: number = 5
 ): TitrationRecommendation {
-  if (protocol.currentStepIndex >= protocol.steps.length - 1) {
-    return { ready: false, recommendation: 'none', reason: 'You are on the final step of your protocol.' };
-  }
-
   const currentStep = protocol.steps[protocol.currentStepIndex];
   if (!currentStep) return { ready: false, recommendation: 'none', reason: 'Invalid protocol step.' };
 
-  const startDate = protocol.currentStepStartDate || protocol.startDate;
-  if (!startDate) return { ready: false, recommendation: 'none', reason: 'Protocol has not started.' };
-
   const metrics = calculateTitrationMetrics(protocol, doses, symptomLogs, weights);
 
+  // SAFETY FIRST: Always check for severe symptoms regardless of protocol position
   if (metrics.symptomScore >= severeThreshold) {
     return {
       ready: true,
       recommendation: 'hold',
       reason: 'WARNING: High side effect burden detected. Seek medical advice before continuing your medication.',
       warningLevel: 'severe',
+    };
+  }
+
+  if (protocol.currentStepIndex >= protocol.steps.length - 1) {
+    return { ready: false, recommendation: 'none', reason: 'You are on the final step of your protocol.' };
+  }
+
+  const startDate = protocol.currentStepStartDate || protocol.startDate;
+  if (!startDate) return { ready: false, recommendation: 'none', reason: 'Protocol has not started.' };
+
+  if (metrics.isPersistent) {
+    return {
+      ready: true,
+      recommendation: 'hold',
+      reason: `Persistent symptoms detected (${metrics.persistentSymptoms.join(', ')}). It is recommended to stay on your current dose until these resolve.`,
+      warningLevel: 'none',
     };
   }
 

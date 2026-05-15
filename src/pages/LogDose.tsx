@@ -12,6 +12,7 @@ import { scheduleReminder } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { SideEffectChips } from '../components/SideEffectChips';
 import { CircularProgress } from '../components/CircularProgress';
+import { MedicalWarningBanner } from '../components/MedicalWarningBanner';
 import type { Dose, InjectionSite, SideEffectLog, SideEffectSeverity } from '../types';
 import { getSideEffectsOrderedForMedication } from '../lib/sideEffects';
 import { getNextInjectionSite } from '../lib/injectionRotation';
@@ -569,7 +570,7 @@ export function LogDose() {
         </div>
       )}
 
-      {titrationAlert && (
+      {titrationAlert && titrationAlert.warningLevel !== 'severe' && (
         <div className={`mb-4 p-4 rounded-xl border ${titrationAlert.warningLevel === 'severe' ? 'bg-red-500/10 border-red-500/30 text-red-400' : titrationAlert.recommendation === 'hold' ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-primary-500/10 border-primary-500/20 text-primary-300'} flex flex-col gap-2 animate-slide-up`}>
            <div className="flex items-center gap-2 font-bold text-sm">
               {titrationAlert.warningLevel === 'severe' ? <AlertTriangle size={18} className="text-red-500 animate-pulse" /> : <Zap size={16} />}
@@ -639,6 +640,8 @@ export function LogDose() {
             <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           </div>
         </div>
+
+        <MedicalWarningBanner medicationId={selectedMedId} />
 
         {/* Date & Time (Full Log) */}
         {!isQuick && (

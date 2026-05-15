@@ -5,6 +5,7 @@ import { useVialStore } from '../stores/vialStore';
 import { useWeightStore } from '../stores/weightStore';
 import { useUIStore } from '../stores/uiStore';
 import { MedicationCard } from '../components/MedicationCard';
+import { MedicalWarningBanner } from '../components/MedicalWarningBanner';
 import { Weight, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 
 export function Dashboard() {
@@ -32,6 +33,10 @@ export function Dashboard() {
           Pepty<span className="text-primary-400">Track</span>
         </h1>
         <p className="text-sm text-slate-400 mt-1">Your GLP-1 companion</p>
+      </div>
+
+      <div className="px-5">
+        <MedicalWarningBanner />
       </div>
 
       {/* Quick Stats */}

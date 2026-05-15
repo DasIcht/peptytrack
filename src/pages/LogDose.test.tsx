@@ -8,6 +8,7 @@ import { useUIStore } from '../stores/uiStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useSideEffectsStore } from '../stores/sideEffectsStore';
 import { useSymptomLogStore } from '../stores/symptomLogStore';
+import { useProtocolStore } from '../stores/protocolStore';
 import type { InjectionSite } from '../types';
 
 const mockMedication = {
@@ -86,6 +87,10 @@ describe('LogDose', () => {
     });
     useSymptomLogStore.setState({
       logs: [],
+      initialized: true,
+    });
+    useProtocolStore.setState({
+      protocols: [],
       initialized: true,
     });
   });
@@ -372,6 +377,53 @@ describe('LogDose', () => {
       // Notes should be populated
       const notesArea = screen.getByPlaceholderText(/Any side effects, observations.../) as HTMLTextAreaElement;
       expect(notesArea.value).toBe('Symptom note');
+    });
+  });
+
+  describe('Medical Warnings', () => {
+    it('displays a medical warning banner when severe symptoms are detected', () => {
+      // Enable titration wizard
+      useSettingsStore.setState({
+        settings: { ...useSettingsStore.getState().settings, titrationWizardEnabled: true }
+      });
+      
+      // Add a protocol
+      useProtocolStore.setState({
+        protocols: [{
+          id: 'p-1',
+          medicationId: 'med-1',
+          name: 'Standard',
+          steps: [{ id: 's1', dosage: 0.25, durationWeeks: 4 }],
+          currentStepIndex: 0,
+          startDate: Date.now() - 30 * 24 * 60 * 60 * 1000,
+          currentStepStartDate: Date.now() - 30 * 24 * 60 * 60 * 1000,
+          autoAdvance: false,
+          createdAt: Date.now()
+        }]
+      });
+      
+      // Set severe symptoms (score > threshold 5)
+      useSymptomLogStore.setState({
+        logs: [
+          {
+            id: 'sym-severe',
+            medicationId: 'med-1',
+            dateTime: Date.now() - 1 * 24 * 60 * 60 * 1000,
+            symptoms: [
+              { label: 'Severe Nausea', severity: 'severe' },
+              { label: 'Severe Fatigue', severity: 'severe' }
+            ], // Score 6
+            notes: '',
+            createdAt: Date.now(),
+          }
+        ]
+      });
+
+      render(<LogDose />);
+      
+      expect(screen.getAllByText('Medical Warning').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText(/High side effect burden detected/)).toBeInTheDocument();
+      expect(screen.getByText('Consult your healthcare provider immediately.')).toBeInTheDocument();
     });
   });
 });
