@@ -32,7 +32,7 @@ describe('titrationAnalytics', () => {
       { id: 'd1', medicationId: 'm1', dosage: 0.25, unit: 'mg', injectionSite: 'abdomen-upper-left', dateTime: Date.now() - 2 * 24 * 60 * 60 * 1000, notes: '', sideEffects: [{ label: 'Nausea', severity: 'mild' }, { label: 'Headache', severity: 'mild' }], createdAt: 0 },
     ];
     const symptomLogs: SymptomLog[] = [
-      { id: 'l1', medicationId: 'm1', dateTime: Date.now() - 5 * 24 * 60 * 60 * 1000, symptoms: [{ label: 'Fatigue', severity: 'moderate' }], createdAt: 0 }
+      { id: 'l1', medicationId: 'm1', dateTime: Date.now() - 5 * 24 * 60 * 60 * 1000, symptoms: [{ label: 'Fatigue', severity: 'moderate' }], notes: '', createdAt: 0 }
     ];
     const res = evaluateTitration(baseProtocol, doses, symptomLogs, []);
     expect(res.ready).toBe(true);
