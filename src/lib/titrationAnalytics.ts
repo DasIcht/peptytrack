@@ -78,6 +78,8 @@ export function calculateTitrationMetrics(
   if (!currentStep) return { 
     timeProgressPercent: 0, 
     symptomScore: 0, 
+    isPersistent: false,
+    persistentSymptoms: [],
     weightLossRateKgPerWeek: 0, 
     daysRemaining: 0,
     hasWeightData: false,
@@ -104,6 +106,8 @@ export function calculateTitrationMetrics(
   if (!startDate) return { 
     timeProgressPercent: 0, 
     symptomScore: 0, 
+    isPersistent: false,
+    persistentSymptoms: [],
     weightLossRateKgPerWeek: 0, 
     daysRemaining: 0,
     hasWeightData: false,

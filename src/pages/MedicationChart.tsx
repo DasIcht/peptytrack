@@ -11,7 +11,7 @@ import { useProtocolStore } from '../stores/protocolStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useSymptomLogStore } from '../stores/symptomLogStore';
 import { TitrationDecisionChart } from '../components/TitrationDecisionChart';
-import { calculateSideEffectScore, calculateWeightedSymptomScore } from '../lib/titrationAnalytics';
+import { calculateWeightedSymptomScore } from '../lib/titrationAnalytics';
 import { RefreshCw, Activity } from 'lucide-react';
 
 const TIME_RANGES = [

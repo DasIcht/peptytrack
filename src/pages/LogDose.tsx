@@ -571,12 +571,12 @@ export function LogDose() {
       )}
 
       {titrationAlert && titrationAlert.warningLevel !== 'severe' && (
-        <div className={`mb-4 p-4 rounded-xl border ${titrationAlert.warningLevel === 'severe' ? 'bg-red-500/10 border-red-500/30 text-red-400' : titrationAlert.recommendation === 'hold' ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-primary-500/10 border-primary-500/20 text-primary-300'} flex flex-col gap-2 animate-slide-up`}>
+        <div className={`mb-4 p-4 rounded-xl border ${titrationAlert.recommendation === 'hold' ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-primary-500/10 border-primary-500/20 text-primary-300'} flex flex-col gap-2 animate-slide-up`}>
            <div className="flex items-center gap-2 font-bold text-sm">
-              {titrationAlert.warningLevel === 'severe' ? <AlertTriangle size={18} className="text-red-500 animate-pulse" /> : <Zap size={16} />}
-              {titrationAlert.warningLevel === 'severe' ? 'Medical Warning' : 'Titration Advice'}
+              <Zap size={16} />
+              Titration Advice
            </div>
-           <p className={`text-xs leading-relaxed ${titrationAlert.warningLevel === 'severe' ? 'font-medium' : 'opacity-90'}`}>{titrationAlert.reason}</p>
+           <p className="text-xs leading-relaxed opacity-90">{titrationAlert.reason}</p>
            
            {titrationAlert.recommendation === 'step-up' && !didStepUp && (
              <div className="flex gap-2 mt-2">
@@ -604,7 +604,7 @@ export function LogDose() {
                </button>
              </div>
            )}
-           {titrationAlert.recommendation === 'hold' && activeProtocol?.autoAdvance && titrationAlert.warningLevel !== 'severe' && (
+           {titrationAlert.recommendation === 'hold' && activeProtocol?.autoAdvance && (
               <div className="text-[10px] mt-1 opacity-70 italic">
                  Auto-advance is temporarily paused based on this recommendation.
               </div>
