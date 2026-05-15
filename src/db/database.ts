@@ -38,6 +38,14 @@ class PeptyTrackDB extends Dexie {
         }
       });
     });
+
+    this.version(6).stores({}).upgrade(tx => {
+      return tx.table('symptomLogs').toCollection().modify(log => {
+        if (log.notes === undefined) {
+          log.notes = '';
+        }
+      });
+    });
   }
 }
 

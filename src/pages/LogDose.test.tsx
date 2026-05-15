@@ -7,6 +7,7 @@ import { useVialStore } from '../stores/vialStore';
 import { useUIStore } from '../stores/uiStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useSideEffectsStore } from '../stores/sideEffectsStore';
+import { useSymptomLogStore } from '../stores/symptomLogStore';
 import type { InjectionSite } from '../types';
 
 const mockMedication = {
@@ -81,6 +82,10 @@ describe('LogDose', () => {
     });
     useSideEffectsStore.setState({
       customEffects: {},
+      initialized: true,
+    });
+    useSymptomLogStore.setState({
+      logs: [],
       initialized: true,
     });
   });
@@ -300,6 +305,73 @@ describe('LogDose', () => {
       const dosageBtn = screen.getByText('0.25').closest('button')!;
       fireEvent.click(dosageBtn);
       expect(screen.getByText(/exceeds the remaining amount/)).toBeInTheDocument();
+    });
+  });
+
+  describe('Unified Activity Timeline', () => {
+    beforeEach(() => {
+      localStorage.setItem('pepty-log-mode', 'full');
+    });
+
+    it('renders both doses and symptom logs in the activity timeline', () => {
+      useMedicationStore.setState({
+        medications: [mockMedication],
+        doses: [{
+          id: 'dose-1',
+          medicationId: 'med-1',
+          dosage: 0.5,
+          unit: 'mg',
+          injectionSite: 'abdomen-upper-left',
+          dateTime: Date.now() - 1000,
+          notes: 'Dose note',
+          createdAt: Date.now(),
+        }],
+      });
+      useSymptomLogStore.setState({
+        logs: [{
+          id: 'sym-1',
+          medicationId: 'med-1',
+          dateTime: Date.now(),
+          symptoms: [{ label: 'Nausea', severity: 'moderate' }],
+          notes: 'Symptom note',
+          createdAt: Date.now(),
+        }],
+      });
+
+      render(<LogDose />);
+      
+      expect(screen.getByText('Semaglutide Activity')).toBeInTheDocument();
+      expect(screen.getByText('0.5 mg')).toBeInTheDocument();
+      expect(screen.getByText('Symptom Log')).toBeInTheDocument();
+      expect(screen.getAllByText('Nausea').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText(/"Symptom note"/)).toBeInTheDocument();
+    });
+
+    it('enters symptom editing mode when edit is clicked on a symptom log', () => {
+      useSymptomLogStore.setState({
+        logs: [{
+          id: 'sym-1',
+          medicationId: 'med-1',
+          dateTime: Date.now(),
+          symptoms: [{ label: 'Nausea', severity: 'moderate' }],
+          notes: 'Symptom note',
+          createdAt: Date.now(),
+        }],
+      });
+
+      render(<LogDose />);
+      
+      const editBtn = screen.getByLabelText('Edit symptom log');
+      fireEvent.click(editBtn);
+
+      // Header should change
+      expect(screen.getByText('Editing Symptoms')).toBeInTheDocument();
+      // Dose-specific sections should be hidden
+      expect(screen.queryByText(/Dosage/)).not.toBeInTheDocument();
+      expect(screen.queryByText('Injection Site')).not.toBeInTheDocument();
+      // Notes should be populated
+      const notesArea = screen.getByPlaceholderText(/Any side effects, observations.../) as HTMLTextAreaElement;
+      expect(notesArea.value).toBe('Symptom note');
     });
   });
 });

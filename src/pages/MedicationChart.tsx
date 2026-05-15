@@ -11,6 +11,7 @@ import { useProtocolStore } from '../stores/protocolStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useSymptomLogStore } from '../stores/symptomLogStore';
 import { TitrationDecisionChart } from '../components/TitrationDecisionChart';
+import { calculateSideEffectScore } from '../lib/titrationAnalytics';
 import { RefreshCw, Activity } from 'lucide-react';
 
 const TIME_RANGES = [
@@ -23,7 +24,9 @@ interface ChartPoint {
   date: number;
   weight: number | null;
   weightUnit: string;
-  [key: string]: number | string | null;
+  symptomScore: number | null;
+  symptomDetails: string[];
+  [key: string]: number | string | string[] | null;
 }
 
 interface DosePoint {
@@ -79,7 +82,13 @@ export function MedicationChart() {
     }
 
     const data: ChartPoint[] = timestamps.map((t) => {
-      const point: ChartPoint = { date: t, weight: null, weightUnit: '' };
+      const point: ChartPoint = { 
+        date: t, 
+        weight: null, 
+        weightUnit: '',
+        symptomScore: null,
+        symptomDetails: []
+      };
       for (const med of medications) {
         point[`level_${med.id}`] = medicationLevelAtTime(med, doses, t);
       }
@@ -106,12 +115,57 @@ export function MedicationChart() {
             date: w.dateTime,
             weight: w.weight,
             weightUnit: w.unit,
+            symptomScore: null,
+            symptomDetails: [],
           };
           for (const med of medications) {
             newPoint[`level_${med.id}`] = medicationLevelAtTime(med, doses, w.dateTime);
           }
           data.push(newPoint);
         }
+      }
+    }
+
+    // Process Symptom Logs
+    const symptomsInRange = symptomLogs
+      .filter((s) => s.dateTime >= start && s.dateTime <= end)
+      .sort((a, b) => a.dateTime - b.dateTime);
+
+    for (const s of symptomsInRange) {
+      const score = calculateSideEffectScore(s.symptoms);
+      const details = s.symptoms.map(se => se.label);
+      const existing = data.find((p) => Math.abs(p.date - s.dateTime) < stepMs / 2);
+      if (existing) {
+        existing.symptomScore = (existing.symptomScore || 0) + score;
+        existing.symptomDetails = [...(existing.symptomDetails || []), ...details];
+      } else {
+        const newPoint: ChartPoint = {
+          date: s.dateTime,
+          weight: null,
+          weightUnit: '',
+          symptomScore: score,
+          symptomDetails: details,
+        };
+        for (const med of medications) {
+          newPoint[`level_${med.id}`] = medicationLevelAtTime(med, doses, s.dateTime);
+        }
+        data.push(newPoint);
+      }
+    }
+
+    // Process Doses for symptoms too
+    const medDosesInRange = doses
+      .filter((d) => d.dateTime >= start && d.dateTime <= end)
+      .sort((a, b) => a.dateTime - b.dateTime);
+    
+    for (const d of medDosesInRange) {
+      if (!d.sideEffects || d.sideEffects.length === 0) continue;
+      const score = calculateSideEffectScore(d.sideEffects);
+      const details = d.sideEffects.map(se => se.label);
+      const existing = data.find((p) => Math.abs(p.date - d.dateTime) < stepMs / 2);
+      if (existing) {
+        existing.symptomScore = (existing.symptomScore || 0) + score;
+        existing.symptomDetails = [...(existing.symptomDetails || []), ...details];
       }
     }
 
@@ -145,7 +199,7 @@ export function MedicationChart() {
     }
 
     return { data, dosePoints, maxLevel: max * 1.2 };
-  }, [medications, doses, weightEntries, rangeDays, now]);
+  }, [medications, doses, weightEntries, symptomLogs, rangeDays, now]);
 
   const { data: chartData, dosePoints } = chartResult;
 
@@ -173,6 +227,14 @@ export function MedicationChart() {
     return { min: Math.max(0, min - pad), max: max + pad };
   }, [chartData]);
 
+  const symptomMax = useMemo(() => {
+    const scores = chartData
+      .filter((p) => p.symptomScore !== null)
+      .map((p) => p.symptomScore as number);
+    if (scores.length === 0) return 10;
+    return Math.max(10, Math.max(...scores) * 1.2);
+  }, [chartData]);
+
   const handleLegendClick = (e: unknown) => {
     const dataKey = (e as { dataKey?: string }).dataKey;
     const key = dataKey;
@@ -187,6 +249,7 @@ export function MedicationChart() {
 
   const legendFormatter = (value: string) => {
     if (value === 'weight') return 'Weight';
+    if (value === 'symptomScore') return 'Symptoms';
     const med = medications.find((m) => `level_${m.id}` === value);
     return med?.name || value;
   };
@@ -266,6 +329,20 @@ export function MedicationChart() {
                   tickFormatter={(v: number) => v.toFixed(2)}
                 />
               )}
+              {chartData.some((p) => p.symptomScore !== null) && (
+                <YAxis
+                  yAxisId="symptoms"
+                  orientation="right"
+                  domain={[0, symptomMax]}
+                  stroke="rgba(167, 139, 250, 0.3)"
+                  tick={{ fill: '#a78bfa', fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                  label={false}
+                  tickFormatter={(v: number) => Math.round(v).toString()}
+                  width={20}
+                />
+              )}
               <Legend
                 onClick={handleLegendClick}
                 wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }}
@@ -277,6 +354,7 @@ export function MedicationChart() {
                   border: '1px solid rgba(255,255,255,0.1)',
                   borderRadius: '12px',
                   fontSize: '12px',
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
                 }}
                 labelFormatter={(v) => format(new Date(Number(v)), 'PPP p')}
                 formatter={(value: unknown, name: unknown, props: unknown) => {
@@ -284,6 +362,11 @@ export function MedicationChart() {
                   if (name === 'weight') {
                     const unit = tooltipProps?.payload?.weightUnit || 'kg';
                     return [`${value} ${unit}`, 'Weight'];
+                  }
+                  if (name === 'symptomScore') {
+                    const details = tooltipProps?.payload?.symptomDetails || [];
+                    const label = details.length > 0 ? `Score: ${value} (${details.join(', ')})` : `Score: ${value}`;
+                    return [label, 'Symptoms'];
                   }
                   const med = medications.find((m) => `level_${m.id}` === name);
                   if (med) {
@@ -319,6 +402,19 @@ export function MedicationChart() {
                 activeDot={{ r: 5, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
                 connectNulls
                 hide={hiddenKeys.has('weight')}
+              />
+              <Line
+                yAxisId="symptoms"
+                type="monotone"
+                dataKey="symptomScore"
+                name="symptomScore"
+                stroke="#a78bfa"
+                strokeWidth={2}
+                strokeDasharray="4 4"
+                dot={{ r: 3, fill: '#a78bfa', stroke: '#0f172a', strokeWidth: 2 }}
+                activeDot={{ r: 5, fill: '#a78bfa', stroke: '#fff', strokeWidth: 2 }}
+                connectNulls
+                hide={hiddenKeys.has('symptomScore')}
               />
               {dosePoints
                 .filter((dp) => !hiddenKeys.has(`level_${dp.medId}`))

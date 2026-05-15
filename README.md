@@ -11,7 +11,8 @@ PeptyTrack is a fully functional, open-source alternative to paid GLP-1 tracking
 - **2-Column Vial Layout** — Dropdown selector on the left, selected vial summary (name + color-coded remaining) on the right. Full Log adds CircularProgress dashboard below
 - **Compact Single-Row Dosage** — Small horizontal-scroll pill buttons (h-9, text-xs) that never wrap — always one line
 - **2-Column Injection Site Selector** — Left column shows body zones (Abdomen, Thigh, Upper Arm), right column shows a 2×2 grid of sites for the selected zone. Both fit in half the vertical space
-- **Premium Dose Logging UI** — Glass-morphism cards, gradient hero header, animated circular vial progress, expandable notes, animated side effects chips, and timeline-style dose history. Auto-calculates injection volume (ml + U-100 units) and supports automatic injection site rotation
+- **Unified Activity Timeline** — Heterogeneous history view in LogDose page that merges dose entries and independent symptom logs into a single, sorted timeline. Supports full CRUD (edit/delete) for both types with distinct visual themes (Teal for doses, Violet for symptoms)
+- **Premium Dose Logging UI** — Glass-morphism cards, gradient hero header, animated circular vial progress, expandable notes, animated side effects chips, and interactive activity timeline. Auto-calculates injection volume (ml + U-100 units) and supports automatic injection site rotation
 - **Medication Level Visualization** — Real-time estimated medication concentration chart based on pharmacokinetic half-life modeling
 - **Weight Tracking** — Log daily weights with trend analysis and interactive charts
 - **Multiple Medications** — Track several GLP-1 drugs simultaneously with independent schedules
@@ -35,7 +36,7 @@ PeptyTrack is a fully functional, open-source alternative to paid GLP-1 tracking
 - **Configurable Reminders** — Set per-medication reminder hours before next dose; master on/off switch
 - **PDF Reports** — Generate doctor-ready reports with medication history, dose logs, and weight trends
 - **Side Effects Logging** — Tap-to-log curated GLP-1 side effects (22 clinically categorized by rarity). Smart ordering prioritizes previously-selected effects per medication. **Severity Tracking** (Mild/Moderate/Severe) with color-coded visual indicators and tactile cycling (tap to cycle severity).
-- **Independent Symptom Logs** — Log symptoms independently from dose entries (e.g., between doses). Accessible via the Quick Log screen when dosage is empty.
+- **Unified Activity History** — Log symptoms independently from dose entries (e.g., between doses). Independent logs now feature **notes** and are merged into the main activity timeline for full lifecycle management (edit/delete).
 - **Severity-Weighted Titration** — Evaluation engine uses a point-based system (Mild=1, Moderate=2, Severe=3) to recommend holding current dose if total severity score > 3 in the last 14 days.
 - **Injection Site Rotation** — Auto-rotate injection sites with 3 strategies (Sequential, Quadrant, Least-Used). Pick which sites to include in rotation (min 2)
 - **Data Backup/Restore** — Export/import JSON backups; auto-backup on every change with restore prompt. Features a **Robust Data Migration Engine** that automatically upgrades old backup files (v1→v6) to the latest format on import.
@@ -47,6 +48,7 @@ PeptyTrack is a fully functional, open-source alternative to paid GLP-1 tracking
 - **Swipe Navigation** — Swipe left/right to switch between tabs on mobile
 - **Titration Wizard** — Automated protocol management with dose step-up recommendations. Features a **Severe Side Effect Warning System** (configurable point threshold) with high-priority UI alerts. Medical disclaimer confirmation flow. Interactive **Titration Charts** (Spider Radar, Gauges, Timeline) for visualizing readiness parameters (Time Progress, Symptom Tolerance, Weight Stability). Automatically detects dose start dates from history logs and monitors for data gaps (drops readiness to 0% if weight or symptom logs are missing for the required period). Recommendations are driven by a safety-first engine that prioritizes symptom tolerance and weight stability over nominal protocol timing.
 - **Interactive Analytics** — Medication Chart tab now includes Titration Analytics visualizations. Users can rotate between Spider (Radar), Gauges, and Timeline views to understand their titration readiness at a glance.
+- **Unified Activity Chart** — The primary Medication Chart now features a dedicated **Symptoms line** (dashed violet) that plots aggregate symptom scores alongside medication levels and weight. Interactive tooltips reveal the specific symptoms and side effects logged at each point in time.
 
 ## Tech Stack
 
@@ -77,8 +79,8 @@ The project includes unit and component tests using **Vitest** with **jsdom** en
 
 | Suite | Tests | Focus |
 |-------|-------|-------|
-| `database.test.ts` | 22 | Dexie CRUD, vial storage, settings persistence, seed deduplication, customSideEffects |
-| `cloudSync.test.ts` | 4 | Data migration pipeline (v1→v6), export/import round-trips, version rejection |
+| `database.test.ts` | 23 | Dexie CRUD, vial storage, settings persistence, seed deduplication, customSideEffects, schema v6 migration |
+| `cloudSync.test.ts` | 5 | Data migration pipeline (v1→v7), export/import round-trips, version rejection |
 | `backupValidation.test.ts` | 7 | Structural integrity checks for backup objects and nested arrays |
 | `medicationStore.test.ts` | 5 | Enable/disable toggle, custom meds, dose updates |
 | `settingsStore.test.ts` | 4 | Default settings, persist/reload, getSetting |

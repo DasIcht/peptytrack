@@ -55,7 +55,7 @@ describe('cloudSync', () => {
     expect(meds[0].name).toBe('Med 1');
 
     const exported = await exportData();
-    expect(exported.version).toBe(6);
+    expect(exported.version).toBe(7);
     expect(exported.vials).toEqual([]);
     expect(exported.protocols).toEqual([]);
     expect(exported.appVersion).toBeDefined();
@@ -96,6 +96,35 @@ describe('cloudSync', () => {
     ]);
   });
 
+  it('v6 to v7 migration backfills symptomLog notes', async () => {
+    const v6Data = {
+      version: 6,
+      exportedAt: 1000,
+      medications: [],
+      doses: [],
+      weightEntries: [],
+      vials: [],
+      settings: {},
+      customSideEffects: [],
+      protocols: [],
+      symptomLogs: [
+        {
+          id: 'sl1',
+          medicationId: 'm1',
+          dateTime: 1000,
+          symptoms: [{ label: 'Nausea', severity: 'mild' }],
+          createdAt: 1000
+        }
+      ]
+    };
+
+    await importData(v6Data);
+
+    const logs = await db.symptomLogs.toArray();
+    expect(logs).toHaveLength(1);
+    expect(logs[0].notes).toBe('');
+  });
+
   it('full round-trip preserves all data', async () => {
     // Setup some data
     const med = { 
@@ -117,7 +146,7 @@ describe('cloudSync', () => {
     await db.settings.put({ id: 'unit', value: 'kg' });
     
     const firstExport = await exportData();
-    expect(firstExport.version).toBe(6);
+    expect(firstExport.version).toBe(7);
     expect(firstExport.medications).toHaveLength(1);
 
     // Clear and import

@@ -157,6 +157,7 @@ interface SymptomLog {
   medicationId: string;
   dateTime: number;
   symptoms: SideEffectLog[];
+  notes: string;
   createdAt: number;
 }
 
@@ -340,6 +341,7 @@ Navigation triggers via `useUIStore().setPage('key')`.
 - `v1-v4`: Ensures missing tables (vials, protocols, symptomLogs, etc.) are initialized as empty arrays.
 - `v4-v5`: Migrates string-based `sideEffects` on doses to the new object format `{label, severity}`.
 - `v5-v6`: Adds `appVersion` metadata.
+- `v6-v7`: Backfills `notes` field in `SymptomLog` records.
 
 ### 7.5 Side Effects Library (`lib/sideEffects.ts`)
 
@@ -597,3 +599,5 @@ npm run test       # Runs unit tests
 | 2026-05-09 | Implemented Side Effect Severity tracking (Mild/Moderate/Severe) with weighted titration analytics (Mild=1, Mod=2, Sev=3). Tapping symptom chips now cycles severity. Added independent symptom logging decoupled from dose entries. Updated IndexedDB to v5, backup to v5. Updated PDF report to include independent logs and severity formatting. |
 | 2026-05-10 | Integrated Titration Wizard: global toggle with medical disclaimer, configurable severe threshold, per-medication protocol management. Log Dose UI optimized for readability: Date/Time moved under medication, Side Effects moved under injection sites. Recommended dosage highlighting with ZAP icon. Interactive titration charts (Spider, Gauges, Timeline) added to Medication Chart tab with rotate functionality. Analytics improved with log-derived dose start dates, 4-week weight lookback, and 0% readiness triggers for missing logs. Added `TitrationWizard.tsx`, `TitrationDecisionChart.tsx`, and `titrationAnalytics.ts`. |
 | 2026-05-12 | Implemented robust Data Migration Engine for backups. Decoupled `BACKUP_VERSION` from DB schema. Added versioned migration pipeline (v1→v6), structural validation on import, and `appVersion` metadata in exports. Fixed UI bug where `symptomLogStore` and `protocolStore` were not reloaded after data restoration. Injected `VITE_APP_VERSION` from `package.json` into the app environment. |
+| 2026-05-15 | Unified Activity Timeline: Merged independent symptom logs into the primary dose history timeline in LogDose page. Upgraded SymptomLog data model to include notes. Implemented full CRUD for symptoms with distinct visual styling (violet theme). Refactored LogDose editing state to support heterogeneous entities (dose/symptom). Bumped DB schema to v6 and Cloud Backup to v7. |
+| 2026-05-15 | Enhanced Medication Chart: Integrated a new **Symptoms series** into the primary chart. Symptoms are plotted as a dashed violet line representing the aggregate severity score. Hovering over data points now provides detailed tooltips listing the specific symptoms recorded at that time, synchronized across doses and independent logs. |

@@ -2,7 +2,7 @@ import { db, getSettings } from '../db/database';
 import type { BackupData } from '../types';
 import { validateBackup } from './backupValidation';
 
-const BACKUP_VERSION = 6;
+const BACKUP_VERSION = 7;
 
 /**
  * Migration pipeline: Each function transforms data from version N to N+1.
@@ -41,6 +41,14 @@ const migrations: Record<number, (data: any) => any> = {
     ...data,
     appVersion: data.appVersion || 'unknown',
     version: 6
+  }),
+  6: (data) => ({
+    ...data,
+    symptomLogs: (data.symptomLogs || []).map((log: any) => ({
+      notes: '',
+      ...log,
+    })),
+    version: 7
   }),
 };
 

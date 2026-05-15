@@ -7,7 +7,7 @@ export interface TitrationRecommendation {
   warningLevel?: 'none' | 'severe';
 }
 
-function calculateSideEffectScore(sideEffects: SideEffectLog[]): number {
+export function calculateSideEffectScore(sideEffects: SideEffectLog[]): number {
   return sideEffects.reduce((score, se) => {
     const severity = typeof se === 'string' ? 'mild' : se.severity;
     switch (severity) {

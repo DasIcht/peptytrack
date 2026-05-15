@@ -228,6 +228,7 @@ export interface SymptomLog {
   medicationId: string;
   dateTime: number;
   symptoms: SideEffectLog[];
+  notes: string;
   createdAt: number;
 }
 
@@ -406,7 +407,7 @@ export interface TitrationMetrics {
 | `downloadFromDropbox(token, path)` | Dropbox |
 
 ### 7.5 Data Migration Engine (`lib/cloudSync.ts`)
-- **Versioned Migration:** Sequence of functions to upgrade data from v1 to vBACKUP_VERSION.
+- **Versioned Migration:** Sequence of functions to upgrade data from v1 to vBACKUP_VERSION (currently v7).
 - **Structural Validation:** `backupValidation.ts` asserts input data shape before DB write.
 - **Traceability:** Embeds `appVersion` and `exportedAt` in every JSON export.
 
@@ -721,6 +722,7 @@ npx netlify deploy --prod --dir=dist
 | 2026-05-09 | Implemented Side Effect Severity tracking (Mild/Moderate/Severe) with weighted titration analytics (Mild=1, Mod=2, Sev=3). Tapping symptom chips now cycles severity. Added independent symptom logging decoupled from dose entries. Updated IndexedDB to v5, backup to v5. Updated PDF report to include independent logs and severity formatting. |
 | 2026-05-10 | Integrated Titration Wizard: global toggle with medical disclaimer, configurable severe threshold, per-medication protocol management. Log Dose UI optimized for readability: Date/Time moved under medication, Side Effects moved under injection sites. Recommended dosage highlighting with ZAP icon. Interactive titration charts (Spider, Gauges, Timeline) added to Medication Chart tab with rotate functionality. Analytics improved with log-derived dose start dates, 4-week weight lookback, and 0% readiness triggers for missing logs. Added `TitrationWizard.tsx`, `TitrationDecisionChart.tsx`, and `titrationAnalytics.ts`. |
 | 2026-05-12 | Implemented robust Data Migration Engine for backups. Decoupled `BACKUP_VERSION` from DB schema. Added versioned migration pipeline (v1→v6), structural validation on import, and `appVersion` metadata in exports. Fixed UI bug where `symptomLogStore` and `protocolStore` were not reloaded after data restoration. Injected `VITE_APP_VERSION` from `package.json` into the app environment. |
+| 2026-05-15 | Unified Activity Timeline: Merged independent symptom logs into the primary dose history timeline in LogDose page. Upgraded SymptomLog data model to include notes. Implemented full CRUD for symptoms with distinct visual styling (violet theme). Refactored LogDose editing state to support heterogeneous entities (dose/symptom). Bumped DB schema to v6 and Cloud Backup to v7. |
 
 > **Last Updated:** 2026-05-12  
 > **Document Version:** 1.7

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useMedicationStore } from '../stores/medicationStore';
 import { useVialStore } from '../stores/vialStore';
 import { useUIStore } from '../stores/uiStore';
@@ -35,6 +35,10 @@ import {
   Activity as ActivityIcon,
 } from 'lucide-react';
 import { format } from 'date-fns';
+
+type ActivityItem =
+  | { kind: 'dose';    data: Dose }
+  | { kind: 'symptom'; data: SymptomLog };
 
 const INJECTION_SITES: { id: InjectionSite; label: string; emoji: string }[] = [
   { id: 'abdomen-upper-left', label: 'Upper Left', emoji: '🫃' },
@@ -90,11 +94,12 @@ export function LogDose() {
   const { customEffects, addCustomSideEffect } = useSideEffectsStore();
   const { protocols, updateProtocol } = useProtocolStore();
   const { entries: weightEntries } = useWeightStore();
-  const { logSymptom, logs: symptomLogs } = useSymptomLogStore();
+  const { logSymptom, updateLog, deleteLog, logs: symptomLogs } = useSymptomLogStore();
 
   const initialMedId = logDoseMedId || medications[0]?.id || '';
   const [selectedMedId, setSelectedMedId] = useState(initialMedId);
-  const [editingDoseId, setEditingDoseId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingType, setEditingType] = useState<'dose' | 'symptom' | null>(null);
   const [selectedVialId, setSelectedVialId] = useState<string>('');
   const [dosage, setDosage] = useState('');
   const [customDosage, setCustomDosage] = useState(false);
@@ -123,42 +128,60 @@ export function LogDose() {
 
   const formRef = useRef<HTMLDivElement>(null);
 
+  const isEditingDose    = editingType === 'dose';
+  const isEditingSymptom = editingType === 'symptom';
+
+  const medDoses = useMemo(() => {
+    return doses
+      .filter((d) => d.medicationId === selectedMedId)
+      .sort((a, b) => b.dateTime - a.dateTime);
+  }, [selectedMedId, doses]);
+
+  const unifiedHistory = useMemo((): ActivityItem[] => {
+    const doseItems: ActivityItem[] = medDoses.map(d => ({ kind: 'dose', data: d }));
+    const symptomItems: ActivityItem[] = symptomLogs
+      .filter(l => l.medicationId === selectedMedId)
+      .map(l => ({ kind: 'symptom', data: l }));
+    return [...doseItems, ...symptomItems]
+      .sort((a, b) => b.data.dateTime - a.data.dateTime);
+  }, [medDoses, symptomLogs, selectedMedId]);
+
   useEffect(() => {
     if (logDoseMedId) setLogDoseMedId(null);
   }, [logDoseMedId, setLogDoseMedId]);
 
   useEffect(() => {
-    if (editingDoseId || !selectedMedId) return;
+    if (editingId || !selectedMedId) return;
     const lastUsed = getLastUsedVialId(selectedMedId, doses);
     if (lastUsed) {
       setSelectedVialId(lastUsed);
     } else {
       setSelectedVialId('');
     }
-  }, [selectedMedId, editingDoseId]);
+  }, [selectedMedId, editingId]);
 
   useEffect(() => {
-    if (editingDoseId || !selectedMedId) return;
+    if (editingId || !selectedMedId) return;
     const activeSites = settings.injectionRotationSites;
     if (activeSites.length < 2) return;
     const nextSite = getNextInjectionSite(doses, settings.injectionRotationStrategy, activeSites);
     if (nextSite) {
       setInjectionSite(nextSite);
     }
-  }, [selectedMedId, editingDoseId]);
+  }, [selectedMedId, editingId]);
 
   // When editing, always open in full mode
   useEffect(() => {
-    if (editingDoseId) {
+    if (editingId) {
       setLogMode('full');
     }
-  }, [editingDoseId]);
+  }, [editingId]);
 
   const selectedMed = medications.find((m) => m.id === selectedMedId);
   const activeProtocol = protocols.find(p => p.medicationId === selectedMedId);
 
   useEffect(() => {
-    if (settings.titrationWizardEnabled && activeProtocol && !editingDoseId) {
+    if (settings.titrationWizardEnabled && activeProtocol && !editingId) {
       const recommendation = evaluateTitration(activeProtocol, doses, symptomLogs, weightEntries);
       if (recommendation.ready) {
         setTitrationAlert(recommendation);
@@ -168,11 +191,11 @@ export function LogDose() {
     } else {
       setTitrationAlert(null);
     }
-  }, [activeProtocol, doses, symptomLogs, weightEntries, selectedMedId, editingDoseId]);
+  }, [activeProtocol, doses, symptomLogs, weightEntries, selectedMedId, editingId]);
 
   useEffect(() => {
     // We no longer auto-select the dosage. The recommended dosage will be highlighted in the UI.
-  }, [activeProtocol, selectedMedId, editingDoseId, selectedMed]);
+  }, [activeProtocol, selectedMedId, editingId, selectedMed]);
 
   const orderedSideEffects = selectedMedId
     ? getSideEffectsOrderedForMedication(selectedMedId, doses, customEffects[selectedMedId] ?? [])
@@ -232,12 +255,10 @@ export function LogDose() {
       : 0
   );
 
-  const medDoses = doses
-    .filter((d) => d.medicationId === selectedMedId)
-    .sort((a, b) => b.dateTime - a.dateTime);
 
   const resetForm = () => {
-    setEditingDoseId(null);
+    setEditingId(null);
+    setEditingType(null);
     setSelectedVialId('');
     setDosage('');
     setCustomDosage(false);
@@ -252,8 +273,9 @@ export function LogDose() {
     setDidStepUp(false);
   };
 
-  const handleEdit = (dose: Dose) => {
-    setEditingDoseId(dose.id);
+  const handleEditDose = (dose: Dose) => {
+    setEditingId(dose.id);
+    setEditingType('dose');
     setSelectedMedId(dose.medicationId);
     setSelectedVialId(dose.vialId || '');
     setDosage(String(dose.dosage));
@@ -273,6 +295,23 @@ export function LogDose() {
     // Determine which zone to expand based on the dose's injection site
     const zone = SITE_ZONES.find((z) => z.sites.includes(dose.injectionSite));
     setExpandedZone(zone?.key || null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleEditSymptom = (log: SymptomLog) => {
+    setEditingId(log.id);
+    setEditingType('symptom');
+    setSelectedMedId(log.medicationId);
+    setDosage('');                          // no dosage for symptom-only
+    setCustomDosage(false);
+    setSelectedSideEffects(log.symptoms);
+    setNotes(log.notes ?? '');
+    setNotesExpanded(!!(log.notes));
+    const d = new Date(log.dateTime);
+    setDate(format(d, 'yyyy-MM-dd'));
+    setTime(format(d, 'HH:mm'));
+    setLogMode('full');                     // force full mode for editing
+    setExpandedZone(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -298,15 +337,23 @@ export function LogDose() {
 
     setSubmitting(true);
     // In quick mode, use current date/time if not explicitly set
-    const dateTime = logMode === 'quick' && !editingDoseId
+    const dateTime = logMode === 'quick' && !editingId
       ? Date.now()
       : new Date(`${date}T${time}`).getTime();
 
     try {
-      if (dosage) {
+      if (isEditingSymptom && editingId) {
+        // Logging a symptom update
+        await updateLog(editingId, {
+          dateTime,
+          symptoms: selectedSideEffects,
+          notes,
+        });
+        addToast('Symptoms updated!', 'success');
+      } else if (dosage) {
         // Logging a dose
-        if (editingDoseId) {
-          await updateDose(editingDoseId, {
+        if (isEditingDose && editingId) {
+          await updateDose(editingId, {
             medicationId: selectedMed.id,
             vialId: selectedVialId || undefined,
             dosage: parseFloat(dosage),
@@ -351,6 +398,7 @@ export function LogDose() {
           medicationId: selectedMed.id,
           dateTime,
           symptoms: selectedSideEffects,
+          notes,
         });
         addToast('Symptoms logged!', 'success');
       }
@@ -358,7 +406,7 @@ export function LogDose() {
       setTimeout(() => resetForm(), 600);
     } catch (err) {
       console.error(err);
-      addToast(editingDoseId ? 'Failed to update dose' : 'Failed to save log', 'error');
+      addToast(editingId ? 'Failed to update log' : 'Failed to save log', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -366,7 +414,7 @@ export function LogDose() {
 
   const { openModal } = useUIStore();
 
-  const handleDelete = (id: string) => {
+  const handleDeleteDose = (id: string) => {
     openModal(
       <ConfirmDialog
         title="Delete Dose Entry?"
@@ -378,9 +426,30 @@ export function LogDose() {
           try {
             await deleteDose(id);
             addToast('Dose deleted', 'info');
-            if (editingDoseId === id) resetForm();
+            if (editingId === id) resetForm();
           } catch {
             addToast('Failed to delete dose', 'error');
+          }
+        }}
+      />
+    );
+  };
+
+  const handleDeleteSymptom = (id: string) => {
+    openModal(
+      <ConfirmDialog
+        title="Delete Symptom Log?"
+        message="This symptom entry will be permanently removed."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        danger
+        onConfirm={async () => {
+          try {
+            await deleteLog(id);
+            addToast('Symptom log deleted', 'info');
+            if (editingId === id) resetForm();
+          } catch {
+            addToast('Failed to delete symptom log', 'error');
           }
         }}
       />
@@ -397,7 +466,7 @@ export function LogDose() {
     (z) => z.sites.some((s) => settings.injectionRotationSites.includes(s))
   );
 
-  const isQuick = logMode === 'quick' && !editingDoseId;
+  const isQuick = logMode === 'quick' && !editingId;
 
   return (
     <div className={`min-h-full ${isQuick ? 'pb-24' : 'pb-28'} px-5 ${isQuick ? 'pt-3 quick-log' : 'pt-6'}`} ref={formRef}>
@@ -435,7 +504,7 @@ export function LogDose() {
         ) : (
           <>
             <div className="flex items-center gap-3 mb-2">
-              {editingDoseId && (
+              {editingId && (
                 <button
                   type="button"
                   onClick={resetForm}
@@ -445,24 +514,24 @@ export function LogDose() {
                 </button>
               )}
               <h1 className="text-3xl font-extrabold tracking-tight">
-                <span className="text-gradient">{editingDoseId ? 'Update' : 'Log'}</span>
+                <span className="text-gradient">{editingId ? 'Update' : 'Log'}</span>
                 <span className="text-white ml-2">Dose</span>
               </h1>
             </div>
             <div className="flex items-center gap-2">
               <span
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider ${
-                  editingDoseId
+                  editingId
                     ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                     : 'bg-primary-500/10 text-primary-400 border border-primary-500/20'
                 }`}
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
-                    editingDoseId ? 'bg-amber-400' : 'bg-primary-400 animate-pulse'
+                    editingId ? 'bg-amber-400' : 'bg-primary-400 animate-pulse'
                   }`}
                 />
-                {editingDoseId ? 'Editing Entry' : 'New Dose'}
+                {editingId ? (isEditingSymptom ? 'Editing Symptoms' : 'Editing Entry') : 'New Dose'}
               </span>
               {selectedMed && (
                 <span className="text-xs text-slate-500">
@@ -475,7 +544,7 @@ export function LogDose() {
       </div>
 
       {/* Mode Toggle — shown only in full mode */}
-      {!editingDoseId && !isQuick && (
+      {!editingId && !isQuick && (
         <div className="mode-toggle mb-6">
           <button
             type="button"
@@ -560,7 +629,7 @@ export function LogDose() {
                 setSelectedSideEffects([]);
                 setExpandedZone(null);
               }}
-              disabled={!!editingDoseId}
+              disabled={!!editingId}
               className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-4 py-3.5 text-white text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all disabled:opacity-50"
             >
               {medsWithDoses.map((m) => (
@@ -595,7 +664,7 @@ export function LogDose() {
         )}
 
         {/* Vial — Quick Log: compact summary; Full Log: select + dashboard */}
-        {selectedMed && vialsForMed.length > 0 && (
+        {selectedMed && vialsForMed.length > 0 && !isEditingSymptom && (
           <div className="card-premium p-5">
             <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-widest">
               <FlaskConical size={12} className="text-primary-400" />
@@ -755,7 +824,7 @@ export function LogDose() {
         )}
 
         {/* Dosage */}
-        {selectedMed && (
+        {selectedMed && !isEditingSymptom && (
           <div className="card-premium p-5">
             <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-3 uppercase tracking-widest">
               <Syringe size={12} className="text-primary-400" />
@@ -829,13 +898,14 @@ export function LogDose() {
         )}
 
         {/* Injection Site */}
-        <div className="card-premium p-5">
+        {!isEditingSymptom && (
+          <div className="card-premium p-5">
           <div className="flex items-center justify-between mb-3">
             <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
               <MapPin size={12} className="text-primary-400" />
               Injection Site
             </label>
-            {!editingDoseId && settings.injectionRotationSites.length >= 2 && (
+            {!editingId && settings.injectionRotationSites.length >= 2 && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-400 text-[10px] font-medium border border-primary-500/15">
                 <RotateCw size={9} />
                 {settings.injectionRotationStrategy}
@@ -939,6 +1009,7 @@ export function LogDose() {
             </>
           )}
         </div>
+      )}
 
         {/* Full Log Only Sections */}
         {!isQuick && (
@@ -999,7 +1070,7 @@ export function LogDose() {
             className={`btn-tactile flex-1 ${isQuick ? 'py-2.5' : 'py-4'} rounded-xl font-semibold text-sm transition-all shadow-lg ${
               submitSuccess
                 ? 'bg-emerald-600 text-white shadow-emerald-900/30'
-                : editingDoseId
+                : editingId
                 ? 'bg-amber-600 text-white shadow-amber-900/30'
                 : !dosage && selectedSideEffects.length > 0
                 ? 'bg-primary-700 text-white shadow-primary-900/30'
@@ -1015,9 +1086,11 @@ export function LogDose() {
               ) : submitting ? (
                 <>
                   <Spinner />
-                  {editingDoseId ? 'Updating...' : 'Logging...'}
+                  {isEditingSymptom ? 'Updating Symptoms...' : isEditingDose ? 'Updating Dose...' : 'Saving...'}
                 </>
-              ) : editingDoseId ? (
+              ) : isEditingSymptom ? (
+                'Update Symptoms'
+              ) : isEditingDose ? (
                 'Update Dose'
               ) : !dosage && selectedSideEffects.length > 0 ? (
                 <>
@@ -1029,7 +1102,7 @@ export function LogDose() {
               )}
             </span>
           </button>
-          {editingDoseId && (
+          {editingId && (
             <button
               type="button"
               onClick={resetForm}
@@ -1041,8 +1114,8 @@ export function LogDose() {
         </div>
       </form>
 
-      {/* Dose History — Timeline */}
-      {!isQuick && selectedMed && medDoses.length > 0 && (
+      {/* Activity History — Timeline */}
+      {!isQuick && selectedMed && unifiedHistory.length > 0 && (
         <div className="mt-10">
           <button
             type="button"
@@ -1050,7 +1123,7 @@ export function LogDose() {
             className="w-full flex items-center justify-between mb-4"
           >
             <h3 className="text-sm font-bold text-slate-300 uppercase tracking-widest">
-              {selectedMed.name} History
+              {selectedMed.name} Activity
             </h3>
             {showHistory ? <ChevronUp size={16} className="text-slate-500" /> : <ChevronDown size={16} className="text-slate-500" />}
           </button>
@@ -1065,80 +1138,28 @@ export function LogDose() {
               <div className="absolute left-[7px] top-2 bottom-2 w-px bg-white/8" />
 
               <div className="flex flex-col gap-4 stagger-children">
-                {medDoses.map((dose) => {
-                  const med = medications.find((m) => m.id === dose.medicationId);
-                  const vial = vials.find((v) => v.id === dose.vialId);
-                  const isEditing = editingDoseId === dose.id;
+                {unifiedHistory.map((item) => {
+                  if (item.kind === 'dose') {
+                    return (
+                      <DoseTimelineItem
+                        key={item.data.id}
+                        dose={item.data}
+                        isEditing={editingId === item.data.id && isEditingDose}
+                        onEdit={() => handleEditDose(item.data)}
+                        onDelete={() => handleDeleteDose(item.data.id)}
+                        medications={medications}
+                        vials={vials}
+                      />
+                    );
+                  }
                   return (
-                    <div
-                      key={dose.id}
-                      className={`relative flex gap-3 rounded-xl border px-4 py-3.5 transition-all ${
-                        isEditing
-                          ? 'border-primary-500/40 bg-primary-600/10 shadow-[0_0_16px_rgba(20,184,166,0.08)]'
-                          : 'border-white/5 bg-surface-900/40 hover:border-white/10 hover:bg-surface-800/60'
-                      }`}
-                    >
-                      {/* Timeline dot */}
-                      <div className="absolute -left-[9px] top-5 w-[15px] h-[15px] rounded-full border-[3px] border-surface-950 bg-primary-500/80 z-10" />
-
-                      <button
-                        onClick={() => handleEdit(dose)}
-                        className="flex-1 text-left min-w-0"
-                      >
-                        <div className="flex items-baseline gap-2 flex-wrap">
-                          <span className="text-lg font-bold text-white">
-                            {dose.dosage} {med?.unit || dose.unit}
-                          </span>
-                          {vial && (
-                            <span className="text-xs text-slate-500 font-medium">
-                              · {vial.name}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          {format(new Date(dose.dateTime), 'PPP p')}
-                        </p>
-                        <p className="text-xs text-slate-500 capitalize mt-0.5">
-                          {dose.injectionSite.replace(/-/g, ' ')}
-                          {dose.notes && ` · ${dose.notes}`}
-                        </p>
-                        {dose.sideEffects && dose.sideEffects.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1.5">
-                            {dose.sideEffects.map((ef) => (
-                              <span
-                                key={ef.label}
-                                className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-medium gap-1 ${
-                                  ef.severity === 'mild'
-                                    ? 'bg-primary-500/10 border-primary-500/20 text-primary-400'
-                                    : ef.severity === 'moderate'
-                                    ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                                    : 'bg-red-500/10 border-red-500/20 text-red-400'
-                                }`}
-                              >
-                                {ef.label}
-                                <span className="opacity-60 text-[8px] uppercase">{ef.severity.slice(0, 3)}</span>
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </button>
-                      <div className="flex items-center gap-0.5 flex-shrink-0">
-                        <button
-                          onClick={() => handleEdit(dose)}
-                          className="p-2 rounded-lg text-slate-500 hover:text-primary-300 hover:bg-primary-500/10 transition-colors"
-                          aria-label="Edit dose"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(dose.id)}
-                          className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                          aria-label="Delete dose"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
+                    <SymptomTimelineItem
+                      key={item.data.id}
+                      log={item.data}
+                      isEditing={editingId === item.data.id && isEditingSymptom}
+                      onEdit={() => handleEditSymptom(item.data)}
+                      onDelete={() => handleDeleteSymptom(item.data.id)}
+                    />
                   );
                 })}
               </div>
@@ -1149,6 +1170,111 @@ export function LogDose() {
     </div>
   );
 }
+
+function DoseTimelineItem({
+  dose, isEditing, onEdit, onDelete, medications, vials
+}: { dose: Dose; isEditing: boolean; onEdit: () => void; onDelete: () => void; medications: Medication[]; vials: Vial[] }) {
+  const med = medications.find((m) => m.id === dose.medicationId);
+  const vial = vials.find((v) => v.id === dose.vialId);
+  return (
+    <div className={`relative flex gap-3 rounded-xl border px-4 py-3.5 transition-all ${
+      isEditing
+        ? 'border-primary-500/40 bg-primary-600/10 shadow-[0_0_16px_rgba(20,184,166,0.08)]'
+        : 'border-white/5 bg-surface-900/40 hover:border-white/10 hover:bg-surface-800/60'
+    }`}>
+      {/* Timeline dot */}
+      <div className="absolute -left-[9px] top-5 w-[15px] h-[15px] rounded-full border-[3px] border-surface-950 bg-primary-500/80 z-10" />
+
+      <button onClick={onEdit} className="flex-1 text-left min-w-0">
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <span className="text-lg font-bold text-white">
+            {dose.dosage} {med?.unit || dose.unit}
+          </span>
+          {vial && (
+            <span className="text-xs text-slate-500 font-medium">
+              · {vial.name}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-slate-400 mt-0.5">{format(new Date(dose.dateTime), 'PPP p')}</p>
+        <p className="text-xs text-slate-500 capitalize mt-0.5">
+          {dose.injectionSite.replace(/-/g, ' ')}
+          {dose.notes && ` · ${dose.notes}`}
+        </p>
+        {dose.sideEffects && dose.sideEffects.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {dose.sideEffects.map((ef) => (
+              <span key={ef.label} className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-medium gap-1 ${
+                ef.severity === 'mild' ? 'bg-primary-500/10 border-primary-500/20 text-primary-400'
+                : ef.severity === 'moderate' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                : 'bg-red-500/10 border-red-500/20 text-red-400'
+              }`}>
+                {ef.label}
+                <span className="opacity-60 text-[8px] uppercase">{ef.severity.slice(0, 3)}</span>
+              </span>
+            ))}
+          </div>
+        )}
+      </button>
+      <div className="flex items-center gap-0.5 flex-shrink-0">
+        <button onClick={onEdit} className="p-2 rounded-lg text-slate-500 hover:text-primary-300 hover:bg-primary-500/10 transition-colors" aria-label="Edit dose">
+          <Pencil size={14} />
+        </button>
+        <button onClick={onDelete} className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors" aria-label="Delete dose">
+          <Trash2 size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SymptomTimelineItem({
+  log, isEditing, onEdit, onDelete,
+}: { log: SymptomLog; isEditing: boolean; onEdit: () => void; onDelete: () => void; }) {
+  return (
+    <div className={`relative flex gap-3 rounded-xl border px-4 py-3.5 transition-all ${
+      isEditing
+        ? 'border-violet-500/40 bg-violet-600/10 shadow-[0_0_16px_rgba(139,92,246,0.08)]'
+        : 'border-white/5 bg-surface-900/40 hover:border-white/10 hover:bg-surface-800/60'
+    }`}>
+      {/* Violet dot to distinguish from teal dose dots */}
+      <div className="absolute -left-[9px] top-5 w-[15px] h-[15px] rounded-full border-[3px] border-surface-950 bg-violet-500/80 z-10" />
+
+      <button onClick={onEdit} className="flex-1 text-left min-w-0">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-500/10 border border-violet-500/20 text-violet-400 mb-1.5">
+          <ActivityIcon size={10} /> Symptom Log
+        </span>
+        <p className="text-xs text-slate-400 mb-1.5">{format(new Date(log.dateTime), 'PPP p')}</p>
+        {log.symptoms.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {log.symptoms.map(ef => (
+              <span key={ef.label} className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-medium gap-1 ${
+                ef.severity === 'mild'     ? 'bg-primary-500/10 border-primary-500/20 text-primary-400'
+                : ef.severity === 'moderate' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                : 'bg-red-500/10 border-red-500/20 text-red-400'
+              }`}>
+                {ef.label}
+                <span className="opacity-60 text-[8px] uppercase">{ef.severity.slice(0, 3)}</span>
+              </span>
+            ))}
+          </div>
+        )}
+        {log.notes && <p className="text-xs text-slate-500 mt-1 italic">"{log.notes}"</p>}
+      </button>
+
+      <div className="flex items-center gap-0.5 flex-shrink-0">
+        <button onClick={onEdit} className="p-2 rounded-lg text-slate-500 hover:text-primary-300 hover:bg-primary-500/10 transition-colors" aria-label="Edit symptom log">
+          <Pencil size={14} />
+        </button>
+        <button onClick={onDelete} className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors" aria-label="Delete symptom log">
+          <Trash2 size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+import type { Medication, SymptomLog, Vial } from '../types';
 
 /* Inline spinner component */
 function Spinner() {

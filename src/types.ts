@@ -65,6 +65,7 @@ export interface SymptomLog {
   medicationId: string;
   dateTime: number;
   symptoms: SideEffectLog[];
+  notes: string;
   createdAt: number;
 }
 
