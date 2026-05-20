@@ -37,7 +37,7 @@ export function scheduleReminder(
   return { id, fireTime: reminderTime };
 }
 
-export function checkAndFireReminders(): void {
+export async function checkAndFireReminders(): Promise<void> {
   if (!('Notification' in window)) return;
   if (Notification.permission !== 'granted') return;
 
@@ -47,13 +47,25 @@ export function checkAndFireReminders(): void {
 
   for (const reminder of reminders) {
     if (reminder.fireTime <= now) {
-      new Notification('PeptyTrack Reminder', {
+      const title = 'PeptyTrack Reminder';
+      const options = {
         body: `Time for your ${reminder.medicationName} ${reminder.dosage}${reminder.unit} dose!`,
         icon: '/icon-192.png',
         badge: '/icon-192.png',
         tag: reminder.id,
         requireInteraction: true,
-      });
+      };
+
+      try {
+        if ('serviceWorker' in navigator) {
+          const registration = await navigator.serviceWorker.ready;
+          await registration.showNotification(title, options);
+        } else {
+          new Notification(title, options as NotificationOptions);
+        }
+      } catch (e) {
+        console.error('Failed to show notification:', e);
+      }
     } else {
       remaining.push(reminder);
     }

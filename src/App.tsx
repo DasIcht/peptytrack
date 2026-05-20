@@ -68,8 +68,8 @@ function App() {
   useEffect(() => {
     if (!initialized) return;
     if (!settings.notificationsEnabled) return;
-    const interval = setInterval(checkAndFireReminders, 60000);
-    checkAndFireReminders();
+    const interval = setInterval(() => { checkAndFireReminders().catch(() => {}); }, 60000);
+    checkAndFireReminders().catch(() => {});
     return () => clearInterval(interval);
   }, [initialized, settings.notificationsEnabled]);
 
