@@ -383,8 +383,8 @@ export interface TitrationMetrics {
 | `getLastUsedSite(doses)` | Most recent injection site across all doses |
 
 ### 7.3 Notification System (`lib/notifications.ts`)
-- Uses `window.Notification` (not service worker — **background reminders don't work when app is closed**).
-- Polls every 60s via `setInterval` in `App.tsx`.
+- Uses `ServiceWorkerRegistration.showNotification()` when a service worker is available to support PWA/standalone mode, falling back to legacy `window.Notification` in non-PWA contexts.
+- **Background limitations:** Because polling runs via `setInterval` in `App.tsx`, reminders still require the app to be open to fire.
 - Reminders stored in `localStorage` under `pepty-reminders`.
 - Only fires once per dose window.
 
@@ -607,7 +607,7 @@ npx playwright test --project=chromium --reporter=dot
 | 2 | **Clear All Data incomplete** | `src/pages/Settings.tsx` | ✅ Fixed. Now clears vials and settings tables, and reloads all stores. |
 | 3 | **Vials inline in Medications** | `src/pages/Medications.tsx` | ✅ Fixed. Vials moved to dedicated `Vials.tsx` page with grouped-by-medication layout and bottom nav tab. |
 | 4 | **Auto-seed library medications** | `src/db/database.ts` | ✅ Removed. `seedDatabaseIfEmpty()` no longer called on init. Medications tab starts empty; users add from library manually. |
-| 5 | **Notifications not wired to SW** | `src/lib/notifications.ts` | Uses `window.Notification` only. Background reminders fail when app is closed. **Partial fix:** reminders now gated behind `settings.notificationsEnabled` master switch. |
+| 5 | **Notifications not wired to SW** | `src/lib/notifications.ts` | ✅ Partially resolved. Now uses `ServiceWorkerRegistration.showNotification()` when available to fix PWA constructor blockages on mobile, with a legacy constructor fallback. Background reminders still require the app to be open because the 60s polling interval runs via `setInterval` in `App.tsx`. |
 
 ### 12.2 Feature Opportunities
 | # | Item | Description |
@@ -728,6 +728,7 @@ npx netlify deploy --prod --dir=dist
 | 2026-05-15 | Enhanced Medication Chart: Integrated a new **Symptoms series** into the primary chart. Symptoms are plotted as a dashed violet line representing the aggregate severity score. Hovering over data points now provides detailed tooltips listing the specific symptoms recorded at that time, synchronized across doses and independent logs. |
 | 2026-05-15 | Global Medical Warnings: Implemented `MedicalWarningBanner` component for high-priority safety alerts. Severe titration warnings (point-based symptom score > threshold) are now displayed prominently on both the **Main Dashboard** and the **Logging** tabs. Prioritized safety checks in the titration engine to ensure warnings are visible even if the user is on their final protocol step. |
 | 2026-05-15 | Enhanced Cumulative Symptom Assessment: Refined the titration analytics engine to use a time-weighted "load-based" symptom score with historical decay (0-2 days: 1.0x, 3-7 days: 0.75x, 8-14 days: 0.5x). Implemented **Persistence Detection** to trigger a "Hold" recommendation if any single symptom is recorded in 3 or more entries within a 7-day window, regardless of total score. Updated Medication Chart to synchronize with this safety logic. |
+| 2026-05-23 | Medical Safety Upgrades: Refactored the titration safety engine with clinical risk tiers. Introduced a 48h emergency red-flag route (Anaphylaxis/severe allergic reaction/severe hypoglycemia/severe abdominal pain) that overrides normal checks to trigger flashing red emergency alerts with direct "Call 911" telephone dialers. Added 7-day urgent checks for physician consultations (kidney injury/gallbladder issues/severe vomiting/diarrhea). Implemented 7-day adaptation windows ignoring routine GI adaptation symptoms, selective moderate/severe persistence holds, and relative percentage-based weekly weight loss limits (>1.5% body weight). Added 9 new unit tests. |
 
-> **Last Updated:** 2026-05-15  
-> **Document Version:** 1.8
+> **Last Updated:** 2026-05-23  
+> **Document Version:** 1.9

@@ -313,6 +313,7 @@ Navigation triggers via `useUIStore().setPage('key')`.
 - Schedules dose reminders based on `medication.reminderHoursBefore`
 - Polls every 60 seconds via `setInterval` in `App.tsx`
 - Reminders fire only once per dose window (tracked via `localStorage`)
+- Uses `ServiceWorkerRegistration.showNotification()` when a service worker is available to ensure support for PWA/standalone mode, with a fallback to legacy `window.Notification` in other environments. Polling still requires the app to be running.
 
 ### 7.3 PDF Export (`lib/pdfExport.ts`)
 
@@ -376,18 +377,30 @@ Navigation triggers via `useUIStore().setPage('key')`.
 **Purpose:** Evaluate readiness for dose step-up based on protocol, side effects, and weight trends.
 
 **Logic:**
-- **Weighted Symptom Load:** Side effects are assigned points based on severity (Mild=1, Moderate=2, Severe=3). These points are then **time-weighted** using a decay factor:
-    - **0-2 days ago**: 1.0x (Acute load)
-    - **3-7 days ago**: 0.75x (Recent load)
-    - **8-14 days ago**: 0.5x (Historical load)
-- **Persistence Detection:** Identifies if any *single* symptom (by label) has been logged in 3 or more distinct entries within the last 7 days.
-- **Log-Derived Start Dates:** Identifies the actual start date of the current dosage level from dose history logs for accurate time progress.
+- **Tiered Clinical Risk Categories:** Mapped standard side effects to clinical risk levels:
+  - `emergency`: Life-threatening or critical events (e.g., Anaphylaxis, Severe Allergic Reaction).
+  - `urgent`: Organ-specific severe symptoms (e.g., Severe Abdominal Pain, Gallbladder issues, Kidney injury signs, Severe injection site necrosis).
+  - `moderate` & `routine`: Expected or localized side effects (e.g., Nausea, headache).
+- **Escalation Rules:** Severe states of routine symptoms are escalated (e.g., Severe Hypoglycemia or Severe Abdominal Pain to `emergency`, Severe Vomiting/Diarrhea to `urgent`).
+- **Emergency and Urgent Checks:**
+  - Past 48 hours is scanned for `emergency` symptoms. If found, returns `warningLevel: 'emergency'`, triggering the crimson alert banner with direct clickable phone-dialer (911) instructions.
+  - Past 7 days is scanned for `urgent` symptoms. If found, returns `warningLevel: 'severe'`, triggering an urgent physician warning.
+- **Titration Adaptation Window:**
+  - Calculates time elapsed since the current step dosage level started.
+  - If $\le 7$ days, ignores routine GI symptoms with `mild` or `moderate` severity during score summation to prevent false-positive Holds.
+- **Selective Persistence Detection:** Identifies if any *single* symptom (by label) has been logged in 3 or more distinct entries within the last 7 days. Only counts `moderate` or `severe` symptoms (ignores `mild` ones).
+- **Weighted Symptom Load:** Side effects are assigned points based on severity (Mild=1, Moderate=2, Severe=3) and **time-weighted**:
+  - **0-2 days ago**: 1.0x (Acute load)
+  - **3-7 days ago**: 0.75x (Recent load)
+  - **8-14 days ago**: 0.5x (Historical load)
 - **Monitored Windows:** Weight trends calculated over 4 weeks; symptom load and persistence calculated over 14 and 7 days respectively.
+- **Relative Percentage-based Weight Loss:** Triggers a safety "Hold" recommendation if the relative weight loss rate exceeds **1.5% of total body weight per week** over a 4-week moving average.
 - **Safety Recommendations:**
-    - **Hold on Persistence:** Triggers a "Hold" recommendation if persistence is detected, even if total score is low.
-    - **Hold on Score:** Triggers a "Hold" if the total weighted score exceeds 3.
-    - **Hold on Rapid Loss:** Triggers a "Hold" if weight loss exceeds 1kg/week.
-- **Medical Warnings:** A high-priority red banner appears if the symptom score reaches `settings.severeSideEffectThreshold` (default: 5).
+  - **Hold on Emergency/Urgent Warnings:** Triggers a hold and outputs emergency or clinical instructions.
+  - **Hold on Persistence:** Triggers a "Hold" recommendation if selective persistence is detected, even if total score is low.
+  - **Hold on Score:** Triggers a "Hold" if the total weighted score exceeds 3.
+  - **Hold on Rapid Relative Loss:** Triggers a "Hold" if relative weekly weight loss exceeds 1.5%.
+- **Medical Warnings:** A high-priority warning banner appears if the symptom score reaches `settings.severeSideEffectThreshold` (default: 5), or if emergency/urgent signs are detected.
 - **Auto-Advance:** Optionally advances protocol steps on successful dose log if recommendation is "step-up".
 
 ### 7.8 Titration Charts (`src/components/TitrationDecisionChart.tsx`)
@@ -514,7 +527,7 @@ App.tsx
 |---|------|----------|-------------|
 | 1 | ~~settingsStore unused~~ | ✅ `src/stores/settingsStore.ts` | Implemented. Wires weight unit default, notification master switch, persists to IndexedDB settings table. |
 | 2 | ~~Modal component unused~~ | ✅ `src/components/Modal.tsx` | Implemented. `ConfirmDialog` component used via `openModal()` for delete confirmations across LogDose, WeightTracker, Medications, and Settings pages. |
-| 3 | **Notifications not wired to SW** | `src/lib/notifications.ts` | Reminders use `window.Notification` but are not connected to the service worker. Background reminders won't work when app is closed. **Partial fix:** reminders now gated behind `settings.notificationsEnabled` master switch. |
+| 3 | **Notifications not wired to SW** | `src/lib/notifications.ts` | ✅ Partially resolved. Now uses `ServiceWorkerRegistration.showNotification()` when available to fix PWA constructor blockages on mobile, with a legacy constructor fallback. Background reminders still require the app to be open because the 60s polling interval runs via `setInterval` in `App.tsx`. |
 
 ### 12.2 Features — Nice to Have
 
@@ -612,3 +625,5 @@ npm run test       # Runs unit tests
 | 2026-05-15 | Enhanced Medication Chart: Integrated a new **Symptoms series** into the primary chart. Symptoms are plotted as a dashed violet line representing the aggregate severity score. Hovering over data points now provides detailed tooltips listing the specific symptoms recorded at that time, synchronized across doses and independent logs. |
 | 2026-05-15 | Global Medical Warnings: Implemented `MedicalWarningBanner` component for high-priority safety alerts. Severe titration warnings (point-based symptom score > threshold) are now displayed prominently on both the **Main Dashboard** and the **Logging** tabs. Prioritized safety checks in the titration engine to ensure warnings are visible even if the user is on their final protocol step. |
 | 2026-05-15 | Enhanced Cumulative Symptom Assessment: Refined the titration analytics engine to use a time-weighted "load-based" symptom score with historical decay (0-2 days: 1.0x, 3-7 days: 0.75x, 8-14 days: 0.5x). Implemented **Persistence Detection** to trigger a "Hold" recommendation if any single symptom is recorded in 3 or more entries within a 7-day window, regardless of total score. Updated Medication Chart to synchronize with this safety logic. |
+| 2026-05-23 | Medical Safety Upgrades: Refactored the titration safety engine with clinical risk tiers. Introduced a 48h emergency red-flag route (Anaphylaxis/severe allergic reaction/severe hypoglycemia/severe abdominal pain) that overrides normal checks to trigger flashing red emergency alerts with direct "Call 911" telephone dialers. Added 7-day urgent checks for physician consultations (kidney injury/gallbladder issues/severe vomiting/diarrhea). Implemented 7-day adaptation windows ignoring routine GI adaptation symptoms, selective moderate/severe persistence holds, and relative percentage-based weekly weight loss limits (>1.5% body weight). Added 9 new unit tests. |
+

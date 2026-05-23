@@ -1,10 +1,12 @@
-import type { Dose } from '../types';
+import type { Dose, SideEffectSeverity } from '../types';
 
 export type SideEffectRarity = 'very-common' | 'common' | 'uncommon' | 'rare' | 'very-rare';
+export type SymptomRiskTier = 'emergency' | 'urgent' | 'moderate' | 'routine';
 
 export interface SideEffectDef {
   label: string;
   rarity: SideEffectRarity;
+  tier: SymptomRiskTier;
 }
 
 const RARITY_ORDER: Record<SideEffectRarity, number> = {
@@ -17,38 +19,66 @@ const RARITY_ORDER: Record<SideEffectRarity, number> = {
 
 export const STANDARD_SIDE_EFFECTS: SideEffectDef[] = [
   // Very Common (>10%)
-  { label: 'Nausea', rarity: 'very-common' },
-  { label: 'Vomiting', rarity: 'very-common' },
-  { label: 'Diarrhea', rarity: 'very-common' },
-  { label: 'Constipation', rarity: 'very-common' },
-  { label: 'Abdominal pain', rarity: 'very-common' },
-  { label: 'Decreased appetite', rarity: 'very-common' },
+  { label: 'Nausea', rarity: 'very-common', tier: 'moderate' },
+  { label: 'Vomiting', rarity: 'very-common', tier: 'moderate' },
+  { label: 'Diarrhea', rarity: 'very-common', tier: 'moderate' },
+  { label: 'Constipation', rarity: 'very-common', tier: 'moderate' },
+  { label: 'Abdominal pain', rarity: 'very-common', tier: 'moderate' },
+  { label: 'Decreased appetite', rarity: 'very-common', tier: 'moderate' },
 
   // Common (1–10%)
-  { label: 'Headache', rarity: 'common' },
-  { label: 'Dizziness', rarity: 'common' },
-  { label: 'Fatigue', rarity: 'common' },
-  { label: 'Injection site reaction', rarity: 'common' },
-  { label: 'Indigestion', rarity: 'common' },
-  { label: 'Bloating', rarity: 'common' },
+  { label: 'Headache', rarity: 'common', tier: 'routine' },
+  { label: 'Dizziness', rarity: 'common', tier: 'moderate' },
+  { label: 'Fatigue', rarity: 'common', tier: 'moderate' },
+  { label: 'Injection site reaction', rarity: 'common', tier: 'routine' },
+  { label: 'Indigestion', rarity: 'common', tier: 'moderate' },
+  { label: 'Bloating', rarity: 'common', tier: 'moderate' },
 
   // Uncommon (0.1–1%)
-  { label: 'Severe abdominal pain', rarity: 'uncommon' },
-  { label: 'Gallbladder issues', rarity: 'uncommon' },
-  { label: 'Hypoglycemia', rarity: 'uncommon' },
-  { label: 'Allergic reaction', rarity: 'uncommon' },
-  { label: 'Hair loss', rarity: 'uncommon' },
-  { label: 'Acid reflux', rarity: 'uncommon' },
+  { label: 'Severe abdominal pain', rarity: 'uncommon', tier: 'urgent' },
+  { label: 'Gallbladder issues', rarity: 'uncommon', tier: 'urgent' },
+  { label: 'Hypoglycemia', rarity: 'uncommon', tier: 'urgent' },
+  { label: 'Allergic reaction', rarity: 'uncommon', tier: 'moderate' },
+  { label: 'Hair loss', rarity: 'uncommon', tier: 'routine' },
+  { label: 'Acid reflux', rarity: 'uncommon', tier: 'moderate' },
 
   // Rare (0.01–0.1%)
-  { label: 'Neck lump / hoarseness', rarity: 'rare' },
-  { label: 'Severe allergic reaction', rarity: 'rare' },
-  { label: 'Kidney injury signs', rarity: 'rare' },
-  { label: 'Severe injection site necrosis', rarity: 'rare' },
+  { label: 'Neck lump / hoarseness', rarity: 'rare', tier: 'routine' },
+  { label: 'Severe allergic reaction', rarity: 'rare', tier: 'emergency' },
+  { label: 'Kidney injury signs', rarity: 'rare', tier: 'urgent' },
+  { label: 'Severe injection site necrosis', rarity: 'rare', tier: 'urgent' },
 
   // Very Rare (<0.01%)
-  { label: 'Anaphylaxis', rarity: 'very-rare' },
+  { label: 'Anaphylaxis', rarity: 'very-rare', tier: 'emergency' },
 ];
+
+/**
+ * Resolve a symptom's clinical risk tier, applying escalation rules for severe states.
+ */
+export function getSymptomRiskTier(label: string, severity?: SideEffectSeverity): SymptomRiskTier {
+  const std = STANDARD_SIDE_EFFECTS.find(se => se.label.toLowerCase() === label.toLowerCase());
+  const baseTier = std ? std.tier : 'moderate'; // default custom symptoms to moderate
+
+  if (severity === 'severe') {
+    // Escalation 1: Hypoglycemia or severe/abdominal pain escalates to emergency
+    if (
+      label.toLowerCase() === 'hypoglycemia' ||
+      label.toLowerCase() === 'severe abdominal pain' ||
+      label.toLowerCase() === 'abdominal pain'
+    ) {
+      return 'emergency';
+    }
+    // Escalation 2: Vomiting or Diarrhea escalates to urgent (due to dehydration/renal injury risk)
+    if (
+      label.toLowerCase() === 'vomiting' ||
+      label.toLowerCase() === 'diarrhea'
+    ) {
+      return 'urgent';
+    }
+  }
+
+  return baseTier;
+}
 
 /**
  * Return standard side effects sorted by rarity (most common first).

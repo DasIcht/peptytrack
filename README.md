@@ -37,7 +37,7 @@ PeptyTrack is a fully functional, open-source alternative to paid GLP-1 tracking
 - **PDF Reports** — Generate doctor-ready reports with medication history, dose logs, and weight trends
 - **Side Effects Logging** — Tap-to-log curated GLP-1 side effects (22 clinically categorized by rarity). Smart ordering prioritizes previously-selected effects per medication. **Severity Tracking** (Mild/Moderate/Severe) with color-coded visual indicators and tactile cycling (tap to cycle severity).
 - **Unified Activity History** — Log symptoms independently from dose entries (e.g., between doses). Independent logs now feature **notes** and are merged into the main activity timeline for full lifecycle management (edit/delete).
-- **Severity-Weighted Titration** — Evaluation engine uses a **Time-Weighted Symptom Load** (Acute=1.0x, Recent=0.75x, Historical=0.5x). Recommends holding current dose if weighted load exceeds 3 or if **Persistence** is detected (same symptom in 3+ entries over 7 days).
+- **Severity-Weighted Clinical Titration** — Evaluation engine uses a **Time-Weighted Symptom Load** (Acute=1.0x, Recent=0.75x, Historical=0.5x). Employs **Clinical Risk Tiers** (Emergency red flags with 911 quick dialers, Urgent physician warnings, Moderate, and Routine levels) to check for acute safety complications. Features a **7-Day Adaptation Window** that ignores routine GI adaptation symptoms in the first 7 days of a new dose level, a **Selective Persistence hold** that ignores mild side effects, and relative **Percentage-Based Weekly Weight Loss holds** (>1.5% body weight).
 - **Injection Site Rotation** — Auto-rotate injection sites with 3 strategies (Sequential, Quadrant, Least-Used). Pick which sites to include in rotation (min 2)
 - **Data Backup/Restore** — Export/import JSON backups; auto-backup on every change with restore prompt. Features a **Robust Data Migration Engine** that automatically upgrades old backup files (v1→v6) to the latest format on import.
 - **Structural Validation** — All imports are validated for structural integrity before being written to IndexedDB, preventing data corruption from malformed files.
@@ -92,7 +92,7 @@ The project includes unit and component tests using **Vitest** with **jsdom** en
 | `SideEffectChips.test.tsx` | 8 | Rendering, toggle selection, custom add, expand/collapse |
 | `injectionRotation.test.ts` | 12 | Sequential, quadrant, LRU strategies, activeSites subset |
 | `LogDose.test.tsx` | 17 | Dual-mode Quick/Full rendering, mode toggle persistence, zone strip, site selection, form submission, dose warnings |
-| `titrationAnalytics.test.ts` | 9 | Time-based step-up, severity-weighted hold, rapid weight loss detection, severe threshold warning, **historical decay**, **persistence detection** |
+| `titrationAnalytics.test.ts` | 16 | Time-based step-up, severity-weighted hold, rapid weight loss detection, severe threshold warning, **historical decay**, **persistence detection**, **emergency warnings**, **titration windows**, **selective persistence** |
 | `symptomLogStore.test.ts` | 5 | CRUD, independent logging persistence, medication filtering |
 
 **Run all tests:**

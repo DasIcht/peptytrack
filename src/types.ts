@@ -1,5 +1,17 @@
 export type Frequency = 'daily' | 'twice-daily' | 'weekly' | 'biweekly';
 
+export interface TitrationMetrics {
+  timeProgressPercent: number;
+  symptomScore: number;
+  isPersistent: boolean;
+  persistentSymptoms: string[];
+  weightLossRateKgPerWeek: number;
+  weightLossPercentPerWeek: number;
+  daysRemaining: number;
+  hasWeightData: boolean;
+  hasSymptomData: boolean;
+}
+
 export interface MedicationTemplate {
   id: string;
   name: string;
