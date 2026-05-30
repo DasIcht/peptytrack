@@ -46,6 +46,14 @@ class PeptyTrackDB extends Dexie {
         }
       });
     });
+
+    this.version(7).stores({}).upgrade(tx => {
+      return tx.table('protocols').toCollection().modify(protocol => {
+        if (protocol.targetType === undefined) {
+          protocol.targetType = 'weekly-equivalent';
+        }
+      });
+    });
   }
 }
 
@@ -105,6 +113,7 @@ export async function seedDatabaseIfEmpty(): Promise<void> {
           dosageOptions: t.dosageOptions,
           unit: t.unit,
           frequency: t.frequency,
+          customFrequencyDays: t.customFrequencyDays,
           halfLifeHours: t.halfLifeHours,
           color: t.color,
           reminderHoursBefore: t.frequency === 'daily' ? 1 : 24,

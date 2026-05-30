@@ -55,7 +55,7 @@ describe('cloudSync', () => {
     expect(meds[0].name).toBe('Med 1');
 
     const exported = await exportData();
-    expect(exported.version).toBe(7);
+    expect(exported.version).toBe(8);
     expect(exported.vials).toEqual([]);
     expect(exported.protocols).toEqual([]);
     expect(exported.appVersion).toBeDefined();
@@ -146,7 +146,7 @@ describe('cloudSync', () => {
     await db.settings.put({ id: 'unit', value: 'kg' });
     
     const firstExport = await exportData();
-    expect(firstExport.version).toBe(7);
+    expect(firstExport.version).toBe(8);
     expect(firstExport.medications).toHaveLength(1);
 
     // Clear and import

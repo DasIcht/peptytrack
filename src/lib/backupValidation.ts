@@ -51,4 +51,11 @@ export function validateBackup(data: any): asserts data is BackupData {
       throw new Error('Invalid dose data: missing id, medicationId, or dateTime');
     }
   }
+
+  if (data.protocols && data.protocols.length > 0) {
+    const first = data.protocols[0];
+    if (!first.id || !first.medicationId || !first.targetType) {
+      throw new Error('Invalid protocol data: missing id, medicationId, or targetType');
+    }
+  }
 }

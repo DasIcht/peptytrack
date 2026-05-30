@@ -2,7 +2,7 @@ import { db, getSettings } from '../db/database';
 import type { BackupData } from '../types';
 import { validateBackup } from './backupValidation';
 
-const BACKUP_VERSION = 7;
+const BACKUP_VERSION = 8;
 
 /**
  * Migration pipeline: Each function transforms data from version N to N+1.
@@ -49,6 +49,14 @@ const migrations: Record<number, (data: any) => any> = {
       ...log,
     })),
     version: 7
+  }),
+  7: (data) => ({
+    ...data,
+    protocols: (data.protocols || []).map((protocol: any) => ({
+      targetType: 'weekly-equivalent',
+      ...protocol,
+    })),
+    version: 8
   }),
 };
 
