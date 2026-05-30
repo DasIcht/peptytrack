@@ -183,7 +183,7 @@ export function LogDose() {
 
   useEffect(() => {
     if (settings.titrationWizardEnabled && activeProtocol && !editingId) {
-      const recommendation = evaluateTitration(activeProtocol, doses, symptomLogs, weightEntries);
+      const recommendation = evaluateTitration(activeProtocol, doses, symptomLogs, weightEntries, medications);
       if (recommendation.ready) {
         setTitrationAlert(recommendation);
       } else {

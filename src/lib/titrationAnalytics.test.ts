@@ -42,7 +42,7 @@ describe('titrationAnalytics', () => {
 
   it('recommends none if not enough time has passed', () => {
     const protocol = { ...baseProtocol, currentStepStartDate: Date.now() - 14 * 24 * 60 * 60 * 1000 }; // 2 weeks ago
-    const res = evaluateTitration(protocol, [], [], []);
+    const res = evaluateTitration(protocol, [], [], [], [testMed]);
     expect(res.ready).toBe(false);
     expect(res.recommendation).toBe('none');
     expect(res.reason).toContain('days left');
@@ -51,19 +51,19 @@ describe('titrationAnalytics', () => {
   it('recommends hold if side effect score > 3', () => {
     // 2 moderate non-GI (2+2) = 4 points (using non-GI Fatigue and Dizziness to avoid adaptation window filtering)
     const doses: Dose[] = [
-      { id: 'd1', medicationId: 'm1', dosage: 0.25, unit: 'mg', injectionSite: 'abdomen-upper-left', dateTime: Date.now() - 2 * 24 * 60 * 60 * 1000, notes: '', sideEffects: [{ label: 'Dizziness', severity: 'moderate' }], createdAt: 0 },
+      { id: 'd1', medicationId: 'm1', dosage: 0.25, unit: 'mg', injectionSite: 'abdomen-upper-left', dateTime: Date.now() - 1.5 * 24 * 60 * 60 * 1000, notes: '', sideEffects: [{ label: 'Dizziness', severity: 'moderate' }], createdAt: 0 },
     ];
     const symptomLogs: SymptomLog[] = [
       { id: 'l1', medicationId: 'm1', dateTime: Date.now() - 5 * 24 * 60 * 60 * 1000, symptoms: [{ label: 'Fatigue', severity: 'moderate' }], notes: '', createdAt: 0 }
     ];
-    const res = evaluateTitration(baseProtocol, doses, symptomLogs, []);
+    const res = evaluateTitration(baseProtocol, doses, symptomLogs, [], [testMed]);
     expect(res.ready).toBe(true);
     expect(res.recommendation).toBe('hold');
     expect(res.reason).toContain('severe side effects detected');
   });
 
   it('recommends step-up if time has passed and no flags', () => {
-    const res = evaluateTitration(baseProtocol, [], [], []);
+    const res = evaluateTitration(baseProtocol, [], [], [], [testMed]);
     expect(res.ready).toBe(true);
     expect(res.recommendation).toBe('step-up');
     expect(res.reason).toContain('ready to advance');
@@ -74,7 +74,7 @@ describe('titrationAnalytics', () => {
       { id: 'w1', weight: 100, unit: 'kg', dateTime: Date.now() - 27 * 24 * 60 * 60 * 1000, notes: '', createdAt: 0 },
       { id: 'w2', weight: 90, unit: 'kg', dateTime: Date.now(), notes: '', createdAt: 0 }
     ]; // 10kg loss in ~3.85 weeks = ~2.59kg/week (2.87% body weight/week)
-    const res = evaluateTitration(baseProtocol, [], [], weights);
+    const res = evaluateTitration(baseProtocol, [], [], weights, [testMed]);
     expect(res.ready).toBe(true);
     expect(res.recommendation).toBe('hold');
     expect(res.reason).toContain('Rapid weight loss');
@@ -87,7 +87,7 @@ describe('titrationAnalytics', () => {
       { id: 'w1', weight: 100, unit: 'kg', dateTime: Date.now() - 14 * 24 * 60 * 60 * 1000, notes: '', createdAt: 0 },
       { id: 'w2', weight: 95, unit: 'kg', dateTime: Date.now(), notes: '', createdAt: 0 }
     ]; // 5kg in 2 weeks = 2.5kg/week (2.63% body weight/week)
-    const res = evaluateTitration(protocol, [], [], weights);
+    const res = evaluateTitration(protocol, [], [], weights, [testMed]);
     expect(res.recommendation).toBe('hold');
     expect(res.reason).toContain('Rapid weight loss');
   });
@@ -106,23 +106,23 @@ describe('titrationAnalytics', () => {
       { id: 'd2', medicationId: 'm1', dosage: 0.5, unit: 'mg', injectionSite: 'arm-left', dateTime: Date.now() - 7 * 24 * 60 * 60 * 1000, notes: '', createdAt: 0 }
     ];
     
-    const res = evaluateTitration(protocol, doses, [], []);
+    const res = evaluateTitration(protocol, doses, [], [], [testMed]);
     // Should be not ready because only 1 week has passed on 0.5mg (needs 4 weeks)
     expect(res.ready).toBe(false);
     expect(res.reason).toContain('21 days left'); 
   });
 
   it('correctly identifies missing weight and symptom data', () => {
-    const metrics = calculateTitrationMetrics(baseProtocol, [], [], []);
+    const metrics = calculateTitrationMetrics(baseProtocol, [], [], [], [testMed]);
     expect(metrics.hasWeightData).toBe(false);
     expect(metrics.hasSymptomData).toBe(false);
     
     const weights: WeightEntry[] = [{ id: 'w1', weight: 100, unit: 'kg', dateTime: Date.now(), notes: '', createdAt: 0 }];
-    const metrics2 = calculateTitrationMetrics(baseProtocol, [], [], weights);
+    const metrics2 = calculateTitrationMetrics(baseProtocol, [], [], weights, [testMed]);
     expect(metrics2.hasWeightData).toBe(false); 
     
     const doses: Dose[] = [{ id: 'd1', medicationId: 'm1', dosage: 0.25, unit: 'mg', injectionSite: 'arm-left', dateTime: Date.now(), notes: '', createdAt: 0 }];
-    const metrics3 = calculateTitrationMetrics(baseProtocol, doses, [], []);
+    const metrics3 = calculateTitrationMetrics(baseProtocol, doses, [], [], [testMed]);
     expect(metrics3.hasSymptomData).toBe(true);
   });
 
@@ -141,7 +141,7 @@ describe('titrationAnalytics', () => {
     // l3 (moderate fatigue): 2 * 1.0 = 2.0
     // Total: 1.5 + 2.25 + 2.0 = 5.75
     
-    const metrics = calculateTitrationMetrics(baseProtocol, [], symptomLogs, []);
+    const metrics = calculateTitrationMetrics(baseProtocol, [], symptomLogs, [], [testMed]);
     expect(metrics.symptomScore).toBe(5.75);
   });
 
@@ -154,7 +154,7 @@ describe('titrationAnalytics', () => {
     ];
     
     // Set severeThreshold to 10 to avoid triggering the preemptive high side effect burden warning (which would happen at score >= 5)
-    const res = evaluateTitration(baseProtocol, [], symptomLogs, [], 10);
+    const res = evaluateTitration(baseProtocol, [], symptomLogs, [], [testMed], 10);
     expect(res.recommendation).toBe('hold');
     expect(res.reason).toContain('Persistent symptoms detected');
     expect(res.reason).toContain('Nausea');
@@ -166,7 +166,7 @@ describe('titrationAnalytics', () => {
       const symptomLogs: SymptomLog[] = [
         { id: 'l1', medicationId: 'm1', dateTime: now - 12 * 60 * 60 * 1000, symptoms: [{ label: 'Anaphylaxis', severity: 'mild' }], notes: '', createdAt: 0 }
       ];
-      const res = evaluateTitration(baseProtocol, [], symptomLogs, [], 5, now);
+      const res = evaluateTitration(baseProtocol, [], symptomLogs, [], [testMed], 5, now);
       expect(res.recommendation).toBe('hold');
       expect(res.warningLevel).toBe('emergency');
       expect(res.reason).toContain('EMERGENCY ALERT');
@@ -178,7 +178,7 @@ describe('titrationAnalytics', () => {
       const doses: Dose[] = [
         { id: 'd1', medicationId: 'm1', dosage: 0.25, unit: 'mg', injectionSite: 'abdomen-upper-left', dateTime: now - 24 * 60 * 60 * 1000, notes: '', sideEffects: [{ label: 'Hypoglycemia', severity: 'severe' }], createdAt: 0 }
       ];
-      const res = evaluateTitration(baseProtocol, doses, [], [], 5, now);
+      const res = evaluateTitration(baseProtocol, doses, [], [], [testMed], 5, now);
       expect(res.recommendation).toBe('hold');
       expect(res.warningLevel).toBe('emergency');
       expect(res.reason).toContain('EMERGENCY ALERT');
@@ -190,7 +190,7 @@ describe('titrationAnalytics', () => {
       const symptomLogs: SymptomLog[] = [
         { id: 'l1', medicationId: 'm1', dateTime: now - 4 * 24 * 60 * 60 * 1000, symptoms: [{ label: 'Kidney injury signs', severity: 'mild' }], notes: '', createdAt: 0 }
       ];
-      const res = evaluateTitration(baseProtocol, [], symptomLogs, [], 5, now);
+      const res = evaluateTitration(baseProtocol, [], symptomLogs, [], [testMed], 5, now);
       expect(res.recommendation).toBe('hold');
       expect(res.warningLevel).toBe('severe');
       expect(res.reason).toContain('URGENT WARNING');
@@ -202,7 +202,7 @@ describe('titrationAnalytics', () => {
       const doses: Dose[] = [
         { id: 'd1', medicationId: 'm1', dosage: 0.25, unit: 'mg', injectionSite: 'abdomen-upper-left', dateTime: now - 3 * 24 * 60 * 60 * 1000, notes: '', sideEffects: [{ label: 'Vomiting', severity: 'severe' }], createdAt: 0 }
       ];
-      const res = evaluateTitration(baseProtocol, doses, [], [], 5, now);
+      const res = evaluateTitration(baseProtocol, doses, [], [], [testMed], 5, now);
       expect(res.recommendation).toBe('hold');
       expect(res.warningLevel).toBe('severe');
       expect(res.reason).toContain('URGENT WARNING');
@@ -223,7 +223,7 @@ describe('titrationAnalytics', () => {
         { id: 'd1', medicationId: 'm1', dosage: 0.25, unit: 'mg', injectionSite: 'abdomen-upper-left', dateTime: now - 1 * 24 * 60 * 60 * 1000, notes: '', sideEffects: [{ label: 'Nausea', severity: 'moderate' }, { label: 'Bloating', severity: 'moderate' }], createdAt: 0 }
       ];
 
-      const metrics = calculateTitrationMetrics(protocol, doses, [], []);
+      const metrics = calculateTitrationMetrics(protocol, doses, [], [], [testMed]);
       // Inside adaptation window, moderate routine GI side effects are ignored for the score
       expect(metrics.symptomScore).toBe(0);
     });
@@ -237,7 +237,7 @@ describe('titrationAnalytics', () => {
         { id: 'l3', medicationId: 'm1', dateTime: now - 5 * 24 * 60 * 60 * 1000, symptoms: [{ label: 'Nausea', severity: 'mild' }], notes: '', createdAt: 0 }
       ];
 
-      const metrics = calculateTitrationMetrics(baseProtocol, [], symptomLogs, []);
+      const metrics = calculateTitrationMetrics(baseProtocol, [], symptomLogs, [], [testMed]);
       expect(metrics.isPersistent).toBe(false);
     });
 
@@ -250,7 +250,7 @@ describe('titrationAnalytics', () => {
         { id: 'w2', weight: 96.8, unit: 'kg', dateTime: now, notes: '', createdAt: 0 }
       ];
       
-      const metricsSafe = calculateTitrationMetrics(baseProtocol, [], [], weightsSafe);
+      const metricsSafe = calculateTitrationMetrics(baseProtocol, [], [], weightsSafe, [testMed]);
       expect(metricsSafe.weightLossPercentPerWeek).toBeLessThan(1.5);
       
       // 100 kg starting, 92.5 kg latest = 7.5 kg loss in 27 days (~3.85 weeks)
@@ -259,7 +259,7 @@ describe('titrationAnalytics', () => {
         { id: 'w1', weight: 100, unit: 'kg', dateTime: now - 27 * 24 * 60 * 60 * 1000, notes: '', createdAt: 0 },
         { id: 'w2', weight: 92.5, unit: 'kg', dateTime: now, notes: '', createdAt: 0 }
       ];
-      const metricsRapid = calculateTitrationMetrics(baseProtocol, [], [], weightsRapid);
+      const metricsRapid = calculateTitrationMetrics(baseProtocol, [], [], weightsRapid, [testMed]);
       expect(metricsRapid.weightLossPercentPerWeek).toBeGreaterThan(1.5);
     });
   });
@@ -284,10 +284,10 @@ describe('titrationAnalytics', () => {
         { id: 'd2', medicationId: 'm1', dosage: 0.5, unit: 'mg', injectionSite: 'arm-left', dateTime: Date.now() - 4 * 7 * 24 * 60 * 60 * 1000, notes: '', createdAt: 0 }
       ];
       
-      const metricsLow = calculateTitrationMetrics(pkProtocol, dosesLow, [], []);
+      const metricsLow = calculateTitrationMetrics(pkProtocol, dosesLow, [], [], [testMed]);
       expect(metricsLow.timeProgressPercent).toBe(0); // Never reached 1.0
 
-      const resLow = evaluateTitration(pkProtocol, dosesLow, [], []);
+      const resLow = evaluateTitration(pkProtocol, dosesLow, [], [], [testMed]);
       expect(resLow.ready).toBe(false);
       expect(resLow.reason).toContain('28 days left'); 
 
@@ -299,7 +299,7 @@ describe('titrationAnalytics', () => {
         { id: 'd4', medicationId: 'm1', dosage: 1.0, unit: 'mg', injectionSite: 'arm-left', dateTime: Date.now() - 1 * 7 * 24 * 60 * 60 * 1000, notes: '', createdAt: 0 },
       ];
       
-      const metricsHigh = calculateTitrationMetrics(pkProtocol, dosesHigh, [], []);
+      const metricsHigh = calculateTitrationMetrics(pkProtocol, dosesHigh, [], [], [testMed]);
       // Because doses are double, the level stays well above 1.0
       // The progress should be near 100% since it was above for most of the 4 weeks
       expect(metricsHigh.timeProgressPercent).toBeGreaterThan(50);

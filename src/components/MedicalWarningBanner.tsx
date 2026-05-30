@@ -36,6 +36,7 @@ export function MedicalWarningBanner({ medicationId }: MedicalWarningBannerProps
         doses, 
         symptomLogs, 
         weightEntries, 
+        medications,
         settings.severeSideEffectThreshold || 5
       );
 

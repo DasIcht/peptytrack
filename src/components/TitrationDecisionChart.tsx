@@ -16,6 +16,7 @@ import {
 import { CircularProgress } from './CircularProgress';
 import type { Protocol, SymptomLog, Dose, WeightEntry } from '../types';
 import { calculateTitrationMetrics } from '../lib/titrationAnalytics';
+import { useMedicationStore } from '../stores/medicationStore';
 
 interface TitrationDecisionChartProps {
   protocol: Protocol;
@@ -33,7 +34,8 @@ export function TitrationDecisionChart({
   severeThreshold
 }: TitrationDecisionChartProps) {
   const chartStyle = protocol.chartStyle || 'spider';
-  const metrics = useMemo(() => calculateTitrationMetrics(protocol, doses, symptomLogs, weightEntries), [protocol, doses, symptomLogs, weightEntries]);
+  const medications = useMedicationStore(state => state.medications);
+  const metrics = useMemo(() => calculateTitrationMetrics(protocol, doses, symptomLogs, weightEntries, medications), [protocol, doses, symptomLogs, weightEntries, medications]);
 
   // Transform metrics for the Spider Chart
   // We want higher values to mean "ready to advance" for visualization clarity.

@@ -1,7 +1,7 @@
 import type { Protocol, Dose, WeightEntry, SymptomLog, SideEffectLog, Medication } from '../types';
 import { getSymptomRiskTier } from './sideEffects';
 import { calculateRollingAverageConcentration } from './halfLifeEngine';
-import { useMedicationStore } from '../stores/medicationStore';
+
 
 export interface TitrationRecommendation {
   ready: boolean;
@@ -70,7 +70,9 @@ export function calculateTitrationMetrics(
   protocol: Protocol,
   doses: Dose[],
   symptomLogs: SymptomLog[],
-  weights: WeightEntry[]
+  weights: WeightEntry[],
+  medications: Medication[],
+  now: number = Date.now()
 ): TitrationMetrics {
   const currentStep = protocol.steps[protocol.currentStepIndex];
   if (!currentStep) return { 
@@ -113,17 +115,11 @@ export function calculateTitrationMetrics(
     hasSymptomData: false
   };
 
-  const now = Date.now();
   let timeProgressPercent = 0;
   let daysRemaining = 0;
 
   if (protocol.targetType === 'steady-state-concentration') {
-    let med: Medication | undefined;
-    try {
-      med = useMedicationStore.getState().medications.find(m => m.id === protocol.medicationId);
-    } catch (e) {
-      // safe fallback if store is not initialized in some test environments
-    }
+    let med = medications.find(m => m.id === protocol.medicationId);
     
     if (med && currentStep.targetConcentration) {
       let daysAtTarget = 0;
@@ -238,6 +234,7 @@ export function evaluateTitration(
   doses: Dose[],
   symptomLogs: SymptomLog[],
   weights: WeightEntry[],
+  medications: Medication[],
   severeThreshold: number = 5,
   now: number = Date.now()
 ): TitrationRecommendation {
@@ -302,7 +299,7 @@ export function evaluateTitration(
     };
   }
 
-  const metrics = calculateTitrationMetrics(protocol, doses, symptomLogs, weights);
+  const metrics = calculateTitrationMetrics(protocol, doses, symptomLogs, weights, medications, now);
 
   // 3. GENERAL HIGH SIDE EFFECT BURDEN WARNING (Always check safety regardless of time progress)
   if (metrics.symptomScore >= severeThreshold) {
