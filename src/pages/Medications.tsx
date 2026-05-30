@@ -29,6 +29,7 @@ function useCustomFormDefaults() {
     dosageOptions: '',
     unit: defaultUnit,
     frequency: 'weekly' as Frequency,
+    customFrequencyDays: 5,
     halfLifeHours: '',
     color: COLOR_PRESETS[0],
   });
@@ -48,6 +49,7 @@ interface EditForm {
   dosageOptions?: string;
   unit?: string;
   frequency?: string;
+  customFrequencyDays?: number;
   halfLifeHours?: string;
   color?: string;
   reminderHoursBefore?: number;
@@ -96,6 +98,7 @@ interface EditForm {
       dosageOptions: med.dosageOptions.join(', '),
       unit: med.unit,
       frequency: med.frequency,
+      customFrequencyDays: med.customFrequencyDays,
       halfLifeHours: String(med.halfLifeHours),
       color: med.color,
       reminderHoursBefore: med.reminderHoursBefore,
@@ -130,6 +133,7 @@ interface EditForm {
       dosageOptions: dosages,
       unit: String(editForm.unit || 'mg'),
       frequency: editForm.frequency as Frequency,
+      customFrequencyDays: editForm.frequency === 'custom' ? editForm.customFrequencyDays : undefined,
       halfLifeHours: halfLife,
       color: String(editForm.color || COLOR_PRESETS[0]),
       reminderHoursBefore: Number(editForm.reminderHoursBefore || 24),
@@ -199,6 +203,7 @@ interface EditForm {
         dosageOptions: dosages,
         unit: customForm.unit,
         frequency: customForm.frequency,
+        customFrequencyDays: customForm.frequency === 'custom' ? customForm.customFrequencyDays : undefined,
         halfLifeHours: halfLife,
         color: customForm.color,
         reminderHoursBefore: customForm.frequency === 'daily' ? 1 : 24,
@@ -207,7 +212,7 @@ interface EditForm {
 
       setCustomForm({
         name: '', brand: '', activeIngredient: '', dosageOptions: '',
-        unit: defaultUnit, frequency: 'weekly' as Frequency, halfLifeHours: '',
+        unit: defaultUnit, frequency: 'weekly' as Frequency, customFrequencyDays: 5, halfLifeHours: '',
         color: COLOR_PRESETS[0],
       });
       setAddMode('library');
@@ -225,7 +230,7 @@ interface EditForm {
     setAddMode('library');
     setCustomForm({
       name: '', brand: '', activeIngredient: '', dosageOptions: '',
-      unit: defaultUnit, frequency: 'weekly' as Frequency, halfLifeHours: '',
+      unit: defaultUnit, frequency: 'weekly' as Frequency, customFrequencyDays: 5, halfLifeHours: '',
       color: COLOR_PRESETS[0],
     });
   };
@@ -366,7 +371,7 @@ interface EditForm {
                       className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className={`grid ${editForm.frequency === 'custom' ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
                     <select
                       value={editForm.frequency || 'weekly'}
                       onChange={(e) => setEditForm((f) => ({ ...f, frequency: e.target.value }))}
@@ -376,7 +381,18 @@ interface EditForm {
                       <option value="twice-daily">Twice Daily</option>
                       <option value="weekly">Weekly</option>
                       <option value="biweekly">Biweekly</option>
+                      <option value="custom">Custom (Days)</option>
                     </select>
+                    {editForm.frequency === 'custom' && (
+                      <input
+                        type="number"
+                        min={1}
+                        value={editForm.customFrequencyDays || ''}
+                        onChange={(e) => setEditForm((f) => ({ ...f, customFrequencyDays: Number(e.target.value) }))}
+                        placeholder="Days (e.g. 5)"
+                        className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                      />
+                    )}
                     <input
                       type="number"
                       min={0}
@@ -414,7 +430,9 @@ interface EditForm {
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     <div className="bg-white/5 rounded-lg p-2 text-center">
                       <p className="text-[10px] text-slate-500 uppercase">Frequency</p>
-                      <p className="text-xs font-medium text-white capitalize">{med.frequency.replace('-', ' ')}</p>
+                      <p className="text-xs font-medium text-white capitalize">
+                        {med.frequency === 'custom' ? `Every ${med.customFrequencyDays}d` : med.frequency.replace('-', ' ')}
+                      </p>
                     </div>
                     <div className="bg-white/5 rounded-lg p-2 text-center">
                       <p className="text-[10px] text-slate-500 uppercase">Half-Life</p>
@@ -616,8 +634,39 @@ interface EditForm {
                         <option value="twice-daily">Twice Daily</option>
                         <option value="weekly">Weekly</option>
                         <option value="biweekly">Biweekly</option>
+                        <option value="custom">Custom (Days)</option>
                       </select>
                     </div>
+                    {customForm.frequency === 'custom' ? (
+                      <div>
+                        <label className="text-xs text-slate-400 block mb-1">Every X Days</label>
+                        <input
+                          type="number"
+                          min={1}
+                          step={1}
+                          value={customForm.customFrequencyDays}
+                          onChange={(e) => setCustomForm((f) => ({ ...f, customFrequencyDays: Number(e.target.value) }))}
+                          placeholder="e.g. 5"
+                          className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-primary-500/50"
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="text-xs text-slate-400 block mb-1">Half-Life (hours) *</label>
+                        <input
+                          type="number"
+                          min={0.1}
+                          step={0.1}
+                          value={customForm.halfLifeHours}
+                          onChange={(e) => setCustomForm((f) => ({ ...f, halfLifeHours: e.target.value }))}
+                          placeholder="e.g. 120"
+                          className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-primary-500/50"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {customForm.frequency === 'custom' && (
                     <div>
                       <label className="text-xs text-slate-400 block mb-1">Half-Life (hours) *</label>
                       <input
@@ -630,7 +679,7 @@ interface EditForm {
                         className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-primary-500/50"
                       />
                     </div>
-                  </div>
+                  )}
 
                   <div>
                     <label className="text-xs text-slate-400 block mb-1.5">Color</label>

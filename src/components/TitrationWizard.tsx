@@ -3,8 +3,8 @@ import { useProtocolStore } from '../stores/protocolStore';
 import { useUIStore } from '../stores/uiStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { uuid } from '../lib/uuid';
-import type { ProtocolStep } from '../types';
-import { Plus, Trash2, Calendar, Syringe, Settings2, Play, Square, PieChart } from 'lucide-react';
+import type { ProtocolStep, TitrationTargetMode } from '../types';
+import { Plus, Trash2, Calendar, Syringe, Settings2, Play, Square, PieChart, Target } from 'lucide-react';
 
 interface TitrationWizardProps {
   medicationId: string;
@@ -19,6 +19,10 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
   const targetMode = useSettingsStore(state => state.settings.titrationTargetMode);
 
   const existingProtocol = getActiveProtocolForMedication(medicationId);
+
+  const [targetType, setTargetType] = useState<TitrationTargetMode>(
+    existingProtocol?.targetType || targetMode
+  );
 
   const [steps, setSteps] = useState<ProtocolStep[]>(
     existingProtocol?.steps || [{ id: uuid(), dosage: 0.25, durationWeeks: 4 }]
@@ -52,7 +56,7 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
     setSubmitting(true);
     try {
       if (existingProtocol) {
-        await updateProtocol(existingProtocol.id, { steps, autoAdvance, chartStyle });
+        await updateProtocol(existingProtocol.id, { steps, autoAdvance, chartStyle, targetType });
         addToast('Protocol updated', 'success');
       } else {
         await addProtocol({
@@ -64,7 +68,7 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
           currentStepStartDate: null,
           autoAdvance,
           chartStyle,
-          targetType: targetMode,
+          targetType,
         });
         addToast('Protocol created', 'success');
       }
@@ -129,7 +133,7 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className={`grid ${targetType === 'steady-state-concentration' ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
               <div>
                 <label className="text-[10px] font-semibold text-slate-400 mb-1 flex items-center gap-1">
                   <Syringe size={10} /> Dosage ({medicationUnit})
@@ -156,6 +160,21 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
                   className="input-premium py-2 text-sm w-full"
                 />
               </div>
+              {targetType === 'steady-state-concentration' && (
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-400 mb-1 flex items-center gap-1">
+                    <Target size={10} /> Target (ng/ml)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={step.targetConcentration || ''}
+                    onChange={(e) => handleStepChange(step.id, 'targetConcentration', parseFloat(e.target.value))}
+                    className="input-premium py-2 text-sm w-full"
+                  />
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -170,6 +189,33 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
       </button>
 
       <div className="bg-surface-900/30 border border-white/5 rounded-xl p-4 mb-6">
+        <div className="mb-4 pb-4 border-b border-white/5">
+          <label className="text-sm font-semibold text-white flex items-center gap-2 mb-2">
+            <Target size={14} className="text-primary-400" />
+            Target Mode
+          </label>
+          <div className="flex bg-surface-800 rounded-xl p-1 border border-white/5">
+            <button
+              type="button"
+              onClick={() => setTargetType('weekly-equivalent')}
+              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+                targetType === 'weekly-equivalent' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Clinical (Weekly)
+            </button>
+            <button
+              type="button"
+              onClick={() => setTargetType('steady-state-concentration')}
+              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+                targetType === 'steady-state-concentration' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Pharmacokinetic
+            </button>
+          </div>
+        </div>
+
         <label className="flex flex-col gap-2 cursor-pointer">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-white flex items-center gap-2">

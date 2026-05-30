@@ -12,8 +12,7 @@ import { requestNotificationPermission } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import {
   Bell, FileText, Download, Upload,
-  Trash2, ChevronRight, Shield, Scale, ToggleLeft, ToggleRight, Pill,
-  RotateCw, MapPin, Wand2
+  RotateCw, MapPin, Wand2, Target
 } from 'lucide-react';
 
 export function Settings() {
@@ -355,6 +354,43 @@ export function Settings() {
               <ToggleLeft size={22} className="text-slate-500" />
             )}
           </button>
+
+          {/* Target Mode Toggle */}
+          {settings.titrationWizardEnabled && (
+            <div className="px-4 py-3.5 border-b border-white/5">
+              <div className="flex items-center gap-3 mb-3">
+                <Target size={18} className="text-primary-400" />
+                <div className="text-left">
+                  <p className="text-sm font-medium text-white">Target Mode</p>
+                  <p className="text-xs text-slate-400">
+                    How titration goals are defined
+                  </p>
+                </div>
+              </div>
+              <div className="flex bg-surface-900 rounded-xl p-1 border border-white/10">
+                <button
+                  onClick={() => updateSetting('titrationTargetMode', 'weekly-equivalent')}
+                  className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors ${
+                    settings.titrationTargetMode === 'weekly-equivalent'
+                      ? 'bg-primary-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  Clinical (Weekly)
+                </button>
+                <button
+                  onClick={() => updateSetting('titrationTargetMode', 'steady-state-concentration')}
+                  className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors ${
+                    settings.titrationTargetMode === 'steady-state-concentration'
+                      ? 'bg-primary-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  Pharmacokinetic
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Severe Side Effect Threshold */}
           {settings.titrationWizardEnabled && (
