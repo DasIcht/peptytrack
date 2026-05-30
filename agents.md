@@ -172,7 +172,7 @@ Preselect medication for logging: `useUIStore().setLogDoseMedId(med.id)` then `s
 
 ### 5.1 Core Types (`src/types.ts`)
 ```typescript
-export type Frequency = 'daily' | 'twice-daily' | 'weekly' | 'biweekly';
+export type Frequency = 'daily' | 'twice-daily' | 'weekly' | 'biweekly' | 'custom';
 
 export interface Medication {
   id: string;                  // UUID (primary key)
@@ -183,6 +183,7 @@ export interface Medication {
   dosageOptions: number[];
   unit: string;                // mg | mcg
   frequency: Frequency;
+  customFrequencyDays?: number;
   halfLifeHours: number;
   color: string;               // Hex color for UI theming
   reminderHoursBefore: number;
@@ -262,6 +263,7 @@ export interface AppSettings {
   injectionRotationSites: InjectionSite[];
   titrationWizardEnabled: boolean;
   severeSideEffectThreshold: number;
+  titrationTargetMode: 'weekly-equivalent' | 'steady-state-concentration';
 }
 
 export interface TitrationMetrics {
