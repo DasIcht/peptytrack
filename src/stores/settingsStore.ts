@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   ],
   titrationWizardEnabled: false,
   severeSideEffectThreshold: 5,
+  titrationTargetMode: 'weekly-equivalent',
 };
 
 interface SettingsState {

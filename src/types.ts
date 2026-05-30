@@ -1,4 +1,4 @@
-export type Frequency = 'daily' | 'twice-daily' | 'weekly' | 'biweekly';
+export type Frequency = 'daily' | 'twice-daily' | 'weekly' | 'biweekly' | 'custom';
 
 export interface TitrationMetrics {
   timeProgressPercent: number;
@@ -20,6 +20,7 @@ export interface MedicationTemplate {
   dosageOptions: number[];
   unit: string;
   frequency: Frequency;
+  customFrequencyDays?: number;
   halfLifeHours: number;
   color: string;
 }
@@ -33,6 +34,7 @@ export interface Medication {
   dosageOptions: number[];
   unit: string;
   frequency: Frequency;
+  customFrequencyDays?: number;
   halfLifeHours: number;
   color: string;
   reminderHoursBefore: number;
@@ -116,6 +118,7 @@ export interface AppSettings {
   injectionRotationSites: InjectionSite[];
   titrationWizardEnabled: boolean;
   severeSideEffectThreshold: number;
+  titrationTargetMode: 'weekly-equivalent' | 'steady-state-concentration';
 }
 
 export interface MedLevelPoint {
@@ -128,12 +131,14 @@ export interface ProtocolStep {
   id: string;
   dosage: number;
   durationWeeks: number;
+  targetConcentration?: number;
 }
 
 export interface Protocol {
   id: string;
   medicationId: string;
   name: string;
+  targetType: 'weekly-equivalent' | 'steady-state-concentration';
   steps: ProtocolStep[];
   currentStepIndex: number;
   startDate: number | null;
