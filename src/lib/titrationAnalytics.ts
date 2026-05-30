@@ -1,5 +1,7 @@
-import type { Protocol, Dose, WeightEntry, SymptomLog, SideEffectLog } from '../types';
+import type { Protocol, Dose, WeightEntry, SymptomLog, SideEffectLog, Medication } from '../types';
 import { getSymptomRiskTier } from './sideEffects';
+import { calculateRollingAverageConcentration } from './halfLifeEngine';
+import { useMedicationStore } from '../stores/medicationStore';
 
 export interface TitrationRecommendation {
   ready: boolean;
@@ -111,12 +113,38 @@ export function calculateTitrationMetrics(
     hasSymptomData: false
   };
 
-  const durationMs = currentStep.durationWeeks * 7 * 24 * 60 * 60 * 1000;
   const now = Date.now();
-  const timeOnStepMs = now - startDate;
-  
-  const timeProgressPercent = Math.min((timeOnStepMs / durationMs) * 100, 100);
-  const daysRemaining = Math.max(0, Math.ceil((durationMs - timeOnStepMs) / (1000 * 60 * 60 * 24)));
+  let timeProgressPercent = 0;
+  let daysRemaining = 0;
+
+  if (protocol.targetType === 'steady-state-concentration') {
+    let med: Medication | undefined;
+    try {
+      med = useMedicationStore.getState().medications.find(m => m.id === protocol.medicationId);
+    } catch (e) {
+      // safe fallback if store is not initialized in some test environments
+    }
+    
+    if (med && currentStep.targetConcentration) {
+      let daysAtTarget = 0;
+      const daysSinceStart = Math.floor((now - startDate) / (24 * 60 * 60 * 1000));
+      for (let i = 0; i <= daysSinceStart; i++) {
+        const checkTime = startDate + i * 24 * 60 * 60 * 1000;
+        const rollingAvg = calculateRollingAverageConcentration(med, doses, 7, checkTime);
+        if (rollingAvg >= currentStep.targetConcentration * 0.95) {
+          daysAtTarget++;
+        }
+      }
+      const targetDays = currentStep.durationWeeks * 7;
+      timeProgressPercent = Math.min((daysAtTarget / targetDays) * 100, 100);
+      daysRemaining = Math.max(0, targetDays - daysAtTarget);
+    }
+  } else {
+    const durationMs = currentStep.durationWeeks * 7 * 24 * 60 * 60 * 1000;
+    const timeOnStepMs = now - startDate;
+    timeProgressPercent = Math.min((timeOnStepMs / durationMs) * 100, 100);
+    daysRemaining = Math.max(0, Math.ceil((durationMs - timeOnStepMs) / (1000 * 60 * 60 * 24)));
+  }
 
   // Symptoms in last 14 days (weighted)
   const fourteenDaysAgo = now - 14 * 24 * 60 * 60 * 1000;

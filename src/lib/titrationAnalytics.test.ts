@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { evaluateTitration, calculateTitrationMetrics } from './titrationAnalytics';
-import type { Protocol, Dose, WeightEntry, SymptomLog } from '../types';
+import type { Protocol, Dose, WeightEntry, SymptomLog, Medication } from '../types';
+import { useMedicationStore } from '../stores/medicationStore';
 
 describe('titrationAnalytics', () => {
   const baseProtocol: Protocol = {
@@ -18,6 +19,26 @@ describe('titrationAnalytics', () => {
       { id: 's2', dosage: 0.5, durationWeeks: 4 }
     ]
   };
+
+  const testMed: Medication = {
+    id: 'm1',
+    templateId: 'lib-semaglutide',
+    name: 'Test Med',
+    brand: 'Brand',
+    activeIngredient: 'Semaglutide',
+    dosageOptions: [0.25, 0.5, 1.0],
+    unit: 'mg',
+    frequency: 'weekly',
+    halfLifeHours: 168, // 1 week
+    color: '#ffffff',
+    reminderHoursBefore: 24,
+    enabled: true,
+    createdAt: 0
+  };
+
+  beforeAll(() => {
+    useMedicationStore.setState({ medications: [testMed] });
+  });
 
   it('recommends none if not enough time has passed', () => {
     const protocol = { ...baseProtocol, currentStepStartDate: Date.now() - 14 * 24 * 60 * 60 * 1000 }; // 2 weeks ago
@@ -240,6 +261,48 @@ describe('titrationAnalytics', () => {
       ];
       const metricsRapid = calculateTitrationMetrics(baseProtocol, [], [], weightsRapid);
       expect(metricsRapid.weightLossPercentPerWeek).toBeGreaterThan(1.5);
+    });
+  });
+
+  describe('Steady-State Concentration Target Mode', () => {
+    const pkProtocol: Protocol = {
+      ...baseProtocol,
+      targetType: 'steady-state-concentration',
+      steps: [
+        { id: 's1', dosage: 0.25, durationWeeks: 4, targetConcentration: 0.5 },
+        { id: 's2', dosage: 0.5, durationWeeks: 4, targetConcentration: 1.0 },
+        { id: 's3', dosage: 1.0, durationWeeks: 4, targetConcentration: 2.0 }
+      ],
+      currentStepIndex: 1, // On 0.5mg
+      currentStepStartDate: Date.now() - 4 * 7 * 24 * 60 * 60 * 1000 // Started 4 weeks ago
+    };
+
+    it('calculates time progress based on days target concentration was met', () => {
+      // If we don't have enough doses to reach 1.0, progress is 0%
+      const dosesLow: Dose[] = [
+        { id: 'd1', medicationId: 'm1', dosage: 0.25, unit: 'mg', injectionSite: 'arm-left', dateTime: Date.now() - 5 * 7 * 24 * 60 * 60 * 1000, notes: '', createdAt: 0 },
+        { id: 'd2', medicationId: 'm1', dosage: 0.5, unit: 'mg', injectionSite: 'arm-left', dateTime: Date.now() - 4 * 7 * 24 * 60 * 60 * 1000, notes: '', createdAt: 0 }
+      ];
+      
+      const metricsLow = calculateTitrationMetrics(pkProtocol, dosesLow, [], []);
+      expect(metricsLow.timeProgressPercent).toBe(0); // Never reached 1.0
+
+      const resLow = evaluateTitration(pkProtocol, dosesLow, [], []);
+      expect(resLow.ready).toBe(false);
+      expect(resLow.reason).toContain('28 days left'); 
+
+      // If we have steady doses of 1.0mg for 4 weeks, levels reach ~1.0-1.4 mg
+      const dosesHigh: Dose[] = [
+        { id: 'd1', medicationId: 'm1', dosage: 1.0, unit: 'mg', injectionSite: 'arm-left', dateTime: Date.now() - 4 * 7 * 24 * 60 * 60 * 1000, notes: '', createdAt: 0 },
+        { id: 'd2', medicationId: 'm1', dosage: 1.0, unit: 'mg', injectionSite: 'arm-left', dateTime: Date.now() - 3 * 7 * 24 * 60 * 60 * 1000, notes: '', createdAt: 0 },
+        { id: 'd3', medicationId: 'm1', dosage: 1.0, unit: 'mg', injectionSite: 'arm-left', dateTime: Date.now() - 2 * 7 * 24 * 60 * 60 * 1000, notes: '', createdAt: 0 },
+        { id: 'd4', medicationId: 'm1', dosage: 1.0, unit: 'mg', injectionSite: 'arm-left', dateTime: Date.now() - 1 * 7 * 24 * 60 * 60 * 1000, notes: '', createdAt: 0 },
+      ];
+      
+      const metricsHigh = calculateTitrationMetrics(pkProtocol, dosesHigh, [], []);
+      // Because doses are double, the level stays well above 1.0
+      // The progress should be near 100% since it was above for most of the 4 weeks
+      expect(metricsHigh.timeProgressPercent).toBeGreaterThan(50);
     });
   });
 });
