@@ -53,6 +53,7 @@ const defaultSettings = {
   ] as InjectionSite[],
   titrationWizardEnabled: false,
   severeSideEffectThreshold: 5,
+  titrationTargetMode: 'weekly-equivalent' as const,
 };
 
 describe('LogDose', () => {
@@ -398,7 +399,8 @@ describe('LogDose', () => {
           startDate: Date.now() - 30 * 24 * 60 * 60 * 1000,
           currentStepStartDate: Date.now() - 30 * 24 * 60 * 60 * 1000,
           autoAdvance: false,
-          createdAt: Date.now()
+          createdAt: Date.now(),
+          targetType: 'weekly-equivalent' as const
         }]
       });
       

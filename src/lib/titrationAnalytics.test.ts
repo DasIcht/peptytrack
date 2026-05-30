@@ -12,6 +12,7 @@ describe('titrationAnalytics', () => {
     currentStepStartDate: Date.now() - 5 * 7 * 24 * 60 * 60 * 1000,
     autoAdvance: false,
     createdAt: Date.now() - 5 * 7 * 24 * 60 * 60 * 1000,
+    targetType: 'weekly-equivalent',
     steps: [
       { id: 's1', dosage: 0.25, durationWeeks: 4 },
       { id: 's2', dosage: 0.5, durationWeeks: 4 }

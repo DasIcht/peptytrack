@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useProtocolStore } from '../stores/protocolStore';
 import { useUIStore } from '../stores/uiStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { uuid } from '../lib/uuid';
 import type { ProtocolStep } from '../types';
 import { Plus, Trash2, Calendar, Syringe, Settings2, Play, Square, PieChart } from 'lucide-react';
@@ -15,6 +16,7 @@ interface TitrationWizardProps {
 export function TitrationWizard({ medicationId, medicationUnit, medicationName, onClose }: TitrationWizardProps) {
   const { addToast } = useUIStore();
   const { getActiveProtocolForMedication, addProtocol, updateProtocol, deleteProtocol } = useProtocolStore();
+  const targetMode = useSettingsStore(state => state.settings.titrationTargetMode);
 
   const existingProtocol = getActiveProtocolForMedication(medicationId);
 
@@ -62,6 +64,7 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
           currentStepStartDate: null,
           autoAdvance,
           chartStyle,
+          targetType: targetMode,
         });
         addToast('Protocol created', 'success');
       }

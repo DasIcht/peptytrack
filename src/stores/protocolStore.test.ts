@@ -19,7 +19,8 @@ describe('useProtocolStore', () => {
       currentStepIndex: 0,
       startDate: null,
       currentStepStartDate: null,
-      autoAdvance: true
+      autoAdvance: true,
+      targetType: 'weekly-equivalent'
     });
 
     const newStore = useProtocolStore.getState();
@@ -39,7 +40,8 @@ describe('useProtocolStore', () => {
       currentStepIndex: 0,
       startDate: null,
       currentStepStartDate: null,
-      autoAdvance: true
+      autoAdvance: true,
+      targetType: 'weekly-equivalent'
     });
 
     const pId = useProtocolStore.getState().protocols[0].id;
@@ -61,7 +63,8 @@ describe('useProtocolStore', () => {
       currentStepIndex: 0,
       startDate: null,
       currentStepStartDate: null,
-      autoAdvance: true
+      autoAdvance: true,
+      targetType: 'weekly-equivalent'
     });
 
     const pId = useProtocolStore.getState().protocols[0].id;
@@ -81,7 +84,8 @@ describe('useProtocolStore', () => {
       currentStepIndex: 0,
       startDate: null,
       currentStepStartDate: null,
-      autoAdvance: true
+      autoAdvance: true,
+      targetType: 'weekly-equivalent'
     });
 
     const p = useProtocolStore.getState().getActiveProtocolForMedication('m1');
