@@ -5,6 +5,8 @@ import {
   generateLevelSeries,
   getNextDoseTime,
   getTimeUntilNextDose,
+  calculateEquivalentCustomDose,
+  calculateRollingAverageConcentration,
 } from './halfLifeEngine';
 import type { Medication, Dose } from '../types';
 
@@ -242,5 +244,25 @@ describe('getTimeUntilNextDose', () => {
 
     const result = getTimeUntilNextDose(TEST_MED, doses);
     expect(result).toMatch(/\d+d/);
+  });
+});
+
+describe('calculateEquivalentCustomDose', () => {
+  it('calculates equivalent custom dose accurately', () => {
+    // 5mg weekly equivalent for every 3 days is 5 * (3/7) = 2.1428...
+    const dose = calculateEquivalentCustomDose(5, 3);
+    expect(dose).toBeCloseTo(2.1428, 3);
+  });
+});
+
+describe('calculateRollingAverageConcentration', () => {
+  it('calculates rolling average concentration over a 7-day period', () => {
+    const med = { id: 'm1', halfLifeHours: 120 } as any;
+    const doses = [
+      { medicationId: 'm1', dosage: 5, dateTime: Date.now() - 3 * 24 * 3600 * 1000 },
+      { medicationId: 'm1', dosage: 5, dateTime: Date.now() - 10 * 24 * 3600 * 1000 }
+    ] as any[];
+    const avg = calculateRollingAverageConcentration(med, doses, 7);
+    expect(avg).toBeGreaterThan(0);
   });
 });

@@ -145,3 +145,35 @@ export function allMedicationLevelsAtTime(
     ])
   );
 }
+
+/**
+ * Calculate the required dose for a custom interval that matches the average steady-state 
+ * circulation of a standard weekly dose.
+ * C_avg is proportional to Dose / interval. So custom_dose = weekly_dose * (custom_days / 7).
+ */
+export function calculateEquivalentCustomDose(weeklyDose: number, customDays: number): number {
+  return weeklyDose * (customDays / 7);
+}
+
+/**
+ * Calculate the rolling average concentration over a specified number of days
+ * by sampling the concentration hourly.
+ */
+export function calculateRollingAverageConcentration(
+  medication: Medication,
+  doses: Dose[],
+  days: number = 7,
+  now: number = Date.now()
+): number {
+  const start = now - days * 24 * 60 * 60 * 1000;
+  const hourlyPoints = generateLevelSeries(medication, doses, {
+    startTime: start,
+    endTime: now,
+    resolutionMinutes: 60
+  });
+  
+  if (hourlyPoints.length === 0) return 0;
+  
+  const sum = hourlyPoints.reduce((acc, point) => acc + point.level, 0);
+  return sum / hourlyPoints.length;
+}
