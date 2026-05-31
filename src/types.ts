@@ -119,7 +119,6 @@ export interface AppSettings {
   injectionRotationSites: InjectionSite[];
   titrationWizardEnabled: boolean;
   severeSideEffectThreshold: number;
-  titrationTargetMode: TitrationTargetMode;
 }
 
 export interface MedLevelPoint {

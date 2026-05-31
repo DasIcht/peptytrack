@@ -24,7 +24,6 @@ describe('SettingsStore', () => {
         ],
         titrationWizardEnabled: false,
         severeSideEffectThreshold: 5,
-        titrationTargetMode: 'weekly-equivalent',
       },
       loading: false,
       initialized: false,
@@ -71,7 +70,6 @@ describe('SettingsStore', () => {
         ],
         titrationWizardEnabled: false,
         severeSideEffectThreshold: 5,
-        titrationTargetMode: 'weekly-equivalent',
       },
       initialized: false,
     });

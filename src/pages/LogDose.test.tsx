@@ -53,7 +53,6 @@ const defaultSettings = {
   ] as InjectionSite[],
   titrationWizardEnabled: false,
   severeSideEffectThreshold: 5,
-  titrationTargetMode: 'weekly-equivalent' as const,
 };
 
 describe('LogDose', () => {
