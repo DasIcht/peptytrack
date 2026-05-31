@@ -9,6 +9,7 @@ import { useWeightStore } from '../stores/weightStore';
 import { useSymptomLogStore } from '../stores/symptomLogStore';
 import { evaluateTitration, type TitrationRecommendation } from '../lib/titrationAnalytics';
 import { scheduleReminder } from '../lib/notifications';
+import { medicationLevelAtTime } from '../lib/halfLifeEngine';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { SideEffectChips } from '../components/SideEffectChips';
 import { CircularProgress } from '../components/CircularProgress';
@@ -117,6 +118,7 @@ export function LogDose() {
 
   const [titrationAlert, setTitrationAlert] = useState<TitrationRecommendation | null>(null);
   const [didStepUp, setDidStepUp] = useState(false);
+  const hasAutoProposedForMedRef = useRef<Record<string, boolean>>({});
 
   // Dual-mode state
   const [logMode, setLogMode] = useState<LogMode>(() => {
@@ -182,6 +184,66 @@ export function LogDose() {
   const selectedMed = medications.find((m) => m.id === selectedMedId);
   const activeProtocol = protocols.find(p => p.medicationId === selectedMedId);
 
+  const recommendedPKDose = useMemo(() => {
+    if (!selectedMed || !activeProtocol || activeProtocol.targetType !== 'steady-state-concentration') return null;
+    const currentStep = activeProtocol.steps[activeProtocol.currentStepIndex];
+    if (!currentStep || !currentStep.targetConcentration) return null;
+    const currentLevel = medicationLevelAtTime(selectedMed, doses, Date.now());
+    const proposed = currentStep.targetConcentration - currentLevel;
+    if (proposed > 0) {
+      const safeProposed = Math.min(proposed, currentStep.dosage);
+      return Number(safeProposed.toFixed(2));
+    }
+    return 0;
+  }, [selectedMed, activeProtocol, doses]);
+
+  const timingWarning = useMemo(() => {
+    if (!settings.titrationWizardEnabled || !activeProtocol || activeProtocol.targetType !== 'weekly-equivalent') return null;
+    if (!selectedMed) return null;
+
+    const dateTime = logMode === 'quick' && !editingId
+      ? Date.now()
+      : new Date(`${date}T${time}`).getTime();
+
+    const otherDoses = doses
+      .filter((d) => d.medicationId === selectedMedId && d.id !== editingId)
+      .sort((a, b) => a.dateTime - b.dateTime);
+
+    if (otherDoses.length === 0) return null;
+
+    const precedingDose = [...otherDoses].reverse().find((d) => d.dateTime < dateTime);
+    if (!precedingDose) return null;
+
+    const msDiff = dateTime - precedingDose.dateTime;
+    const daysDiff = msDiff / (1000 * 60 * 60 * 24);
+
+    let expectedIntervalDays = 7;
+    if (selectedMed.frequency === 'daily') expectedIntervalDays = 1;
+    else if (selectedMed.frequency === 'twice-daily') expectedIntervalDays = 0.5;
+    else if (selectedMed.frequency === 'biweekly') expectedIntervalDays = 14;
+    else if (selectedMed.frequency === 'custom') expectedIntervalDays = selectedMed.customFrequencyDays || 7;
+
+    const diffDays = daysDiff - expectedIntervalDays;
+
+    if (diffDays < -0.5) {
+      return {
+        type: 'early' as const,
+        days: Math.abs(diffDays),
+        message: `Dosing now would be ${Math.abs(diffDays).toFixed(1)} days early in accordance to the ${selectedMed.frequency} frequency. This has the potential of overdosing and can be very dangerous.`,
+      };
+    } else if (diffDays > 0.5) {
+      return {
+        type: 'late' as const,
+        days: diffDays,
+        message: `Dosing now would be ${diffDays.toFixed(1)} days late in accordance to the ${selectedMed.frequency} frequency.`,
+      };
+    }
+
+    return null;
+  }, [settings.titrationWizardEnabled, activeProtocol, selectedMed, selectedMedId, doses, editingId, logMode, date, time]);
+
+
+
   useEffect(() => {
     if (settings.titrationWizardEnabled && activeProtocol && !editingId) {
       const recommendation = evaluateTitration(activeProtocol, doses, symptomLogs, weightEntries, medications);
@@ -196,8 +258,27 @@ export function LogDose() {
   }, [activeProtocol, doses, symptomLogs, weightEntries, selectedMedId, editingId]);
 
   useEffect(() => {
-    // We no longer auto-select the dosage. The recommended dosage will be highlighted in the UI.
-  }, [activeProtocol, selectedMedId, editingId, selectedMed]);
+    if (editingId || !selectedMed || !settings.titrationWizardEnabled || !activeProtocol) return;
+
+    if (!hasAutoProposedForMedRef.current[selectedMed.id]) {
+      const currentStep = activeProtocol.steps[activeProtocol.currentStepIndex];
+      if (currentStep) {
+        if (activeProtocol.targetType === 'steady-state-concentration') {
+          if (recommendedPKDose !== null) {
+            setDosage(String(recommendedPKDose));
+            setCustomDosage(!selectedMed.dosageOptions.includes(recommendedPKDose));
+          } else {
+            setDosage('0');
+            setCustomDosage(true);
+          }
+        } else {
+          setDosage(String(currentStep.dosage));
+          setCustomDosage(!selectedMed.dosageOptions.includes(currentStep.dosage));
+        }
+      }
+      hasAutoProposedForMedRef.current[selectedMed.id] = true;
+    }
+  }, [activeProtocol, selectedMed, editingId, settings.titrationWizardEnabled, recommendedPKDose]);
 
   const orderedSideEffects = selectedMedId
     ? getSideEffectsOrderedForMedication(selectedMedId, doses, customEffects[selectedMedId] ?? [])
@@ -273,6 +354,7 @@ export function LogDose() {
     setSubmitSuccess(false);
     setExpandedZone(null);
     setDidStepUp(false);
+    hasAutoProposedForMedRef.current = {};
   };
 
   const handleEditDose = (dose: Dose) => {
@@ -613,6 +695,25 @@ export function LogDose() {
         </div>
       )}
 
+      {timingWarning && (
+        <div 
+          className={`mb-4 p-4 rounded-xl border ${
+            timingWarning.type === 'early' 
+              ? 'bg-red-500/10 border-red-500/20 text-red-300 shadow-[0_0_12px_rgba(239,68,68,0.1)]' 
+              : 'bg-amber-500/10 border-amber-500/20 text-amber-300'
+          } flex flex-col gap-2 animate-slide-up`}
+          aria-label="Dose Timing Warning"
+        >
+          <div className="flex items-center gap-2 font-bold text-sm">
+            <AlertTriangle className={timingWarning.type === 'early' ? 'text-red-400 animate-pulse' : 'text-amber-400'} size={18} />
+            <span>{timingWarning.type === 'early' ? 'Overdose Risk Warning' : 'Schedule Deviation Info'}</span>
+          </div>
+          <p className="text-xs leading-relaxed opacity-95">
+            {timingWarning.message}
+          </p>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className={`flex flex-col ${isQuick ? 'gap-2.5' : 'gap-5'} mode-content ${switchingMode ? 'switching' : ''}`}>
         {/* Medication Select */}
         <div className="card-premium p-5">
@@ -640,6 +741,30 @@ export function LogDose() {
             </select>
             <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           </div>
+          {settings.titrationWizardEnabled && activeProtocol && selectedMed && (
+            <div className="mt-4 pt-4 border-t border-white/5 space-y-2" aria-label="Titration Protocol Info">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 text-slate-400">
+                  <ActivityIcon size={13} className="text-amber-400 animate-pulse" />
+                  <span className="font-semibold text-slate-300">Titration Protocol:</span>
+                  <span className="text-slate-400 truncate max-w-[150px]">{activeProtocol.name}</span>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold text-[10px] uppercase tracking-wider whitespace-nowrap">
+                  Step {activeProtocol.currentStepIndex + 1} of {activeProtocol.steps.length}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] bg-surface-900/40 rounded-lg p-2.5 border border-white/5">
+                <span className="text-slate-400">Current Step Target:</span>
+                <span className="font-semibold text-white">
+                  {activeProtocol.targetType === 'steady-state-concentration' ? (
+                    <>Maintain <span className="text-primary-300">{activeProtocol.steps[activeProtocol.currentStepIndex]?.targetConcentration} ng/ml</span> PK Target</>
+                  ) : (
+                    <>{activeProtocol.steps[activeProtocol.currentStepIndex]?.dosage} {selectedMed.unit} Weekly Dose</>
+                  )}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         <MedicalWarningBanner medicationId={selectedMedId} />
@@ -838,9 +963,13 @@ export function LogDose() {
               Dosage ({selectedMed.unit})
             </label>
             {!customDosage ? (
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
                 {selectedMed.dosageOptions.map((d) => {
-                  const isRecommended = settings.titrationWizardEnabled && activeProtocol && activeProtocol.steps[activeProtocol.currentStepIndex]?.dosage === d;
+                  const isRecommended = settings.titrationWizardEnabled && activeProtocol && (
+                    activeProtocol.targetType === 'steady-state-concentration'
+                      ? recommendedPKDose === d
+                      : activeProtocol.steps[activeProtocol.currentStepIndex]?.dosage === d
+                  );
                   return (
                     <button
                       key={d}
@@ -885,6 +1014,22 @@ export function LogDose() {
                   Presets
                 </button>
               </div>
+            )}
+            
+            {settings.titrationWizardEnabled && activeProtocol && !isEditingSymptom && !editingId && (
+              <>
+                {activeProtocol.targetType === 'steady-state-concentration' ? (
+                  <div className="mt-3 text-[10px] text-primary-400 opacity-90 animate-fade-in flex items-center gap-1.5 bg-primary-500/10 px-2 py-1.5 rounded-lg border border-primary-500/15 animate-slide-up">
+                    <Zap size={10} className="flex-shrink-0" />
+                    <span>Calculated top-up dose to reach your {activeProtocol.steps[activeProtocol.currentStepIndex]?.targetConcentration} ng/ml target peak.</span>
+                  </div>
+                ) : (
+                  <div className="mt-3 text-[10px] text-amber-400 opacity-90 animate-fade-in flex items-center gap-1.5 bg-amber-500/10 px-2 py-1.5 rounded-lg border border-amber-500/15 animate-slide-up">
+                    <Zap size={10} className="flex-shrink-0" />
+                    <span>Recommended clinical dosage for Step {activeProtocol.currentStepIndex + 1} is {activeProtocol.steps[activeProtocol.currentStepIndex]?.dosage} {selectedMed.unit}.</span>
+                  </div>
+                )}
+              </>
             )}
 
             {isQuick && (

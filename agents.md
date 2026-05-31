@@ -89,7 +89,7 @@ peptyTrack/
 │   │   └── Toast.tsx          # Toast notification system
 │   └── pages/                 # Full-page route components
 │       ├── Dashboard.tsx      # Home: stats, medication cards, quick actions
-│       ├── LogDose.tsx        # Dual-mode dose logging: Quick Log (compact single-screen layout, no scroll) and Full Log (complete form with all sections). Quick mode shows an inline header toggle, compact card padding, horizontal scrollable injection site pills, and hides dose history. Full mode features the visual body-zone 2-column selector, compact vial summary, full vial dashboard with circular progress, notes, side effects, and dose history timeline.
+│       ├── LogDose.tsx        # Dual-mode dose logging: Quick Log (compact single-screen layout, no scroll) and Full Log (complete form with all sections). Quick mode shows an inline header toggle, compact card padding, horizontal scrollable injection site pills, and hides dose history. Full mode features the visual body-zone 2-column selector, compact vial summary, full vial dashboard with circular progress, notes, side effects, and dose history timeline. Now dynamically integrates titration protocol step indication, smart dosage presets/custom highlights, and auto-proposes pharmacokinetic top-up doses.
 │       ├── MedicationChart.tsx# Dual-axis medication level + weight chart
 │       ├── WeightTracker.tsx  # Weight logging with date picker + history
 │       ├── Medications.tsx    # Medication management — add from library/custom, enable/disable
@@ -504,7 +504,7 @@ colors: {
 
 | Test File | Coverage |
 |-----------|----------|
-| `halfLifeEngine.test.ts` | 15 tests — concentration decay, accumulation, series generation, next dose timing |
+| `halfLifeEngine.test.ts` | 17 tests — concentration decay, accumulation, series generation, next dose timing |
 | `sideEffects.test.ts` | 8 tests — rarity ordering, per-medication smart sorting, deduplication |
 | `database.test.ts` | 22 tests — CRUD, queries, sorting, seed deduplication & idempotency, vial storage, customSideEffects |
 | `medicationStore.test.ts` | 5 tests — enable/disable, persistence, custom med creation, dose update |
@@ -516,7 +516,9 @@ colors: {
 | `injectionRotation.test.ts` | 12 tests — sequential, quadrant, LRU strategies, activeSites subset |
 | `cloudSync.test.ts` | 4 tests — migration pipeline (v1→v6), round-trips, version rejection |
 | `backupValidation.test.ts` | 7 tests — structural integrity checks |
-| `titrationAnalytics.test.ts` | 7 tests — time-based step-up (log-derived), severity-weighted hold, rapid weight loss detection, severe threshold warning, missing data detection |
+| `titrationAnalytics.test.ts` | 17 tests — time-based step-up (log-derived), severity-weighted hold, rapid weight loss detection, severe threshold warning, missing data detection |
+| `LogDose.test.tsx` | 22 tests — rendering, toggle selection, custom add, expand/collapse, severity cycling, active titration step indication, clinical and PK dose recommendation highlighting |
+| `symptomLogStore.test.ts` | 6 tests — independent symptom entries CRUD |
 
 ### 9.1 Testing Patterns
 - Use `fake-indexeddb` for IndexedDB mocking in tests.
@@ -738,6 +740,7 @@ npx netlify deploy --prod --dir=dist
 | 2026-05-15 | Global Medical Warnings: Implemented `MedicalWarningBanner` component for high-priority safety alerts. Severe titration warnings (point-based symptom score > threshold) are now displayed prominently on both the **Main Dashboard** and the **Logging** tabs. Prioritized safety checks in the titration engine to ensure warnings are visible even if the user is on their final protocol step. |
 | 2026-05-15 | Enhanced Cumulative Symptom Assessment: Refined the titration analytics engine to use a time-weighted "load-based" symptom score with historical decay (0-2 days: 1.0x, 3-7 days: 0.75x, 8-14 days: 0.5x). Implemented **Persistence Detection** to trigger a "Hold" recommendation if any single symptom is recorded in 3 or more entries within a 7-day window, regardless of total score. Updated Medication Chart to synchronize with this safety logic. |
 | 2026-05-23 | Medical Safety Upgrades: Refactored the titration safety engine with clinical risk tiers. Introduced a 48h emergency red-flag route (Anaphylaxis/severe allergic reaction/severe hypoglycemia/severe abdominal pain) that overrides normal checks to trigger flashing red emergency alerts with direct "Call 911" telephone dialers. Added 7-day urgent checks for physician consultations (kidney injury/gallbladder issues/severe vomiting/diarrhea). Implemented 7-day adaptation windows ignoring routine GI adaptation symptoms, selective moderate/severe persistence holds, and relative percentage-based weekly weight loss limits (>1.5% body weight). Added 9 new unit tests. |
+| 2026-05-31 | UX & Safety Enhancements: Integrated active titration protocol step indication card into LogDose page. Refactored auto-proposal and preset highlight logic to support both Clinical (weekly) and Pharmacokinetic (steady-state top-up) modes seamlessly, preserving highlight functionality and pre-filling the exact PK recommended dosage. Added vertical padding to the presets list container to prevent border/shadow clipping when the titration wizard is disabled. Implemented high-priority early overdose risk warnings and late schedule deviation timing alerts in Clinical Mode. Added 4 new unit tests to LogDose.test.tsx (bringing the total to 24 passing tests). |
 
-> **Last Updated:** 2026-05-23  
-> **Document Version:** 1.9
+> **Last Updated:** 2026-05-31  
+> **Document Version:** 2.0

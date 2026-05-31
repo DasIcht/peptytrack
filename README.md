@@ -80,21 +80,21 @@ The project includes unit and component tests using **Vitest** with **jsdom** en
 
 | Suite | Tests | Focus |
 |-------|-------|-------|
-| `database.test.ts` | 23 | Dexie CRUD, vial storage, settings persistence, seed deduplication, customSideEffects, schema v6 migration |
+| `database.test.ts` | 22 | Dexie CRUD, vial storage, settings persistence, seed deduplication, customSideEffects, schema v6 migration |
 | `cloudSync.test.ts` | 5 | Data migration pipeline (v1→v7), export/import round-trips, version rejection |
 | `backupValidation.test.ts` | 7 | Structural integrity checks for backup objects and nested arrays |
 | `medicationStore.test.ts` | 5 | Enable/disable toggle, custom meds, dose updates |
 | `settingsStore.test.ts` | 4 | Default settings, persist/reload, getSetting |
-| `halfLifeEngine.test.ts` | 15 | Concentration decay, dose accumulation, next dose timing |
+| `halfLifeEngine.test.ts` | 17 | Concentration decay, dose accumulation, next dose timing |
 | `vialStore.test.ts` | 10 | CRUD, remaining computation, filtering, last used, remaining override |
 | `ConfirmDialog.test.tsx` | 7 | Rendering, confirm/cancel actions, danger styling |
 | `sideEffects.test.ts` | 8 | Side effect rarity ordering, per-medication smart sorting, deduplication |
 | `sideEffectsStore.test.ts` | 7 | CRUD, persistence, deduplication, per-med isolation |
 | `SideEffectChips.test.tsx` | 8 | Rendering, toggle selection, custom add, expand/collapse |
 | `injectionRotation.test.ts` | 12 | Sequential, quadrant, LRU strategies, activeSites subset |
-| `LogDose.test.tsx` | 17 | Dual-mode Quick/Full rendering, mode toggle persistence, zone strip, site selection, form submission, dose warnings |
-| `titrationAnalytics.test.ts` | 16 | Time-based step-up, severity-weighted hold, rapid weight loss detection, severe threshold warning, **historical decay**, **persistence detection**, **emergency warnings**, **titration windows**, **selective persistence** |
-| `symptomLogStore.test.ts` | 5 | CRUD, independent logging persistence, medication filtering |
+| `LogDose.test.tsx` | 24 | Dual-mode Quick/Full rendering, mode toggle persistence, zone strip, site selection, form submission, dose warnings, active titration step indication, clinical and PK dose recommendation highlighting, and overdose/schedule deviation timing warnings |
+| `titrationAnalytics.test.ts` | 17 | Time-based step-up, severity-weighted hold, rapid weight loss detection, severe threshold warning, **historical decay**, **persistence detection**, **emergency warnings**, **titration windows**, **selective persistence** |
+| `symptomLogStore.test.ts` | 6 | CRUD, independent logging persistence, medication filtering |
 
 **Run all tests:**
 ```bash

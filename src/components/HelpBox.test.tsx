@@ -1,6 +1,6 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { HelpBox } from './HelpBox';
+import { describe, it, expect } from 'vitest';
 
 describe('HelpBox', () => {
   it('renders children only when expanded', () => {

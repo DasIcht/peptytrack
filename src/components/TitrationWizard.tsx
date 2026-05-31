@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useProtocolStore } from '../stores/protocolStore';
 import { useUIStore } from '../stores/uiStore';
+import { useMedicationStore } from '../stores/medicationStore';
 
 import { uuid } from '../lib/uuid';
 import { HelpBox } from './HelpBox';
@@ -18,6 +19,13 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
   const { addToast } = useUIStore();
   const { getActiveProtocolForMedication, addProtocol, updateProtocol, deleteProtocol } = useProtocolStore();
   const existingProtocol = getActiveProtocolForMedication(medicationId);
+  const medication = useMedicationStore(state => state.medications.find(m => m.id === medicationId));
+
+  const getComputedTarget = (dosage: number) => {
+    if (!medication || !dosage) return 0;
+    const lambda = Math.LN2 / medication.halfLifeHours;
+    return dosage / (1 - Math.exp(-lambda * 168)); // Weekly equivalent (168 hours)
+  };
   
   const [targetType, setTargetType] = useState<TitrationTargetMode>(
     existingProtocol?.targetType ?? 'weekly-equivalent'
@@ -53,15 +61,22 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
     }
 
     setSubmitting(true);
+    
+    // Auto-compute targets for PK mode
+    const finalSteps = steps.map(s => ({
+      ...s,
+      targetConcentration: targetType === 'steady-state-concentration' ? getComputedTarget(s.dosage || 0) : s.targetConcentration
+    }));
+
     try {
       if (existingProtocol) {
-        await updateProtocol(existingProtocol.id, { steps, autoAdvance, chartStyle, targetType });
+        await updateProtocol(existingProtocol.id, { steps: finalSteps, autoAdvance, chartStyle, targetType });
         addToast('Protocol updated', 'success');
       } else {
         await addProtocol({
           medicationId,
           name: `${medicationName} Protocol`,
-          steps,
+          steps: finalSteps,
           currentStepIndex: 0,
           startDate: null,
           currentStepStartDate: null,
@@ -164,14 +179,9 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
                   <label className="text-[10px] font-semibold text-slate-400 mb-1 flex items-center gap-1">
                     <Target size={10} /> Target (ng/ml)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={step.targetConcentration || ''}
-                    onChange={(e) => handleStepChange(step.id, 'targetConcentration', parseFloat(e.target.value))}
-                    className="input-premium py-2 text-sm w-full"
-                  />
+                  <div className="input-premium py-2 text-sm w-full bg-surface-900/50 text-slate-400 cursor-not-allowed flex items-center">
+                    {getComputedTarget(step.dosage || 0).toFixed(2)}
+                  </div>
                 </div>
               )}
             </div>
@@ -193,7 +203,7 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
             <Target size={14} className="text-primary-400" />
             Target Mode
             <HelpBox>
-              Clinical mode targets a weekly dose equivalent. Pharmacokinetic mode targets a specific steady-state concentration (ng/ml) based on half-life decay. Target Concentration (ng/ml) field specifies the desired steady-state level.
+              Clinical mode targets a weekly dose equivalent. Pharmacokinetic mode automatically calculates and targets a steady-state concentration (ng/ml) based on the weekly dosage equivalent and the medication's half-life.
             </HelpBox>
           </label>
           <div className="flex bg-surface-800 rounded-xl p-1 border border-white/5">
