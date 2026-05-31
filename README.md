@@ -31,6 +31,7 @@ PeptyTrack is a fully functional, open-source alternative to paid GLP-1 tracking
 | Retatrutide | Zepbound | 168h (7d) | Weekly |
 
 ### Smart Features
+- **Context-Specific Patient Guidance** — Provides inline tooltips and help boxes to explain complex pharmacokinetics, syringe math, and site rotations directly where users need them.
 - **Persistent Settings** — Choose default weight unit (kg/lb) and control notification master switch
 - **Modal Confirmation Dialogs** — Styled, non-blocking confirmation dialogs for all destructive actions (delete dose, delete weight, delete medication, clear all data)
 - **Configurable Reminders** — Set per-medication reminder hours before next dose; master on/off switch

@@ -81,6 +81,7 @@ peptyTrack/
 │   │   ├── CircularProgress.tsx # Animated SVG circular progress indicator
 │   │   ├── TitrationWizard.tsx # Protocol management wizard with interactive steps
 │   │   ├── TitrationDecisionChart.tsx # Radar/Gauge/Timeline visualizations for titration readiness
+│   │   ├── HelpBox.tsx        # Floating popover used for inline contextual patient guidance
 │   │   └── Toast.tsx          # Toast notification system
 │   │
 │   └── pages/                 # Full-page route components
@@ -141,6 +142,7 @@ interface Protocol {
   startDate: number | null;
   currentStepStartDate: number | null;
   autoAdvance: boolean;
+  targetMode: 'weight_loss' | 'maintenance' | 'custom'; // Decoupled from global settings
   chartStyle?: 'spider' | 'gauges' | 'timeline';
   createdAt: number;
 }
@@ -476,6 +478,7 @@ App.tsx
 │
 ├── BottomNav.tsx          (fixed, all pages)
 ├── ToastContainer.tsx     (overlay, all pages)
+├── HelpBox.tsx            (floating popover, inline guidance)
 └── Modal.tsx              (overlay, all pages)
 ```
 
