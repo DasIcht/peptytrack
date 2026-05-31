@@ -12,7 +12,9 @@ import { requestNotificationPermission } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import {
   Bell, FileText, Download, Upload,
-  RotateCw, MapPin, Wand2, Target
+  RotateCw, MapPin, Wand2, Target,
+  Scale, Pill, ToggleRight, ToggleLeft,
+  Shield, ChevronRight, Trash2
 } from 'lucide-react';
 
 export function Settings() {

@@ -1,0 +1,28 @@
+<h2>How should we approach Custom Dosing Frequencies?</h2>
+<p class="subtitle">When moving away from strict weekly/daily schedules, we need to balance clinical accuracy with flexibility.</p>
+
+<div class="options">
+  <div class="option" data-choice="preset-split" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Clinical Presets + "Split" Toggle</h3>
+      <p>Users select standard clinical doses (e.g. 5mg weekly) and choose how to divide it (e.g., "Split into 2 doses per week"). The system automatically handles the math.</p>
+      <div class="pros-cons" style="margin-top: 10px; font-size: 0.9em">
+        <div class="pros" style="margin-bottom: 5px;"><strong>Pros:</strong> Foolproof, stays perfectly aligned with clinical trial step-ups.</div>
+        <div class="cons"><strong>Cons:</strong> Less flexible for users doing arbitrary schedules (e.g. every 5 days).</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="option" data-choice="arbitrary" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Arbitrary Frequency & Auto-Equivalence</h3>
+      <p>Users input any frequency (e.g. "Every X days"). The titration wizard suggests the equivalent custom dose needed to maintain the target average steady-state circulation.</p>
+      <div class="pros-cons" style="margin-top: 10px; font-size: 0.9em">
+        <div class="pros" style="margin-bottom: 5px;"><strong>Pros:</strong> Maximum flexibility, accurately models exact custom schedules.</div>
+        <div class="cons"><strong>Cons:</strong> More complex UI, calculates specific doses that might not map cleanly to standard pen clicks or easy vial math.</div>
+      </div>
+    </div>
+  </div>
+</div>
