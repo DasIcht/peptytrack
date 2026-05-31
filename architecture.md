@@ -86,7 +86,7 @@ peptyTrack/
 │   │
 │   └── pages/                 # Full-page route components
 │       ├── Dashboard.tsx      # Home — stats, medication cards, quick actions
-│       ├── LogDose.tsx        # Dual-mode dose logging: Quick Log (compact 3-tap flow) and Full Log (complete form). 2-column vial layout (dropdown + summary). Compact single-row dosage pills. 2-column injection site selector (zone list | site grid). Circular vial progress, expandable notes, animated side effects, timeline-style dose history
+│       ├── LogDose.tsx        # Dual-mode dose logging: Quick Log (compact 3-tap flow) and Full Log (complete form). 2-column vial layout (dropdown + summary). Compact single-row dosage pills. 2-column injection site selector (zone list | site grid). Circular vial progress, expandable notes, animated side effects, timeline-style dose history, active titration protocol step indication card, and smart clinical/PK dosage highlights
 │       ├── MedicationChart.tsx# Dual-axis medication level + weight chart
 │       ├── WeightTracker.tsx  # Weight logging with date picker + history
 │       ├── Medications.tsx    # Medication management — add from library/custom, enable/disable
@@ -507,7 +507,7 @@ App.tsx
 
 | Test File | Coverage |
 |-----------|----------|
-| `halfLifeEngine.test.ts` | 15 tests — concentration decay, dose accumulation, series generation, next dose timing |
+| `halfLifeEngine.test.ts` | 17 tests — concentration decay, dose accumulation, series generation, next dose timing |
 | `database.test.ts` | 16 tests — medication CRUD, dose queries, weight sorting, settings persistence, seed deduplication & idempotency, vial CRUD |
 | `medicationStore.test.ts` | 5 tests — enable/disable toggle, state persistence across reloads, custom medication creation, dose update |
 | `settingsStore.test.ts` | 4 tests — default settings, persist/reload, getSetting, merge with defaults |
@@ -629,4 +629,5 @@ npm run test       # Runs unit tests
 | 2026-05-15 | Global Medical Warnings: Implemented `MedicalWarningBanner` component for high-priority safety alerts. Severe titration warnings (point-based symptom score > threshold) are now displayed prominently on both the **Main Dashboard** and the **Logging** tabs. Prioritized safety checks in the titration engine to ensure warnings are visible even if the user is on their final protocol step. |
 | 2026-05-15 | Enhanced Cumulative Symptom Assessment: Refined the titration analytics engine to use a time-weighted "load-based" symptom score with historical decay (0-2 days: 1.0x, 3-7 days: 0.75x, 8-14 days: 0.5x). Implemented **Persistence Detection** to trigger a "Hold" recommendation if any single symptom is recorded in 3 or more entries within a 7-day window, regardless of total score. Updated Medication Chart to synchronize with this safety logic. |
 | 2026-05-23 | Medical Safety Upgrades: Refactored the titration safety engine with clinical risk tiers. Introduced a 48h emergency red-flag route (Anaphylaxis/severe allergic reaction/severe hypoglycemia/severe abdominal pain) that overrides normal checks to trigger flashing red emergency alerts with direct "Call 911" telephone dialers. Added 7-day urgent checks for physician consultations (kidney injury/gallbladder issues/severe vomiting/diarrhea). Implemented 7-day adaptation windows ignoring routine GI adaptation symptoms, selective moderate/severe persistence holds, and relative percentage-based weekly weight loss limits (>1.5% body weight). Added 9 new unit tests. |
+| 2026-05-31 | UX & Safety Enhancements: Integrated active titration protocol step indication card into LogDose page. Refactored auto-proposal and preset highlight logic to support both Clinical (weekly) and Pharmacokinetic (steady-state top-up) modes seamlessly, preserving highlight functionality and pre-filling the exact PK recommended dosage. Added vertical padding to the presets list container to prevent border/shadow clipping when the titration wizard is disabled. Implemented high-priority early overdose risk warnings and late schedule deviation timing alerts in Clinical Mode. Added 4 new unit tests to LogDose.test.tsx (bringing the total to 24 passing tests). |
 

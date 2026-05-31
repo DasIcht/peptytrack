@@ -427,4 +427,143 @@ describe('LogDose', () => {
       expect(screen.getByText('Consult your healthcare provider immediately.')).toBeInTheDocument();
     });
   });
+
+  describe('Titration Wizard & Protocol Step Displays', () => {
+    beforeEach(() => {
+      // Enable titration wizard
+      useSettingsStore.setState({
+        settings: { ...defaultSettings, titrationWizardEnabled: true }
+      });
+    });
+
+    it('shows titration step indication when weekly protocol is active', () => {
+      useProtocolStore.setState({
+        protocols: [{
+          id: 'p-1',
+          medicationId: 'med-1',
+          name: 'Weekly clinical prot',
+          steps: [{ id: 's1', dosage: 0.25, durationWeeks: 4 }, { id: 's2', dosage: 0.5, durationWeeks: 4 }],
+          currentStepIndex: 1,
+          startDate: Date.now(),
+          currentStepStartDate: Date.now(),
+          autoAdvance: false,
+          createdAt: Date.now(),
+          targetType: 'weekly-equivalent'
+        }],
+        initialized: true
+      });
+
+      render(<LogDose />);
+
+      expect(screen.getByLabelText('Titration Protocol Info')).toBeInTheDocument();
+      expect(screen.getByText('Weekly clinical prot')).toBeInTheDocument();
+      expect(screen.getByText('Step 2 of 2')).toBeInTheDocument();
+      expect(screen.getByText(/0.5 mg Weekly Dose/)).toBeInTheDocument();
+      expect(screen.getByText(/Recommended clinical dosage for Step 2 is 0.5 mg/)).toBeInTheDocument();
+    });
+
+    it('shows step indication and calculates top-up dose in PK mode', () => {
+      useProtocolStore.setState({
+        protocols: [{
+          id: 'p-1',
+          medicationId: 'med-1',
+          name: 'PK steady state prot',
+          steps: [{ id: 's1', dosage: 0.5, durationWeeks: 4, targetConcentration: 10.0 }],
+          currentStepIndex: 0,
+          startDate: Date.now(),
+          currentStepStartDate: Date.now(),
+          autoAdvance: false,
+          createdAt: Date.now(),
+          targetType: 'steady-state-concentration'
+        }],
+        initialized: true
+      });
+
+      render(<LogDose />);
+
+      expect(screen.getByLabelText('Titration Protocol Info')).toBeInTheDocument();
+      expect(screen.getByText('PK steady state prot')).toBeInTheDocument();
+      expect(screen.getByText('Step 1 of 1')).toBeInTheDocument();
+      expect(screen.getAllByText(/10\s*ng\/ml/).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText(/Calculated top-up dose to reach your/)).toBeInTheDocument();
+    });
+
+    it('shows timing warning when logging a dose 3 days early in clinical weekly mode', () => {
+      useProtocolStore.setState({
+        protocols: [{
+          id: 'p-1',
+          medicationId: 'med-1',
+          name: 'Weekly clinical prot',
+          steps: [{ id: 's1', dosage: 0.25, durationWeeks: 4 }],
+          currentStepIndex: 0,
+          startDate: Date.now() - 3 * 24 * 60 * 60 * 1000,
+          currentStepStartDate: Date.now() - 3 * 24 * 60 * 60 * 1000,
+          autoAdvance: false,
+          createdAt: Date.now(),
+          targetType: 'weekly-equivalent'
+        }],
+        initialized: true
+      });
+
+      useMedicationStore.setState({
+        medications: [mockMedication],
+        doses: [{
+          id: 'prev-dose',
+          medicationId: 'med-1',
+          dosage: 0.25,
+          unit: 'mg',
+          injectionSite: 'abdomen-upper-left',
+          dateTime: Date.now() - 3 * 24 * 60 * 60 * 1000, // 3 days ago
+          notes: '',
+          createdAt: Date.now() - 3 * 24 * 60 * 60 * 1000,
+        }],
+        initialized: true
+      });
+
+      render(<LogDose />);
+
+      expect(screen.getByLabelText('Dose Timing Warning')).toBeInTheDocument();
+      expect(screen.getByText('Overdose Risk Warning')).toBeInTheDocument();
+      expect(screen.getByText(/Dosing now would be 4\.0 days early/)).toBeInTheDocument();
+    });
+
+    it('shows timing warning when logging a dose 3 days late in clinical weekly mode', () => {
+      useProtocolStore.setState({
+        protocols: [{
+          id: 'p-1',
+          medicationId: 'med-1',
+          name: 'Weekly clinical prot',
+          steps: [{ id: 's1', dosage: 0.25, durationWeeks: 4 }],
+          currentStepIndex: 0,
+          startDate: Date.now() - 10 * 24 * 60 * 60 * 1000,
+          currentStepStartDate: Date.now() - 10 * 24 * 60 * 60 * 1000,
+          autoAdvance: false,
+          createdAt: Date.now(),
+          targetType: 'weekly-equivalent'
+        }],
+        initialized: true
+      });
+
+      useMedicationStore.setState({
+        medications: [mockMedication],
+        doses: [{
+          id: 'prev-dose',
+          medicationId: 'med-1',
+          dosage: 0.25,
+          unit: 'mg',
+          injectionSite: 'abdomen-upper-left',
+          dateTime: Date.now() - 10 * 24 * 60 * 60 * 1000, // 10 days ago
+          notes: '',
+          createdAt: Date.now() - 10 * 24 * 60 * 60 * 1000,
+        }],
+        initialized: true
+      });
+
+      render(<LogDose />);
+
+      expect(screen.getByLabelText('Dose Timing Warning')).toBeInTheDocument();
+      expect(screen.getByText('Schedule Deviation Info')).toBeInTheDocument();
+      expect(screen.getByText(/Dosing now would be 3\.0 days late/)).toBeInTheDocument();
+    });
+  });
 });
