@@ -10,6 +10,7 @@ import { exportData, downloadBackupJSON, importData } from '../lib/cloudSync';
 import { generatePDF, downloadPDF } from '../lib/pdfExport';
 import { requestNotificationPermission } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { HelpBox } from '../components/HelpBox';
 import {
   Bell, FileText, Download, Upload,
   RotateCw, MapPin, Wand2,
@@ -362,7 +363,12 @@ export function Settings() {
             <div className="flex items-center gap-3">
               <AlertTriangle size={18} className="text-red-400" />
               <div className="text-left">
-                <p className="text-sm font-medium text-white">Severe Side Effect Threshold</p>
+                <p className="text-sm font-medium text-white flex items-center gap-2">
+                  Severe Side Effect Threshold
+                  <HelpBox>
+                    This threshold acts as a global warning system. Points are accumulated based on symptom severity (Mild=1, Mod=2, Sev=3) over recent logs. If the total score exceeds this value, a medical warning is triggered.
+                  </HelpBox>
+                </p>
                 <p className="text-xs text-slate-400">
                   Points required to trigger a medical warning
                 </p>

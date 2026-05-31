@@ -2,6 +2,7 @@ import { useMedicationStore } from '../stores/medicationStore';
 import { useVialStore } from '../stores/vialStore';
 import { Clock, ChevronRight, FlaskConical } from 'lucide-react';
 import { format } from 'date-fns';
+import { HelpBox } from './HelpBox';
 
 interface MedicationCardProps {
   medId: string;
@@ -57,7 +58,12 @@ export function MedicationCard({ medId, onClick }: MedicationCardProps) {
 
       <div className="mb-3">
         <div className="flex items-center justify-between text-xs mb-1.5">
-          <span className="text-slate-400">Medication Level</span>
+          <span className="text-slate-400 flex items-center gap-1">
+            Medication Level
+            <HelpBox>
+              This level is estimated by a pharmacokinetic engine calculating the remaining active concentration based on your medication's half-life decay.
+            </HelpBox>
+          </span>
           <span className="font-medium" style={{ color: med.color }}>
             {level.toFixed(2)} {med.unit}
           </span>

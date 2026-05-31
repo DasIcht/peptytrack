@@ -12,6 +12,7 @@ import { scheduleReminder } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { SideEffectChips } from '../components/SideEffectChips';
 import { CircularProgress } from '../components/CircularProgress';
+import { HelpBox } from '../components/HelpBox';
 import { MedicalWarningBanner } from '../components/MedicalWarningBanner';
 import type { Dose, InjectionSite, SideEffectLog, SideEffectSeverity } from '../types';
 import { getSideEffectsOrderedForMedication } from '../lib/sideEffects';
@@ -672,6 +673,9 @@ export function LogDose() {
             <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-widest">
               <FlaskConical size={12} className="text-primary-400" />
               Vial
+              <HelpBox>
+                To calculate units: Divide your dose by the vial concentration. For example, a 5mg dose from a 2mg/0.1ml vial equals 0.25ml or 25 units.
+              </HelpBox>
             </label>
             {isQuick ? (
               // Quick Log: 2-column layout — dropdown left, summary right
@@ -907,6 +911,9 @@ export function LogDose() {
             <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
               <MapPin size={12} className="text-primary-400" />
               Injection Site
+              <HelpBox>
+                Rotating injection sites is crucial for scar-tissue prevention and absorption consistency.
+              </HelpBox>
             </label>
             {!editingId && settings.injectionRotationSites.length >= 2 && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-400 text-[10px] font-medium border border-primary-500/15">

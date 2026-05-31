@@ -3,6 +3,7 @@ import { useProtocolStore } from '../stores/protocolStore';
 import { useUIStore } from '../stores/uiStore';
 
 import { uuid } from '../lib/uuid';
+import { HelpBox } from './HelpBox';
 import type { ProtocolStep, TitrationTargetMode } from '../types';
 import { Plus, Trash2, Calendar, Syringe, Settings2, Play, Square, PieChart, Target } from 'lucide-react';
 
@@ -19,7 +20,7 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
   const existingProtocol = getActiveProtocolForMedication(medicationId);
   
   const [targetType, setTargetType] = useState<TitrationTargetMode>(
-    existingProtocol?.targetType || 'weekly-equivalent'
+    existingProtocol?.targetType ?? 'weekly-equivalent'
   );
 
   const [steps, setSteps] = useState<ProtocolStep[]>(
@@ -191,6 +192,9 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
           <label className="text-sm font-semibold text-white flex items-center gap-2 mb-2">
             <Target size={14} className="text-primary-400" />
             Target Mode
+            <HelpBox>
+              Clinical mode targets a weekly dose equivalent. Pharmacokinetic mode targets a specific steady-state concentration (ng/ml) based on half-life decay. Target Concentration (ng/ml) field specifies the desired steady-state level.
+            </HelpBox>
           </label>
           <div className="flex bg-surface-800 rounded-xl p-1 border border-white/5">
             <button

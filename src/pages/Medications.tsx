@@ -7,6 +7,7 @@ import { uuid } from '../lib/uuid';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { TitrationWizard } from '../components/TitrationWizard';
 import { MEDICATION_LIBRARY } from '../db/seed';
+import { HelpBox } from '../components/HelpBox';
 import type { Frequency } from '../types';
 import { Pill, Trash2, Edit3, Clock, ChevronRight, X, Plus, Save, Activity } from 'lucide-react';
 
@@ -652,7 +653,12 @@ interface EditForm {
                       </div>
                     ) : (
                       <div>
-                        <label className="text-xs text-slate-400 block mb-1">Half-Life (hours) *</label>
+                        <label className="text-xs text-slate-400 flex items-center gap-1 mb-1">
+                          Half-Life (hours) *
+                          <HelpBox>
+                            Half-life is the time required for the concentration of the medication in your body to reduce by half. This value is critical for the app to accurately calculate and graph your estimated blood levels over time.
+                          </HelpBox>
+                        </label>
                         <input
                           type="number"
                           min={0.1}
@@ -668,7 +674,12 @@ interface EditForm {
 
                   {customForm.frequency === 'custom' && (
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1">Half-Life (hours) *</label>
+                      <label className="text-xs text-slate-400 flex items-center gap-1 mb-1">
+                        Half-Life (hours) *
+                        <HelpBox>
+                          Half-life is the time required for the concentration of the medication in your body to reduce by half. This value is critical for the app to accurately calculate and graph your estimated blood levels over time.
+                        </HelpBox>
+                      </label>
                       <input
                         type="number"
                         min={0.1}
