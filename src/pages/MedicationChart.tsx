@@ -11,6 +11,7 @@ import { useProtocolStore } from '../stores/protocolStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useSymptomLogStore } from '../stores/symptomLogStore';
 import { TitrationDecisionChart } from '../components/TitrationDecisionChart';
+import { HelpBox } from '../components/HelpBox';
 import { calculateWeightedSymptomScore } from '../lib/titrationAnalytics';
 import { RefreshCw, Activity } from 'lucide-react';
 
@@ -265,7 +266,12 @@ export function MedicationChart() {
 
   return (
     <div className="min-h-full pb-24 px-3 pt-6">
-      <h1 className="text-2xl font-bold text-white mb-1">Medication Levels</h1>
+      <div className="flex items-center gap-2 mb-1">
+        <h1 className="text-2xl font-bold text-white">Medication Levels</h1>
+        <HelpBox>
+          This dual-axis chart maps your estimated medication levels on the left axis, and your weight/symptoms on the right axis.
+        </HelpBox>
+      </div>
       <p className="text-sm text-slate-400 mb-6">Estimated concentration based on half-life</p>
 
       {/* Time range selector */}

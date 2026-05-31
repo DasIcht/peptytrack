@@ -5,6 +5,7 @@ import { useVialStore } from '../stores/vialStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useUIStore } from '../stores/uiStore';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { HelpBox } from '../components/HelpBox';
 import { FlaskConical, Plus, ChevronRight, Edit3, Trash2 } from 'lucide-react';
 
 export function Vials() {
@@ -193,7 +194,12 @@ export function Vials() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Vials</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-white">Vials</h1>
+            <HelpBox>
+              Reconstitution is the process of mixing your freeze-dried peptide (mg) with bacteriostatic water (ml). Fill out the total mg of peptide and the total ml of water added to calculate your vial's concentration.
+            </HelpBox>
+          </div>
           <p className="text-sm text-slate-400">
             {totalVials} vial{totalVials !== 1 ? 's' : ''} across {medications.length} medication{medications.length !== 1 ? 's' : ''}
           </p>
