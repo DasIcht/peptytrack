@@ -1,0 +1,450 @@
+{
+  "version": 7,
+  "appVersion": "1.1.0",
+  "exportedAt": 1780156836975,
+  "medications": [
+    {
+      "id": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "templateId": "tirzepatide",
+      "name": "Tirzepatide",
+      "brand": "Mounjaro / Zepbound",
+      "activeIngredient": "Tirzepatide",
+      "dosageOptions": [
+        2.5,
+        5,
+        7.5,
+        10,
+        12.5,
+        15
+      ],
+      "unit": "mg",
+      "frequency": "weekly",
+      "halfLifeHours": 120,
+      "color": "#f59e0b",
+      "reminderHoursBefore": 24,
+      "enabled": true,
+      "createdAt": 1777488804936
+    }
+  ],
+  "doses": [
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "dosage": 2.5,
+      "unit": "mg",
+      "injectionSite": "abdomen-upper-left",
+      "dateTime": 1776884160000,
+      "notes": "",
+      "id": "09bb5f88-571f-425a-a1b0-71b3102f1ae7",
+      "createdAt": 1777488994706,
+      "vialId": "84d0ffdf-0049-45e9-ba02-f4a9edcc4035"
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "dosage": 1.8,
+      "unit": "mg",
+      "injectionSite": "abdomen-upper-right",
+      "dateTime": 1775847420000,
+      "notes": "",
+      "id": "30cdc37b-3274-42e0-bc11-e41c83dd2596",
+      "createdAt": 1777489085337,
+      "vialId": "54593227-1d5a-46ab-9e26-ae81d401106c"
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "dosage": 2.5,
+      "unit": "mg",
+      "injectionSite": "abdomen-upper-right",
+      "dateTime": 1778048100000,
+      "notes": "",
+      "id": "3d485264-1266-4be8-b759-5deb5b80d24b",
+      "createdAt": 1778053319356,
+      "vialId": "84d0ffdf-0049-45e9-ba02-f4a9edcc4035"
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "dosage": 2.5,
+      "unit": "mg",
+      "injectionSite": "abdomen-upper-left",
+      "dateTime": 1777445760000,
+      "notes": "",
+      "id": "68ee6b63-a6f6-46f0-9fb9-ce5d06d11366",
+      "createdAt": 1777489014469,
+      "vialId": "84d0ffdf-0049-45e9-ba02-f4a9edcc4035"
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "dosage": 1.4,
+      "unit": "mg",
+      "injectionSite": "abdomen-upper-left",
+      "dateTime": 1774641480000,
+      "notes": "",
+      "id": "9084f4ce-e54f-4f9b-8d46-f3e07e5730a8",
+      "createdAt": 1777489136235,
+      "vialId": "54593227-1d5a-46ab-9e26-ae81d401106c"
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "vialId": "84d0ffdf-0049-45e9-ba02-f4a9edcc4035",
+      "dosage": 2.5,
+      "unit": "mg",
+      "injectionSite": "abdomen-lower-left",
+      "dateTime": 1778612894532,
+      "notes": "",
+      "sideEffects": [],
+      "id": "9f2287d4-aec7-4d5c-8382-241b682462d7",
+      "createdAt": 1778612894532
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "dosage": 1.6,
+      "unit": "mg",
+      "injectionSite": "abdomen-upper-right",
+      "dateTime": 1775242680000,
+      "notes": "",
+      "id": "afadfa0c-cd52-48e9-aa22-f3af7f354e85",
+      "createdAt": 1777489110870,
+      "vialId": "54593227-1d5a-46ab-9e26-ae81d401106c"
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "vialId": "4d00a81f-4782-46bf-a2e9-abfe78ee0325",
+      "dosage": 2.5,
+      "unit": "mg",
+      "injectionSite": "abdomen-lower-right",
+      "dateTime": 1779024420000,
+      "notes": "",
+      "sideEffects": [],
+      "id": "b24e4765-3e87-40e1-a06c-1e982ab9b884",
+      "createdAt": 1779024437457
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "vialId": "4d00a81f-4782-46bf-a2e9-abfe78ee0325",
+      "dosage": 2.5,
+      "unit": "mg",
+      "injectionSite": "abdomen-upper-left",
+      "dateTime": 1779481059142,
+      "notes": "",
+      "sideEffects": [],
+      "id": "bca289ff-e089-4197-ba6a-a2debfda4131",
+      "createdAt": 1779481059142
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "vialId": "4d00a81f-4782-46bf-a2e9-abfe78ee0325",
+      "dosage": 2.5,
+      "unit": "mg",
+      "injectionSite": "abdomen-upper-right",
+      "dateTime": 1779869640000,
+      "notes": "",
+      "sideEffects": [],
+      "id": "c0337474-0c79-47f8-b032-483323c1954f",
+      "createdAt": 1779870385539
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "dosage": 1.2,
+      "unit": "mg",
+      "injectionSite": "abdomen-upper-left",
+      "dateTime": 1774036680000,
+      "notes": "",
+      "id": "ce1558d8-3ab2-4c55-9031-149570f48f06",
+      "createdAt": 1777489157440,
+      "vialId": "54593227-1d5a-46ab-9e26-ae81d401106c"
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "dosage": 1.8,
+      "unit": "mg",
+      "injectionSite": "abdomen-upper-right",
+      "dateTime": 1776452160000,
+      "notes": "",
+      "id": "e4d0c08f-4034-4fa6-a9f3-5ffb5b258a17",
+      "createdAt": 1777489063064,
+      "vialId": "54593227-1d5a-46ab-9e26-ae81d401106c"
+    }
+  ],
+  "weightEntries": [
+    {
+      "weight": 103.6,
+      "unit": "kg",
+      "dateTime": 1774810800000,
+      "notes": "",
+      "id": "037262cc-5e35-4407-9925-d7a967a5beb4",
+      "createdAt": 1777489245959
+    },
+    {
+      "weight": 100.3,
+      "unit": "kg",
+      "dateTime": 1779524820000,
+      "notes": "",
+      "id": "07373c0a-d5cc-4d8c-a0b3-30544f98bdc6",
+      "createdAt": 1779524847134
+    },
+    {
+      "weight": 100.9,
+      "unit": "kg",
+      "dateTime": 1778650260000,
+      "notes": "",
+      "id": "40ef98f0-f301-467f-b4e4-2998851b5151",
+      "createdAt": 1778650322221
+    },
+    {
+      "weight": 101.3,
+      "unit": "kg",
+      "dateTime": 1777620480000,
+      "notes": "",
+      "id": "4f44d896-539e-4184-9672-d534eb6a8b58",
+      "createdAt": 1777620538543
+    },
+    {
+      "weight": 101.3,
+      "unit": "kg",
+      "dateTime": 1778053320000,
+      "notes": "",
+      "id": "55878ea5-89d9-4643-a4cf-b3c10b78726e",
+      "createdAt": 1778053339177
+    },
+    {
+      "weight": 103.1,
+      "unit": "kg",
+      "dateTime": 1777230120000,
+      "notes": "",
+      "id": "6abcd94e-14c0-4ac2-a8b7-bf055136d765",
+      "createdAt": 1777489353355
+    },
+    {
+      "weight": 99.9,
+      "unit": "kg",
+      "dateTime": 1780118580000,
+      "notes": "",
+      "id": "811375fc-73a6-4328-ba8a-f56ab9781c4a",
+      "createdAt": 1780118635648
+    },
+    {
+      "weight": 103.3,
+      "unit": "kg",
+      "dateTime": 1777057260000,
+      "notes": "",
+      "id": "83b66e0c-ee66-4bf7-b696-b4abf9735f9a",
+      "createdAt": 1777489312656
+    },
+    {
+      "weight": 100.3,
+      "unit": "kg",
+      "dateTime": 1780031580000,
+      "notes": "",
+      "id": "b7084951-7e6c-4dd8-a49a-f52bf5c9bb96",
+      "createdAt": 1780031641457
+    },
+    {
+      "weight": 100.9,
+      "unit": "kg",
+      "dateTime": 1778313780000,
+      "notes": "",
+      "id": "c28e7a35-f18d-4123-a550-b5934dbfc4ec",
+      "createdAt": 1778313814910
+    },
+    {
+      "weight": 100.8,
+      "unit": "kg",
+      "dateTime": 1779120060000,
+      "notes": "",
+      "id": "e789a6e0-104a-4812-876a-59d149589f35",
+      "createdAt": 1779120101385
+    },
+    {
+      "weight": 103.2,
+      "unit": "kg",
+      "dateTime": 1776106860000,
+      "notes": "",
+      "id": "e9ad6446-9e9b-4dcc-aa7b-93708802d2bc",
+      "createdAt": 1777489293610
+    },
+    {
+      "weight": 104,
+      "unit": "kg",
+      "dateTime": 1774425540000,
+      "notes": "",
+      "id": "ec59806e-95c1-4e79-85c7-2883080440ca",
+      "createdAt": 1777489221820
+    },
+    {
+      "weight": 103.2,
+      "unit": "kg",
+      "dateTime": 1775588400000,
+      "notes": "",
+      "id": "ed7b1dc9-1e6d-423b-a6bb-ef90ff90e25a",
+      "createdAt": 1777489265943
+    },
+    {
+      "weight": 102.3,
+      "unit": "kg",
+      "dateTime": 1777402920000,
+      "notes": "",
+      "id": "ed9a3eee-dee6-4126-a7f5-70ae0c48a650",
+      "createdAt": 1777489381395
+    },
+    {
+      "weight": 103.1,
+      "unit": "kg",
+      "dateTime": 1777143660000,
+      "notes": "",
+      "id": "ee462a3b-c282-41d3-9f4b-e44c422e832f",
+      "createdAt": 1777489330800
+    },
+    {
+      "weight": 101.9,
+      "unit": "kg",
+      "dateTime": 1777527420000,
+      "notes": "",
+      "id": "fe13dfcb-0618-4319-a81a-13b11f397972",
+      "createdAt": 1777527456812
+    }
+  ],
+  "vials": [
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "name": "Vial #3",
+      "peptideAmount": 10,
+      "peptideUnit": "mg",
+      "bacWaterAmount": 1,
+      "reconstitutedAt": 1778976000000,
+      "remainingOverride": null,
+      "notes": "",
+      "id": "4d00a81f-4782-46bf-a2e9-abfe78ee0325",
+      "createdAt": 1779024427383
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "name": "Vial #1",
+      "peptideAmount": 10,
+      "peptideUnit": "mg",
+      "bacWaterAmount": 1,
+      "reconstitutedAt": 1773964800000,
+      "remainingOverride": 0,
+      "notes": "TCI TR10 FWBP MFG:OCT28,2025",
+      "id": "54593227-1d5a-46ab-9e26-ae81d401106c",
+      "createdAt": 1778093071283
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "name": "Vial #2",
+      "peptideAmount": 10,
+      "peptideUnit": "mg",
+      "bacWaterAmount": 1,
+      "reconstitutedAt": 1776816000000,
+      "remainingOverride": null,
+      "notes": "TCI TR10 FWBP MFG:OCT28,2025",
+      "id": "84d0ffdf-0049-45e9-ba02-f4a9edcc4035",
+      "createdAt": 1778093131974
+    }
+  ],
+  "settings": {
+    "injectionRotationSites": [
+      "abdomen-upper-left",
+      "abdomen-upper-right",
+      "abdomen-lower-left",
+      "abdomen-lower-right"
+    ],
+    "titrationWizardEnabled": true
+  },
+  "customSideEffects": [],
+  "protocols": [
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "name": "Tirzepatide Protocol",
+      "steps": [
+        {
+          "id": "42641907-44b3-4b04-a6ba-97aae12a504e",
+          "dosage": 2.5,
+          "durationWeeks": 4
+        },
+        {
+          "id": "6493ea2a-134b-4f42-8bcf-2a04fc58b167",
+          "dosage": 3.3,
+          "durationWeeks": 4
+        },
+        {
+          "id": "ddb8367b-56c5-4d96-acc2-023d823eff94",
+          "dosage": 5,
+          "durationWeeks": 4
+        }
+      ],
+      "currentStepIndex": 1,
+      "startDate": 1778610692604,
+      "currentStepStartDate": 1779870385579,
+      "autoAdvance": true,
+      "chartStyle": "spider",
+      "id": "a7e54d82-2e8c-4ab8-a8ba-83fafe3ae9c0",
+      "createdAt": 1778610688032
+    }
+  ],
+  "symptomLogs": [
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "dateTime": 1778564940000,
+      "symptoms": [
+        {
+          "label": "Diarrhea",
+          "severity": "mild"
+        }
+      ],
+      "id": "780c9fae-1c19-4834-8ff9-c2860e092e8c",
+      "createdAt": 1778651365426,
+      "notes": ""
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "dateTime": 1778999160000,
+      "symptoms": [
+        {
+          "label": "Constipation",
+          "severity": "mild"
+        }
+      ],
+      "notes": "",
+      "id": "908082ad-08ba-4ea6-99c7-a1789dc8452b",
+      "createdAt": 1778999186810
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "dateTime": 1778874420000,
+      "symptoms": [
+        {
+          "label": "Constipation",
+          "severity": "mild"
+        }
+      ],
+      "id": "a2a89a39-78cd-4f81-856c-7f815a7fb9e0",
+      "createdAt": 1778874439854,
+      "notes": ""
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "dateTime": 1778955960000,
+      "symptoms": [
+        {
+          "label": "Constipation",
+          "severity": "mild"
+        }
+      ],
+      "notes": "",
+      "id": "de986e1b-5ad7-4112-96bd-e41205bfb0f7",
+      "createdAt": 1778955990109
+    },
+    {
+      "medicationId": "09e4d8b0-ad64-43c9-acd7-1807d6510841",
+      "dateTime": 1779305940000,
+      "symptoms": [
+        {
+          "label": "Diarrhea",
+          "severity": "mild"
+        }
+      ],
+      "notes": "",
+      "id": "e382d2a5-03de-4694-9755-92f145544a6b",
+      "createdAt": 1779356388522
+    }
+  ]
+}
