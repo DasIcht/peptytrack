@@ -489,6 +489,13 @@ colors: {
 - All pages have `pb-24` to clear bottom nav.
 - `main` is `relative` for overlay positioning.
 
+### 8.4 Contextual Guidance Components
+- **`<HelpBox>`**: Used for inline patient guidance (e.g., syringe math, pharmacokinetics).
+  - Uses `absolute` positioning to float above content.
+  - Ensures high visibility with `z-[100]`.
+  - Employs premium styling: `bg-surface-800/50`, `backdrop-blur-md`, and subtle borders `border-white/5`.
+  - Integrated closely with the elements they explain to provide context without taking up permanent vertical space.
+
 ---
 
 ## 9. Testing
