@@ -12,9 +12,9 @@ import { requestNotificationPermission } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import {
   Bell, FileText, Download, Upload,
-  RotateCw, MapPin, Wand2, Target,
+  RotateCw, MapPin, Wand2,
   Scale, Pill, ToggleRight, ToggleLeft,
-  Shield, ChevronRight, Trash2
+  Shield, ChevronRight, Trash2, AlertTriangle
 } from 'lucide-react';
 
 export function Settings() {
@@ -332,10 +332,10 @@ export function Settings() {
         </div>
       </div>
 
-      {/* Titration Wizard */}
+      {/* Global Safety Settings */}
       <div className="mb-6">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Titration Wizard</h2>
-        <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Global Safety Settings</h2>
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden card-premium">
           {/* Toggle */}
           <button
             onClick={() => handleTitrationWizardToggle(!settings.titrationWizardEnabled)}
@@ -344,7 +344,7 @@ export function Settings() {
             <div className="flex items-center gap-3">
               <Wand2 size={18} className="text-accent-400" />
               <div className="text-left">
-                <p className="text-sm font-medium text-white">Enable Wizard</p>
+                <p className="text-sm font-medium text-white">Enable Titration Wizard</p>
                 <p className="text-xs text-slate-400">
                   Step-up recommendations and safety warnings
                 </p>
@@ -357,70 +357,31 @@ export function Settings() {
             )}
           </button>
 
-          {/* Target Mode Toggle */}
-          {settings.titrationWizardEnabled && (
-            <div className="px-4 py-3.5 border-b border-white/5">
-              <div className="flex items-center gap-3 mb-3">
-                <Target size={18} className="text-primary-400" />
-                <div className="text-left">
-                  <p className="text-sm font-medium text-white">Target Mode</p>
-                  <p className="text-xs text-slate-400">
-                    How titration goals are defined
-                  </p>
-                </div>
-              </div>
-              <div className="flex bg-surface-900 rounded-xl p-1 border border-white/10">
-                <button
-                  onClick={() => updateSetting('titrationTargetMode', 'weekly-equivalent')}
-                  className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors ${
-                    settings.titrationTargetMode === 'weekly-equivalent'
-                      ? 'bg-primary-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  Clinical (Weekly)
-                </button>
-                <button
-                  onClick={() => updateSetting('titrationTargetMode', 'steady-state-concentration')}
-                  className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors ${
-                    settings.titrationTargetMode === 'steady-state-concentration'
-                      ? 'bg-primary-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  Pharmacokinetic
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Severe Side Effect Threshold */}
-          {settings.titrationWizardEnabled && (
-            <div className="flex items-center justify-between px-4 py-3.5">
-              <div className="flex items-center gap-3">
-                <Shield size={18} className="text-red-400" />
-                <div className="text-left">
-                  <p className="text-sm font-medium text-white">Severe Side Effect Threshold</p>
-                  <p className="text-xs text-slate-400">
-                    Points required to trigger a medical warning (Mild=1, Mod=2, Sev=3)
-                  </p>
-                </div>
+          <div className="flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors">
+            <div className="flex items-center gap-3">
+              <AlertTriangle size={18} className="text-red-400" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-white">Severe Side Effect Threshold</p>
+                <p className="text-xs text-slate-400">
+                  Points required to trigger a medical warning
+                </p>
               </div>
-              <input
-                type="number"
-                min={3}
-                max={20}
-                value={settings.severeSideEffectThreshold}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  if (!isNaN(val) && val >= 3) {
-                    updateSetting('severeSideEffectThreshold', val);
-                  }
-                }}
-                className="w-16 bg-surface-900 border border-white/10 rounded-lg px-2 py-1 text-white text-sm text-center focus:outline-none focus:border-primary-500"
-              />
             </div>
-          )}
+            <input
+              type="number"
+              min={3}
+              max={20}
+              value={settings.severeSideEffectThreshold}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val) && val >= 3) {
+                  updateSetting('severeSideEffectThreshold', val);
+                }
+              }}
+              className="w-16 input-premium border border-white/10 rounded-lg px-2 py-1 text-white text-sm text-center focus:outline-none focus:border-primary-500 bg-surface-900"
+            />
+          </div>
         </div>
       </div>
 

@@ -263,7 +263,6 @@ export interface AppSettings {
   injectionRotationSites: InjectionSite[];
   titrationWizardEnabled: boolean;
   severeSideEffectThreshold: number;
-  titrationTargetMode: 'weekly-equivalent' | 'steady-state-concentration';
 }
 
 export interface TitrationMetrics {
