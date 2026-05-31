@@ -26,13 +26,24 @@ export function MedicationCard({ medId, onClick }: MedicationCardProps) {
   const levelPercent = Math.min((level / maxLevel) * 100, 100);
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      className="w-full text-left group relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-surface-800 to-surface-900 p-4 transition-all duration-300 hover:border-white/10 hover:shadow-lg hover:shadow-black/20 active:scale-[0.98]"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
+      className="w-full text-left group relative rounded-2xl border border-white/5 bg-gradient-to-br from-surface-800 to-surface-900 p-4 transition-all duration-300 hover:border-white/10 hover:shadow-lg hover:shadow-black/20 active:scale-[0.98] cursor-pointer"
     >
-      <div className="absolute top-0 right-0 w-32 h-32 opacity-5 rounded-full -translate-y-1/2 translate-x-1/2" style={{ backgroundColor: med.color }} />
+      <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+        <div className="absolute top-0 right-0 w-32 h-32 opacity-5 rounded-full -translate-y-1/2 translate-x-1/2" style={{ backgroundColor: med.color }} />
+      </div>
 
-      <div className="flex items-start justify-between mb-3">
+      <div className="relative z-10">
+        <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -106,6 +117,7 @@ export function MedicationCard({ medId, onClick }: MedicationCardProps) {
           </div>
         </div>
       )}
-    </button>
+      </div>
+    </div>
   );
 }
