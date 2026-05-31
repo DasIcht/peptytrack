@@ -17,7 +17,7 @@ export function HelpBox({ children, className = '' }: HelpBoxProps) {
         className={`transition-colors inline-flex items-center justify-center rounded-full p-1 -m-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 self-start ${
           isExpanded ? 'text-primary-400' : 'text-slate-400 hover:text-slate-300'
         }`}
-        aria-label="Toggle help"
+        aria-label={isExpanded ? "Hide help" : "Show help"}
         aria-expanded={isExpanded}
       >
         <HelpCircle size={18} />

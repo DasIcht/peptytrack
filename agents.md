@@ -85,6 +85,7 @@ peptyTrack/
 │   │   ├── CircularProgress.tsx # Animated SVG circular progress with color-coded rings
 │   │   ├── TitrationWizard.tsx # Protocol management wizard with interactive steps
 │   │   ├── TitrationDecisionChart.tsx # Radar/Gauge/Timeline visualizations for titration readiness
+│   │   ├── HelpBox.tsx        # Collapsible contextual help container
 │   │   └── Toast.tsx          # Toast notification system
 │   └── pages/                 # Full-page route components
 │       ├── Dashboard.tsx      # Home: stats, medication cards, quick actions
