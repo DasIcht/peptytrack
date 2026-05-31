@@ -8,12 +8,32 @@ export interface HelpBoxProps {
 
 export function HelpBox({ children, className = '' }: HelpBoxProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!isExpanded) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsExpanded(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isExpanded]);
 
   return (
-    <div className={`inline-flex flex-col ${className}`}>
+    <div ref={containerRef} className={`inline-flex relative ${className}`}>
       <button
         type="button"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsExpanded(!isExpanded);
+        }}
         className={`transition-colors inline-flex items-center justify-center rounded-full p-1 -m-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 self-start ${
           isExpanded ? 'text-primary-400' : 'text-slate-400 hover:text-slate-300'
         }`}
@@ -24,14 +44,12 @@ export function HelpBox({ children, className = '' }: HelpBoxProps) {
       </button>
 
       <div
-        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
-          isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        className={`absolute z-[100] top-full left-1/2 -translate-x-1/2 mt-2 w-64 max-w-[85vw] shadow-xl transition-all duration-200 ease-out ${
+          isExpanded ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'
         }`}
       >
-        <div className="overflow-hidden">
-          <div className="p-3 mt-3 bg-surface-800/50 border border-white/5 rounded-xl text-sm leading-relaxed text-slate-300 shadow-elevated">
-            {children}
-          </div>
+        <div className="p-3 bg-surface-800 border border-white/10 rounded-xl text-sm leading-relaxed text-slate-300 shadow-elevated">
+          {children}
         </div>
       </div>
     </div>
