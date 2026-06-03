@@ -7,7 +7,7 @@ import { useSettingsStore } from './stores/settingsStore';
 import { useSideEffectsStore } from './stores/sideEffectsStore';
 import { useProtocolStore } from './stores/protocolStore';
 import { useSymptomLogStore } from './stores/symptomLogStore';
-import { checkAndFireReminders } from './lib/notifications';
+import { checkAndFireReminders, rescheduleAllReminders } from './lib/notifications';
 import { getAutoBackup, clearAutoBackup, saveAutoBackup } from './lib/autoBackup';
 import { importData, exportData } from './lib/cloudSync';
 import { BottomNav } from './components/BottomNav';
@@ -72,6 +72,16 @@ function App() {
     checkAndFireReminders().catch(() => {});
     return () => clearInterval(interval);
   }, [initialized, settings.notificationsEnabled]);
+
+  // Synchronize reminders when data or notification settings change
+  useEffect(() => {
+    if (!initialized) return;
+    if (settings.notificationsEnabled) {
+      rescheduleAllReminders(medications, doses);
+    } else {
+      localStorage.setItem('pepty-reminders', '[]');
+    }
+  }, [initialized, medications, doses, settings.notificationsEnabled]);
 
   // Auto-backup whenever data changes
   useEffect(() => {

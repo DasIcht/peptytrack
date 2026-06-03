@@ -7,6 +7,8 @@ import {
   rescheduleAllReminders,
 } from './notifications';
 import type { Medication, Dose } from '../types';
+import { useSettingsStore } from '../stores/settingsStore';
+import { useProtocolStore } from '../stores/protocolStore';
 
 const TEST_MED: Medication = {
   id: 'test-med-1',
@@ -28,6 +30,24 @@ describe('notifications library', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+    useSettingsStore.setState({
+      settings: {
+        weightUnit: 'kg',
+        medicationUnit: 'mg',
+        notificationsEnabled: true,
+        injectionRotationStrategy: 'sequential',
+        injectionRotationSites: [],
+        titrationWizardEnabled: false,
+        severeSideEffectThreshold: 5,
+      },
+      loading: false,
+      initialized: true,
+    });
+    useProtocolStore.setState({
+      protocols: [],
+      loading: false,
+      initialized: true,
+    });
   });
 
   afterEach(() => {
@@ -105,6 +125,123 @@ describe('notifications library', () => {
     it('returns null if no next dose is scheduled', () => {
       const reminder = scheduleReminder(TEST_MED, []);
       expect(reminder).toBeNull();
+    });
+
+    it('returns null if medication is disabled', () => {
+      const disabledMed = { ...TEST_MED, enabled: false };
+      const lastDose: Dose = {
+        id: 'd1',
+        medicationId: TEST_MED.id,
+        dosage: 0.25,
+        unit: 'mg',
+        injectionSite: 'abdomen-upper-left',
+        dateTime: Date.now() - 24 * 60 * 60 * 1000,
+        notes: '',
+        createdAt: 0,
+      };
+
+      const reminder = scheduleReminder(disabledMed, [lastDose]);
+      expect(reminder).toBeNull();
+    });
+
+    it('schedules reminder with dosage of last logged dose when titration is disabled', () => {
+      const now = Date.now();
+      const lastDose: Dose = {
+        id: 'd1',
+        medicationId: TEST_MED.id,
+        dosage: 0.5, // Different from starting dose (0.25)
+        unit: 'mg',
+        injectionSite: 'abdomen-upper-left',
+        dateTime: now - 24 * 60 * 60 * 1000,
+        notes: '',
+        createdAt: 0,
+      };
+
+      const reminder = scheduleReminder(TEST_MED, [lastDose]);
+      expect(reminder).not.toBeNull();
+      
+      const stored = JSON.parse(localStorage.getItem('pepty-reminders') || '[]');
+      expect(stored.length).toBe(1);
+      expect(stored[0].dosage).toBe(0.5);
+    });
+
+    it('schedules reminder with active protocol step dosage when titration is enabled', () => {
+      const now = Date.now();
+      useSettingsStore.setState({
+        settings: {
+          weightUnit: 'kg',
+          medicationUnit: 'mg',
+          notificationsEnabled: true,
+          injectionRotationStrategy: 'sequential',
+          injectionRotationSites: [],
+          titrationWizardEnabled: true,
+          severeSideEffectThreshold: 5,
+        }
+      });
+      useProtocolStore.setState({
+        protocols: [{
+          id: 'proto-1',
+          medicationId: TEST_MED.id,
+          name: 'Protocol 1',
+          targetType: 'weekly-equivalent',
+          steps: [
+            { id: 's1', dosage: 0.25, durationWeeks: 4 },
+            { id: 's2', dosage: 1.0, durationWeeks: 4 }, // current step dosage
+          ],
+          currentStepIndex: 1,
+          startDate: now,
+          currentStepStartDate: now,
+          autoAdvance: true,
+          createdAt: now,
+        }]
+      });
+
+      const lastDose: Dose = {
+        id: 'd1',
+        medicationId: TEST_MED.id,
+        dosage: 0.25,
+        unit: 'mg',
+        injectionSite: 'abdomen-upper-left',
+        dateTime: now - 24 * 60 * 60 * 1000,
+        notes: '',
+        createdAt: 0,
+      };
+
+      const reminder = scheduleReminder(TEST_MED, [lastDose]);
+      expect(reminder).not.toBeNull();
+
+      const stored = JSON.parse(localStorage.getItem('pepty-reminders') || '[]');
+      expect(stored.length).toBe(1);
+      expect(stored[0].dosage).toBe(1.0); // titration step dosage
+    });
+
+    it('deduplicates previous reminders for the same medication', () => {
+      const now = Date.now();
+      // Setup existing reminders, including one duplicate for TEST_MED.id
+      localStorage.setItem('pepty-reminders', JSON.stringify([
+        { id: `reminder-${TEST_MED.id}-old`, medicationId: TEST_MED.id, dosage: 0.25, fireTime: 100 },
+        { id: `reminder-other`, medicationId: 'other-med', dosage: 1.5, fireTime: 200 }
+      ]));
+
+      const lastDose: Dose = {
+        id: 'd1',
+        medicationId: TEST_MED.id,
+        dosage: 0.5,
+        unit: 'mg',
+        injectionSite: 'abdomen-upper-left',
+        dateTime: now - 24 * 60 * 60 * 1000,
+        notes: '',
+        createdAt: 0,
+      };
+
+      const reminder = scheduleReminder(TEST_MED, [lastDose]);
+      expect(reminder).not.toBeNull();
+
+      const stored = JSON.parse(localStorage.getItem('pepty-reminders') || '[]');
+      expect(stored.length).toBe(2); // One other med, one new TEST_MED (old TEST_MED is removed)
+      const testMedReminders = stored.filter((r: any) => r.medicationId === TEST_MED.id);
+      expect(testMedReminders.length).toBe(1);
+      expect(testMedReminders[0].id).toContain(`reminder-${TEST_MED.id}`);
     });
   });
 

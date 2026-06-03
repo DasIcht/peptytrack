@@ -386,6 +386,10 @@ export interface TitrationMetrics {
 
 ### 7.3 Notification System (`lib/notifications.ts`)
 - Uses `ServiceWorkerRegistration.showNotification()` when a service worker is available to support PWA/standalone mode, falling back to legacy `window.Notification` in non-PWA contexts.
+- **Dynamic Dosage Resolution:** Schedules the next dose reminder using the active titration protocol step's dosage (if titration is enabled), falling back to the last logged dose's dosage, or medication's starting dosage if no history exists.
+- **Duplicate Prevention:** Clears previous reminder entries for the same medication from `localStorage` before scheduling a new one.
+- **Enabled State Check:** Only schedules reminders if the medication is enabled.
+- **Declarative Synchronization:** Declared and synchronized automatically in `App.tsx` on data changes (new/updated/deleted doses, changes to enabled status or settings).
 - **Background limitations:** Because polling runs via `setInterval` in `App.tsx`, reminders still require the app to be open to fire.
 - Reminders stored in `localStorage` under `pepty-reminders`.
 - Only fires once per dose window.
@@ -741,6 +745,7 @@ npx netlify deploy --prod --dir=dist
 | 2026-05-15 | Enhanced Cumulative Symptom Assessment: Refined the titration analytics engine to use a time-weighted "load-based" symptom score with historical decay (0-2 days: 1.0x, 3-7 days: 0.75x, 8-14 days: 0.5x). Implemented **Persistence Detection** to trigger a "Hold" recommendation if any single symptom is recorded in 3 or more entries within a 7-day window, regardless of total score. Updated Medication Chart to synchronize with this safety logic. |
 | 2026-05-23 | Medical Safety Upgrades: Refactored the titration safety engine with clinical risk tiers. Introduced a 48h emergency red-flag route (Anaphylaxis/severe allergic reaction/severe hypoglycemia/severe abdominal pain) that overrides normal checks to trigger flashing red emergency alerts with direct "Call 911" telephone dialers. Added 7-day urgent checks for physician consultations (kidney injury/gallbladder issues/severe vomiting/diarrhea). Implemented 7-day adaptation windows ignoring routine GI adaptation symptoms, selective moderate/severe persistence holds, and relative percentage-based weekly weight loss limits (>1.5% body weight). Added 9 new unit tests. |
 | 2026-05-31 | UX & Safety Enhancements: Integrated active titration protocol step indication card into LogDose page. Refactored auto-proposal and preset highlight logic to support both Clinical (weekly) and Pharmacokinetic (steady-state top-up) modes seamlessly, preserving highlight functionality and pre-filling the exact PK recommended dosage. Added vertical padding to the presets list container to prevent border/shadow clipping when the titration wizard is disabled. Implemented high-priority early overdose risk warnings and late schedule deviation timing alerts in Clinical Mode. Added 4 new unit tests to LogDose.test.tsx (bringing the total to 24 passing tests). |
+| 2026-06-02 | Dose Notification Correctness Fix: Upgraded the notification library to dynamically resolve reminder dosages (checking active titration protocol steps or falling back to the last logged dosage). Deduplicated reminders by filtering previous entries for the same medication before scheduling. Added a central `useEffect` in `App.tsx` to automatically synchronize and reschedule reminders when medications, doses, or settings change. Added 4 unit tests in `notifications.test.ts`. |
 
-> **Last Updated:** 2026-05-31  
-> **Document Version:** 2.0
+> **Last Updated:** 2026-06-02  
+> **Document Version:** 2.1

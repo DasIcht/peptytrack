@@ -311,10 +311,17 @@ Navigation triggers via `useUIStore().setPage('key')`.
 
 ### 7.2 Notification System (`lib/notifications.ts`)
 
-- Requests browser notification permission
-- Schedules dose reminders based on `medication.reminderHoursBefore`
-- Polls every 60 seconds via `setInterval` in `App.tsx`
-- Reminders fire only once per dose window (tracked via `localStorage`)
+- Requests browser notification permission.
+- Schedules dose reminders based on `medication.reminderHoursBefore`.
+- Dynamically resolves next dose's target dosage:
+  - If `titrationWizardEnabled` is active in `settingsStore` and there is an active protocol for the medication, it schedules the reminder with the active protocol step's dosage.
+  - Otherwise, it falls back to scheduling with the dosage of the last logged dose.
+  - If there is no dose history, it uses the default starting dosage.
+- Deduplicates scheduled reminders for the same medication by clearing old reminders from `localStorage` before appending new ones.
+- Only schedules reminders if `medication.enabled` is `true`.
+- Declared/synchronized automatically inside `App.tsx` on data changes (new/updated/deleted doses, changes to enabled status or settings).
+- Polls every 60 seconds via `setInterval` in `App.tsx`.
+- Reminders fire only once per dose window (tracked via `localStorage`).
 - Uses `ServiceWorkerRegistration.showNotification()` when a service worker is available to ensure support for PWA/standalone mode, with a fallback to legacy `window.Notification` in other environments. Polling still requires the app to be running.
 
 ### 7.3 PDF Export (`lib/pdfExport.ts`)
@@ -630,4 +637,5 @@ npm run test       # Runs unit tests
 | 2026-05-15 | Enhanced Cumulative Symptom Assessment: Refined the titration analytics engine to use a time-weighted "load-based" symptom score with historical decay (0-2 days: 1.0x, 3-7 days: 0.75x, 8-14 days: 0.5x). Implemented **Persistence Detection** to trigger a "Hold" recommendation if any single symptom is recorded in 3 or more entries within a 7-day window, regardless of total score. Updated Medication Chart to synchronize with this safety logic. |
 | 2026-05-23 | Medical Safety Upgrades: Refactored the titration safety engine with clinical risk tiers. Introduced a 48h emergency red-flag route (Anaphylaxis/severe allergic reaction/severe hypoglycemia/severe abdominal pain) that overrides normal checks to trigger flashing red emergency alerts with direct "Call 911" telephone dialers. Added 7-day urgent checks for physician consultations (kidney injury/gallbladder issues/severe vomiting/diarrhea). Implemented 7-day adaptation windows ignoring routine GI adaptation symptoms, selective moderate/severe persistence holds, and relative percentage-based weekly weight loss limits (>1.5% body weight). Added 9 new unit tests. |
 | 2026-05-31 | UX & Safety Enhancements: Integrated active titration protocol step indication card into LogDose page. Refactored auto-proposal and preset highlight logic to support both Clinical (weekly) and Pharmacokinetic (steady-state top-up) modes seamlessly, preserving highlight functionality and pre-filling the exact PK recommended dosage. Added vertical padding to the presets list container to prevent border/shadow clipping when the titration wizard is disabled. Implemented high-priority early overdose risk warnings and late schedule deviation timing alerts in Clinical Mode. Added 4 new unit tests to LogDose.test.tsx (bringing the total to 24 passing tests). |
+| 2026-06-02 | Dose Notification Correctness Fix: Upgraded the notification library to dynamically resolve reminder dosages (checking active titration protocol steps or falling back to the last logged dosage). Deduplicated reminders by filtering previous entries for the same medication before scheduling. Added a central `useEffect` in `App.tsx` to automatically synchronize and reschedule reminders when medications, doses, or settings change. Added 4 unit tests in `notifications.test.ts`. |
 

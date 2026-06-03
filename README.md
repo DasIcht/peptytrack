@@ -95,6 +95,7 @@ The project includes unit and component tests using **Vitest** with **jsdom** en
 | `LogDose.test.tsx` | 24 | Dual-mode Quick/Full rendering, mode toggle persistence, zone strip, site selection, form submission, dose warnings, active titration step indication, clinical and PK dose recommendation highlighting, and overdose/schedule deviation timing warnings |
 | `titrationAnalytics.test.ts` | 17 | Time-based step-up, severity-weighted hold, rapid weight loss detection, severe threshold warning, **historical decay**, **persistence detection**, **emergency warnings**, **titration windows**, **selective persistence** |
 | `symptomLogStore.test.ts` | 6 | CRUD, independent logging persistence, medication filtering |
+| `notifications.test.ts` | 14 | Notification permission request, clearance, scheduling with titration/last dose fallback, check/fire reminders, and duplicate prevention |
 
 **Run all tests:**
 ```bash
