@@ -1,5 +1,7 @@
 import type { Medication, Dose } from '../types';
 import { getNextDoseTime } from './halfLifeEngine';
+import { useSettingsStore } from '../stores/settingsStore';
+import { useProtocolStore } from '../stores/protocolStore';
 
 export async function requestNotificationPermission(): Promise<boolean> {
   if (!('Notification' in window)) return false;
@@ -11,6 +13,8 @@ export function scheduleReminder(
   medication: Medication,
   doses: Dose[]
 ): { id: string; fireTime: number } | null {
+  if (!medication.enabled) return null;
+
   const nextDose = getNextDoseTime(medication, doses);
   if (!nextDose) return null;
 
@@ -22,17 +26,46 @@ export function scheduleReminder(
 
   const id = `reminder-${medication.id}-${nextDose.getTime()}`;
 
-  // Store in localStorage for persistence across sessions
+  // Determine dosage based on protocol or last dose
+  let dosage = medication.dosageOptions[0];
+  const medDoses = doses
+    .filter((d) => d.medicationId === medication.id)
+    .sort((a, b) => b.dateTime - a.dateTime);
+
+  const settings = useSettingsStore.getState().settings;
+  const titrationEnabled = settings?.titrationWizardEnabled ?? false;
+  let protocolDose: number | undefined;
+
+  if (titrationEnabled) {
+    const protocol = useProtocolStore.getState().protocols.find((p) => p.medicationId === medication.id);
+    if (protocol) {
+      const currentStep = protocol.steps[protocol.currentStepIndex];
+      if (currentStep) {
+        protocolDose = currentStep.dosage;
+      }
+    }
+  }
+
+  if (protocolDose !== undefined) {
+    dosage = protocolDose;
+  } else if (medDoses.length > 0) {
+    dosage = medDoses[0].dosage;
+  }
+
+  // Store in localStorage for persistence across sessions, deduplicating previous reminders for this medication
   const reminders = JSON.parse(localStorage.getItem('pepty-reminders') || '[]');
-  reminders.push({
+  const filteredReminders = reminders.filter(
+    (r: { medicationId: string }) => r.medicationId !== medication.id
+  );
+  filteredReminders.push({
     id,
     medicationId: medication.id,
     medicationName: medication.name,
-    dosage: medication.dosageOptions[0],
+    dosage,
     unit: medication.unit,
     fireTime: reminderTime,
   });
-  localStorage.setItem('pepty-reminders', JSON.stringify(reminders));
+  localStorage.setItem('pepty-reminders', JSON.stringify(filteredReminders));
 
   return { id, fireTime: reminderTime };
 }
