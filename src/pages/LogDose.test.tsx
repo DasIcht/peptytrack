@@ -565,5 +565,72 @@ describe('LogDose', () => {
       expect(screen.getByText('Schedule Deviation Info')).toBeInTheDocument();
       expect(screen.getByText(/Dosing now would be 3\.0 days late/)).toBeInTheDocument();
     });
+
+    it('recalculates and updates proposed dosage when advancing to the next step', async () => {
+      useSettingsStore.setState({
+        settings: { ...defaultSettings, titrationWizardEnabled: true }
+      });
+
+      useProtocolStore.setState({
+        protocols: [{
+          id: 'p-1',
+          medicationId: 'med-1',
+          name: 'Steady State Protocol',
+          steps: [
+            { id: 's1', dosage: 3.3, durationWeeks: 1, targetConcentration: 2.0 },
+            { id: 's2', dosage: 5.0, durationWeeks: 1, targetConcentration: 5.0 }
+          ],
+          currentStepIndex: 0,
+          startDate: Date.now() - 10 * 24 * 60 * 60 * 1000,
+          currentStepStartDate: Date.now() - 10 * 24 * 60 * 60 * 1000,
+          autoAdvance: false,
+          createdAt: Date.now(),
+          targetType: 'steady-state-concentration'
+        }],
+        initialized: true
+      });
+
+      useMedicationStore.setState({
+        medications: [{
+          ...mockMedication,
+          dosageOptions: [3.3, 5.0]
+        }],
+        doses: [{
+          id: 'prev-dose',
+          medicationId: 'med-1',
+          dosage: 10.0,
+          unit: 'mg',
+          injectionSite: 'abdomen-upper-left',
+          dateTime: Date.now() - 10 * 24 * 60 * 60 * 1000,
+          notes: '',
+          createdAt: Date.now() - 10 * 24 * 60 * 60 * 1000,
+        }],
+        initialized: true
+      });
+
+      render(<LogDose />);
+
+      // Verify that Step 1 titration info is displayed
+      expect(screen.getByText('Step 1 of 2')).toBeInTheDocument();
+
+      // Click "Advance to 5 mg" button
+      const advanceBtn = screen.getByText(/Advance to 5/);
+      expect(advanceBtn).toBeInTheDocument();
+      fireEvent.click(advanceBtn);
+
+      // Now it should have updated protocol currentStepIndex to 1
+      await waitFor(() => {
+        expect(screen.getByText('Step 2 of 2')).toBeInTheDocument();
+      });
+
+      // The new target concentration is 5.0
+      expect(screen.getAllByText(/5\s*ng\/ml/).length).toBeGreaterThanOrEqual(1);
+
+      // The dosage should automatically update to the custom calculated top-up dose.
+      // Since it's a custom dosage, the custom input should be displayed.
+      const dosageInput = screen.getByPlaceholderText(/Enter dosage in mg/) as HTMLInputElement;
+      expect(dosageInput).toBeInTheDocument();
+      expect(parseFloat(dosageInput.value)).toBeCloseTo(1.29, 1);
+    });
   });
 });
