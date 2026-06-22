@@ -122,12 +122,19 @@ export function calculateTitrationMetrics(
     let med = medications.find(m => m.id === protocol.medicationId);
     
     if (med && currentStep.targetConcentration) {
+      const earliestDoseDate = medicationDoses.length > 0
+        ? medicationDoses[0].dateTime
+        : (protocol.startDate || startDate);
+
+      const lambda = Math.LN2 / med.halfLifeHours;
+      const targetAverage = (currentStep.targetConcentration * (1 - Math.exp(-lambda * 168))) / (lambda * 168);
+
       let daysAtTarget = 0;
-      const daysSinceStart = Math.floor((now - startDate) / (24 * 60 * 60 * 1000));
-      for (let i = 0; i <= daysSinceStart; i++) {
-        const checkTime = startDate + i * 24 * 60 * 60 * 1000;
+      const daysSinceEarliest = Math.floor((now - earliestDoseDate) / (24 * 60 * 60 * 1000));
+      for (let i = 0; i <= daysSinceEarliest; i++) {
+        const checkTime = earliestDoseDate + i * 24 * 60 * 60 * 1000;
         const rollingAvg = calculateRollingAverageConcentration(med, doses, 7, checkTime);
-        if (rollingAvg >= currentStep.targetConcentration * 0.95) {
+        if (rollingAvg >= targetAverage * 0.95) {
           daysAtTarget++;
         }
       }
@@ -345,9 +352,9 @@ export function evaluateTitration(
     return { ready: false, recommendation: 'none', reason: 'You are on the final step of your protocol.' };
   }
 
-  const startDate = protocol.currentStepStartDate || protocol.startDate;
-  if (!startDate) return { ready: false, recommendation: 'none', reason: 'Protocol has not started.' };
-
+  // For steady-state-concentration mode, the time progress has already been correctly
+  // computed by calculateTitrationMetrics() using earliestDoseDate, so we use that
+  // directly. For other modes, we fall back to the step start date.
   if (metrics.timeProgressPercent < 100) {
     return {
       ready: false,

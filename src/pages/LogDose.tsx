@@ -260,7 +260,8 @@ export function LogDose() {
   useEffect(() => {
     if (editingId || !selectedMed || !settings.titrationWizardEnabled || !activeProtocol) return;
 
-    if (!hasAutoProposedForMedRef.current[selectedMed.id]) {
+    const proposalKey = `${selectedMed.id}-${activeProtocol.currentStepIndex}`;
+    if (!hasAutoProposedForMedRef.current[proposalKey]) {
       const currentStep = activeProtocol.steps[activeProtocol.currentStepIndex];
       if (currentStep) {
         if (activeProtocol.targetType === 'steady-state-concentration') {
@@ -276,7 +277,7 @@ export function LogDose() {
           setCustomDosage(!selectedMed.dosageOptions.includes(currentStep.dosage));
         }
       }
-      hasAutoProposedForMedRef.current[selectedMed.id] = true;
+      hasAutoProposedForMedRef.current[proposalKey] = true;
     }
   }, [activeProtocol, selectedMed, editingId, settings.titrationWizardEnabled, recommendedPKDose]);
 
@@ -466,7 +467,9 @@ export function LogDose() {
           }]);
           
           if (activeProtocol) {
-            if (didStepUp || (activeProtocol.autoAdvance && titrationAlert?.recommendation === 'step-up')) {
+            // Only advance protocol on submit if it wasn't already advanced when user clicked "Advance"
+            // (i.e., autoAdvance case where user didn't manually click the button)
+            if (!didStepUp && activeProtocol.autoAdvance && titrationAlert?.recommendation === 'step-up') {
               await updateProtocol(activeProtocol.id, {
                 currentStepIndex: activeProtocol.currentStepIndex + 1,
                 currentStepStartDate: Date.now()
@@ -668,9 +671,13 @@ export function LogDose() {
                  className="px-4 py-2.5 bg-primary-600 text-white rounded-lg text-xs font-bold hover:bg-primary-500 transition-colors flex-1 shadow-lg shadow-primary-900/20"
                  onClick={() => {
                     if (!activeProtocol) return;
-                    const nextStep = activeProtocol.steps[activeProtocol.currentStepIndex + 1];
-                    setDosage(String(nextStep.dosage));
-                    setCustomDosage(!selectedMed?.dosageOptions.includes(nextStep.dosage));
+                    // Advance the protocol step immediately so the PK target updates
+                    updateProtocol(activeProtocol.id, {
+                      currentStepIndex: activeProtocol.currentStepIndex + 1,
+                      currentStepStartDate: Date.now()
+                    });
+                    // Don't set dosage here — let the useMemo recalculate recommendedPKDose
+                    // with the new step's target, then the useEffect below will auto-propose it
                     setDidStepUp(true);
                  }}
                >
@@ -731,6 +738,7 @@ export function LogDose() {
                 setCustomDosage(false);
                 setSelectedSideEffects([]);
                 setExpandedZone(null);
+                hasAutoProposedForMedRef.current = {};
               }}
               disabled={!!editingId}
               className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-4 py-3.5 text-white text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all disabled:opacity-50"
