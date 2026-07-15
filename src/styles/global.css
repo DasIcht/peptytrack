@@ -1,3 +1,219 @@
+/* ============================================================
+   THEME DEFINITIONS — CSS Custom Properties
+   Each [data-theme] block defines the full colour system.
+   Tailwind reads these via var(--color-*) references.
+============================================================ */
+
+/* 1. Teal Night (default) — dark navy + teal */
+[data-theme="teal-night"] {
+  color-scheme: dark;
+  --color-primary-50:  #f0fdfa;
+  --color-primary-100: #ccfbf1;
+  --color-primary-200: #99f6e4;
+  --color-primary-300: #5eead4;
+  --color-primary-400: #2dd4bf;
+  --color-primary-500: #14b8a6;
+  --color-primary-600: #0d9488;
+  --color-primary-700: #0f766e;
+  --color-primary-800: #115e59;
+  --color-primary-900: #134e4a;
+  --color-surface-800: #1e293b;
+  --color-surface-900: #0f172a;
+  --color-surface-950: #020617;
+  --color-accent-400: #fb923c;
+  --color-accent-500: #f97316;
+  --color-accent-600: #ea580c;
+  --color-text-primary:   #ffffff;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted:     #64748b;
+  --color-border:   rgba(255, 255, 255, 0.06);
+  --color-card-bg:  rgba(30, 41, 59, 0.6);
+  --color-input-bg: rgba(30, 41, 59, 0.6);
+  --color-nav-bg:   rgba(15, 23, 42, 0.9);
+  --color-glass-bg: rgba(30, 41, 59, 0.6);
+  --color-glass-border: rgba(255, 255, 255, 0.05);
+}
+
+/* 2. Violet Storm — dark purple + violet */
+[data-theme="violet-storm"] {
+  color-scheme: dark;
+  --color-primary-50:  #f5f3ff;
+  --color-primary-100: #ede9fe;
+  --color-primary-200: #ddd6fe;
+  --color-primary-300: #c4b5fd;
+  --color-primary-400: #a78bfa;
+  --color-primary-500: #8b5cf6;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #6d28d9;
+  --color-primary-800: #5b21b6;
+  --color-primary-900: #4c1d95;
+  --color-surface-800: #1e1b2e;
+  --color-surface-900: #130a24;
+  --color-surface-950: #0d0418;
+  --color-accent-400: #f472b6;
+  --color-accent-500: #ec4899;
+  --color-accent-600: #db2777;
+  --color-text-primary:   #ffffff;
+  --color-text-secondary: #a5b4fc;
+  --color-text-muted:     #7c6aac;
+  --color-border:   rgba(139, 92, 246, 0.15);
+  --color-card-bg:  rgba(30, 27, 46, 0.7);
+  --color-input-bg: rgba(30, 27, 46, 0.7);
+  --color-nav-bg:   rgba(19, 10, 36, 0.9);
+  --color-glass-bg: rgba(30, 27, 46, 0.6);
+  --color-glass-border: rgba(139, 92, 246, 0.1);
+}
+
+/* 3. Solar Amber — dark charcoal + amber */
+[data-theme="solar-amber"] {
+  color-scheme: dark;
+  --color-primary-50:  #fffbeb;
+  --color-primary-100: #fef3c7;
+  --color-primary-200: #fde68a;
+  --color-primary-300: #fcd34d;
+  --color-primary-400: #fbbf24;
+  --color-primary-500: #f59e0b;
+  --color-primary-600: #d97706;
+  --color-primary-700: #b45309;
+  --color-primary-800: #92400e;
+  --color-primary-900: #78350f;
+  --color-surface-800: #292118;
+  --color-surface-900: #1a1400;
+  --color-surface-950: #0d0d00;
+  --color-accent-400: #f87171;
+  --color-accent-500: #ef4444;
+  --color-accent-600: #dc2626;
+  --color-text-primary:   #ffffff;
+  --color-text-secondary: #d4a04a;
+  --color-text-muted:     #8a6a30;
+  --color-border:   rgba(245, 158, 11, 0.12);
+  --color-card-bg:  rgba(41, 33, 24, 0.7);
+  --color-input-bg: rgba(41, 33, 24, 0.7);
+  --color-nav-bg:   rgba(26, 20, 0, 0.9);
+  --color-glass-bg: rgba(41, 33, 24, 0.6);
+  --color-glass-border: rgba(245, 158, 11, 0.08);
+}
+
+/* 4. Arctic Blue — deep navy + sky blue */
+[data-theme="arctic-blue"] {
+  color-scheme: dark;
+  --color-primary-50:  #f0f9ff;
+  --color-primary-100: #e0f2fe;
+  --color-primary-200: #bae6fd;
+  --color-primary-300: #7dd3fc;
+  --color-primary-400: #38bdf8;
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+  --color-primary-700: #0369a1;
+  --color-primary-800: #075985;
+  --color-primary-900: #0c4a6e;
+  --color-surface-800: #0f2340;
+  --color-surface-900: #0a1628;
+  --color-surface-950: #020b18;
+  --color-accent-400: #34d399;
+  --color-accent-500: #10b981;
+  --color-accent-600: #059669;
+  --color-text-primary:   #ffffff;
+  --color-text-secondary: #7dd3fc;
+  --color-text-muted:     #4a7fa0;
+  --color-border:   rgba(56, 189, 248, 0.12);
+  --color-card-bg:  rgba(15, 35, 64, 0.7);
+  --color-input-bg: rgba(15, 35, 64, 0.7);
+  --color-nav-bg:   rgba(10, 22, 40, 0.9);
+  --color-glass-bg: rgba(15, 35, 64, 0.6);
+  --color-glass-border: rgba(56, 189, 248, 0.08);
+}
+
+/* 5. Nordic — warm white + terracotta (LIGHT) */
+[data-theme="nordic"] {
+  color-scheme: light;
+  --color-primary-50:  #fdf6f3;
+  --color-primary-100: #fae8e0;
+  --color-primary-200: #f5cfc0;
+  --color-primary-300: #edab91;
+  --color-primary-400: #d98a68;
+  --color-primary-500: #c67b5c;
+  --color-primary-600: #a85c3e;
+  --color-primary-700: #8a4530;
+  --color-primary-800: #6d3324;
+  --color-primary-900: #52261b;
+  --color-surface-800: #e8e0d8;
+  --color-surface-900: #f5f0eb;
+  --color-surface-950: #fafbfc;
+  --color-accent-400: #5b7b6d;
+  --color-accent-500: #4a6a5c;
+  --color-accent-600: #3a5649;
+  --color-text-primary:   #2d3748;
+  --color-text-secondary: #4a5568;
+  --color-text-muted:     #8a99a6;
+  --color-border:   rgba(45, 55, 72, 0.1);
+  --color-card-bg:  rgba(255, 255, 255, 0.8);
+  --color-input-bg: rgba(255, 255, 255, 0.9);
+  --color-nav-bg:   rgba(245, 240, 235, 0.95);
+  --color-glass-bg: rgba(255, 255, 255, 0.7);
+  --color-glass-border: rgba(45, 55, 72, 0.08);
+}
+
+/* 6. Kinetic Flux — light + cyan/green (LIGHT) */
+[data-theme="kinetic-flux"] {
+  color-scheme: light;
+  --color-primary-50:  #ecfbff;
+  --color-primary-100: #cef4ff;
+  --color-primary-200: #9deaff;
+  --color-primary-300: #5dd8ff;
+  --color-primary-400: #2bbfff;
+  --color-primary-500: #2bb3ff;
+  --color-primary-600: #0090e0;
+  --color-primary-700: #0072b8;
+  --color-primary-800: #005490;
+  --color-primary-900: #003c68;
+  --color-surface-800: #d8e0f0;
+  --color-surface-900: #eef1f9;
+  --color-surface-950: #f4f6fb;
+  --color-accent-400: #7dff5a;
+  --color-accent-500: #5de83a;
+  --color-accent-600: #3ecc20;
+  --color-text-primary:   #0a0f1f;
+  --color-text-secondary: #2c3450;
+  --color-text-muted:     #68708c;
+  --color-border:   rgba(10, 15, 31, 0.12);
+  --color-card-bg:  rgba(255, 255, 255, 0.85);
+  --color-input-bg: rgba(255, 255, 255, 0.9);
+  --color-nav-bg:   rgba(238, 241, 249, 0.95);
+  --color-glass-bg: rgba(255, 255, 255, 0.7);
+  --color-glass-border: rgba(10, 15, 31, 0.08);
+}
+
+/* 7. Notion — pure white + notion blue (LIGHT) */
+[data-theme="notion"] {
+  color-scheme: light;
+  --color-primary-50:  #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #2383e2;
+  --color-primary-600: #0b6e99;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-surface-800: #e9e9e7;
+  --color-surface-900: #fbfbfa;
+  --color-surface-950: #ffffff;
+  --color-accent-400: #4dab9a;
+  --color-accent-500: #0f7b6c;
+  --color-accent-600: #0a5f54;
+  --color-text-primary:   #37352f;
+  --color-text-secondary: #787774;
+  --color-text-muted:     #9b9a97;
+  --color-border:   #e9e9e7;
+  --color-card-bg:  #ffffff;
+  --color-input-bg: #ffffff;
+  --color-nav-bg:   rgba(251, 251, 250, 0.97);
+  --color-glass-bg: rgba(255, 255, 255, 0.9);
+  --color-glass-border: #e9e9e7;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -23,7 +239,7 @@
 
   /* Custom focus styles */
   *:focus-visible {
-    outline: 2px solid #14b8a6;
+    outline: 2px solid var(--color-primary-500);
     outline-offset: 2px;
     border-radius: 8px;
   }
@@ -35,10 +251,10 @@
 
   /* Glass morphism card utility */
   .glass {
-    background: rgba(30, 41, 59, 0.6);
+    background: var(--color-glass-bg);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-glass-border);
   }
 
   /* Premium shadow for cards */
@@ -70,10 +286,10 @@
 
   /* Premium card: glass + elevated shadow + subtle border glow */
   .card-premium {
-    background: rgba(30, 41, 59, 0.7);
+    background: var(--color-card-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--color-glass-border);
     border-radius: 1rem;
     box-shadow:
       0 1px 2px rgba(0, 0, 0, 0.08),
@@ -91,18 +307,19 @@
 
   /* Premium input with focus glow */
   .input-premium {
-    background: rgba(30, 41, 59, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-border);
     border-radius: 0.75rem;
     padding: 0.75rem 1rem;
-    color: white;
+    color: var(--color-text-primary);
     font-size: 0.875rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .input-premium:focus {
     outline: none;
-    border-color: rgba(20, 184, 166, 0.5);
-    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15), 0 0 12px rgba(20, 184, 166, 0.1);
+    border-color: var(--color-primary-500);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 20%, transparent),
+                0 0 12px color-mix(in srgb, var(--color-primary-500) 15%, transparent);
   }
 
   /* Tactile button */
@@ -130,6 +347,13 @@
     0% { transform: translateY(16px); opacity: 0; }
     100% { transform: translateY(0); opacity: 1; }
   }
+
+  /* Light theme body text colour override */
+  [data-theme="nordic"] body,
+  [data-theme="kinetic-flux"] body,
+  [data-theme="notion"] body {
+    color: var(--color-text-primary);
+  }
 }
 
 @layer components {
@@ -141,7 +365,7 @@
   /* Input date/time picker dark styling */
   input[type="date"],
   input[type="time"] {
-    color-scheme: dark;
+    color-scheme: var(--color-scheme, dark);
   }
 
   /* Number input hide spinner */
@@ -159,8 +383,8 @@
   /* Mode toggle segmented control */
   .mode-toggle {
     display: flex;
-    background: rgba(30, 41, 59, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-border);
     border-radius: 9999px;
     padding: 3px;
     gap: 2px;
@@ -180,9 +404,9 @@
     white-space: nowrap;
   }
   .mode-toggle-btn.active {
-    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+    background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-600) 100%);
     color: white;
-    box-shadow: 0 2px 8px rgba(20, 184, 166, 0.3);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary-500) 35%, transparent);
   }
   .mode-toggle-btn:not(.active):hover {
     color: rgba(226, 232, 240, 0.9);
@@ -213,8 +437,8 @@
     gap: 0.25rem;
     padding: 0.625rem 1rem;
     border-radius: 0.875rem;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid var(--color-border);
+    background: var(--color-card-bg);
     transition: all 0.2s ease;
     cursor: pointer;
     min-width: 80px;
@@ -224,9 +448,9 @@
     background: rgba(30, 41, 59, 0.7);
   }
   .zone-card.active {
-    background: rgba(20, 184, 166, 0.12);
-    border-color: rgba(20, 184, 166, 0.4);
-    box-shadow: 0 0 16px rgba(20, 184, 166, 0.1);
+    background: color-mix(in srgb, var(--color-primary-500) 15%, transparent);
+    border-color: color-mix(in srgb, var(--color-primary-500) 50%, transparent);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--color-primary-500) 15%, transparent);
   }
   .zone-card .zone-emoji {
     font-size: 1.25rem;
@@ -240,7 +464,7 @@
     color: rgba(148, 163, 184, 0.8);
   }
   .zone-card.active .zone-label {
-    color: #5eead4;
+    color: var(--color-primary-300);
   }
 
   /* Zone expansion panel */
@@ -256,14 +480,14 @@
     gap: 0.75rem;
     padding: 0.625rem 1rem;
     border-radius: 0.75rem;
-    background: rgba(30, 41, 59, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-border);
     font-size: 0.8125rem;
-    color: rgba(148, 163, 184, 0.9);
+    color: var(--color-text-secondary);
   }
   .vial-summary .vial-name {
     font-weight: 600;
-    color: white;
+    color: var(--color-text-primary);
   }
   .vial-summary .vial-remaining {
     margin-left: auto;
