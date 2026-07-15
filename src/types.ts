@@ -111,6 +111,15 @@ export interface WeightEntry {
   createdAt: number;
 }
 
+export type ThemeId =
+  | 'teal-night'
+  | 'violet-storm'
+  | 'solar-amber'
+  | 'arctic-blue'
+  | 'nordic'
+  | 'kinetic-flux'
+  | 'notion';
+
 export interface AppSettings {
   weightUnit: 'kg' | 'lb';
   medicationUnit: 'mg' | 'mcg' | 'units';
@@ -119,6 +128,8 @@ export interface AppSettings {
   injectionRotationSites: InjectionSite[];
   titrationWizardEnabled: boolean;
   severeSideEffectThreshold: number;
+  theme: ThemeId;
+  customAccentColor: string | null;
 }
 
 export interface MedLevelPoint {

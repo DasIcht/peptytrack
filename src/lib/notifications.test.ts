@@ -39,6 +39,8 @@ describe('notifications library', () => {
         injectionRotationSites: [],
         titrationWizardEnabled: false,
         severeSideEffectThreshold: 5,
+        theme: 'teal-night' as const,
+        customAccentColor: null,
       },
       loading: false,
       initialized: true,
@@ -176,6 +178,8 @@ describe('notifications library', () => {
           injectionRotationSites: [],
           titrationWizardEnabled: true,
           severeSideEffectThreshold: 5,
+          theme: 'teal-night' as const,
+          customAccentColor: null,
         }
       });
       useProtocolStore.setState({

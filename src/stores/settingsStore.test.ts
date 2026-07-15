@@ -24,6 +24,8 @@ describe('SettingsStore', () => {
         ],
         titrationWizardEnabled: false,
         severeSideEffectThreshold: 5,
+        theme: 'teal-night' as const,
+        customAccentColor: null,
       },
       loading: false,
       initialized: false,
@@ -70,6 +72,8 @@ describe('SettingsStore', () => {
         ],
         titrationWizardEnabled: false,
         severeSideEffectThreshold: 5,
+        theme: 'teal-night' as const,
+        customAccentColor: null,
       },
       initialized: false,
     });

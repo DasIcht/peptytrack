@@ -53,6 +53,8 @@ const defaultSettings = {
   ] as InjectionSite[],
   titrationWizardEnabled: false,
   severeSideEffectThreshold: 5,
+  theme: 'teal-night' as const,
+  customAccentColor: null,
 };
 
 describe('LogDose', () => {
