@@ -118,39 +118,37 @@ export function WeightTracker() {
 
   return (
     <div className="min-h-full pb-24 px-5 pt-6">
-      <h1 className="text-2xl font-bold text-white mb-1">
+      <h1 className="text-2xl font-bold text-content-primary mb-1">
         {editingEntryId ? 'Update Weight' : 'Weight Tracker'}
       </h1>
-      <p className="text-sm text-slate-400 mb-6">Monitor your progress over time</p>
+      <p className="text-sm text-content-secondary mb-6">Monitor your progress over time</p>
 
       {/* Trend Card */}
       {trend && (
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-4 mb-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400 uppercase tracking-wider">Overall Change</p>
+              <p className="text-xs text-content-secondary uppercase tracking-wider">Overall Change</p>
               <div className="flex items-center gap-2 mt-1">
                 {trend.change < 0 ? (
                   <TrendingDown size={20} className="text-emerald-400" />
                 ) : trend.change > 0 ? (
                   <TrendingUp size={20} className="text-red-400" />
                 ) : (
-                  <Minus size={20} className="text-slate-400" />
+                  <Minus size={20} className="text-content-secondary" />
                 )}
-                <span className={`text-2xl font-bold ${
-                  trend.change < 0 ? 'text-emerald-400' : trend.change > 0 ? 'text-red-400' : 'text-slate-300'
-                }`}>
+                <span className={`text-2xl font-bold ${ trend.change < 0 ? 'text-emerald-400' : trend.change > 0 ? 'text-red-400' : 'text-content-secondary' }`}>
                   {Math.abs(trend.change)} {entries[0]?.unit || unit}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-content-muted mt-1">
                 Over {trend.periodDays} days
               </p>
             </div>
             {entries[0] && (
               <div className="text-right">
-                <p className="text-xs text-slate-400">Latest</p>
-                <p className="text-xl font-bold text-white">{entries[0].weight} {entries[0].unit}</p>
+                <p className="text-xs text-content-secondary">Latest</p>
+                <p className="text-xl font-bold text-content-primary">{entries[0].weight} {entries[0].unit}</p>
               </div>
             )}
           </div>
@@ -203,19 +201,19 @@ export function WeightTracker() {
 
       {/* Entry Form */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 mb-6">
-        <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+        <h3 className="text-sm font-semibold text-content-secondary uppercase tracking-wider">
           {editingEntryId ? 'Edit Entry' : 'Log Weight'}
         </h3>
         <div className="flex gap-3">
           <div className="flex-1 relative">
-            <Scale size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Scale size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-content-secondary" />
             <input
               type="number"
               step="0.1"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               placeholder="Weight"
-              className="w-full bg-surface-800 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:outline-none focus:border-primary-500 transition-colors"
+              className="w-full bg-surface-800 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-content-primary text-sm focus:outline-none focus:border-primary-500 transition-colors"
             />
           </div>
           <div className="flex rounded-xl border border-white/10 overflow-hidden">
@@ -224,11 +222,7 @@ export function WeightTracker() {
                 key={u}
                 type="button"
                 onClick={() => setUnit(u)}
-                className={`px-4 py-2.5 text-xs font-medium transition-colors ${
-                  unit === u
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-surface-800 text-slate-400 hover:text-white'
-                }`}
+                className={`px-4 py-2.5 text-xs font-medium transition-colors ${ unit === u ? 'bg-primary-600 text-white' : 'bg-surface-800 text-slate-400 hover:text-white' }`}
               >
                 {u.toUpperCase()}
               </button>
@@ -237,21 +231,21 @@ export function WeightTracker() {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-slate-500 mb-1.5 uppercase tracking-wider">Date</label>
+            <label className="block text-xs text-content-muted mb-1.5 uppercase tracking-wider">Date</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary-500 transition-colors"
+              className="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-content-primary text-sm focus:outline-none focus:border-primary-500 transition-colors"
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1.5 uppercase tracking-wider">Time</label>
+            <label className="block text-xs text-content-muted mb-1.5 uppercase tracking-wider">Time</label>
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary-500 transition-colors"
+              className="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-content-primary text-sm focus:outline-none focus:border-primary-500 transition-colors"
             />
           </div>
         </div>
@@ -260,7 +254,7 @@ export function WeightTracker() {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Notes (optional)"
-          className="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary-500 transition-colors"
+          className="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-content-primary text-sm focus:outline-none focus:border-primary-500 transition-colors"
         />
         <div className="flex gap-3">
           <button
@@ -274,7 +268,7 @@ export function WeightTracker() {
             <button
               type="button"
               onClick={resetForm}
-              className="px-4 py-3 rounded-xl bg-surface-800 hover:bg-surface-700 border border-white/10 text-slate-300 text-sm transition-all"
+              className="px-4 py-3 rounded-xl bg-surface-800 hover:bg-surface-700 border border-white/10 text-content-secondary text-sm transition-all"
             >
               Cancel
             </button>
@@ -285,29 +279,25 @@ export function WeightTracker() {
       {/* History */}
       {entries.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">History</h3>
+          <h3 className="text-sm font-semibold text-content-secondary uppercase tracking-wider mb-3">History</h3>
           <div className="flex flex-col gap-2">
             {entries.map((entry) => (
               <div
                 key={entry.id}
-                className={`flex items-center justify-between rounded-xl border px-4 py-3 transition-colors ${
-                  editingEntryId === entry.id
-                    ? 'border-primary-500/40 bg-primary-600/10'
-                    : 'border-white/5 bg-surface-800/30'
-                }`}
+                className={`flex items-center justify-between rounded-xl border px-4 py-3 transition-colors ${ editingEntryId === entry.id ? 'border-primary-500/40 bg-primary-600/10' : 'border-white/5 bg-surface-800/30' }`}
               >
                 <button
                   onClick={() => handleEdit(entry)}
                   className="flex-1 text-left"
                 >
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-sm font-medium text-content-primary">
                     {entry.weight} {entry.unit}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-content-secondary">
                     {format(new Date(entry.dateTime), 'PPP p')}
                   </p>
                   {entry.notes && (
-                    <p className="text-xs text-slate-500 mt-0.5">{entry.notes}</p>
+                    <p className="text-xs text-content-muted mt-0.5">{entry.notes}</p>
                   )}
                 </button>
                 <div className="flex items-center gap-1">

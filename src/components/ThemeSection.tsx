@@ -132,7 +132,7 @@ export function ThemeSection() {
                     : 'conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #8b5cf6, #ef4444)',
                 }}
               >
-                <Palette size={14} className="text-white drop-shadow" />
+                <Palette size={14} className="text-content-primary drop-shadow" />
               </div>
               <span
                 className="text-[10px] font-medium"

@@ -52,9 +52,9 @@ export function MedicationCard({ medId, onClick }: MedicationCardProps) {
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: med.color }} />
           </div>
           <div>
-            <h3 className="font-semibold text-white text-sm">{med.name}</h3>
+            <h3 className="font-semibold text-content-primary text-sm">{med.name}</h3>
             <div className="flex items-center gap-1.5">
-              <p className="text-xs text-slate-400">{med.brand}</p>
+              <p className="text-xs text-content-secondary">{med.brand}</p>
               {medVialCount > 0 && (
                 <span className="flex items-center gap-0.5 text-[9px] px-1 py-0.5 rounded-full bg-primary-500/10 text-primary-400">
                   <FlaskConical size={8} />
@@ -64,12 +64,12 @@ export function MedicationCard({ medId, onClick }: MedicationCardProps) {
             </div>
           </div>
         </div>
-        <ChevronRight size={16} className="text-slate-500 group-hover:text-slate-300 transition-colors" />
+        <ChevronRight size={16} className="text-content-muted group-hover:text-content-primary transition-colors" />
       </div>
 
       <div className="mb-3">
         <div className="flex items-center justify-between text-xs mb-1.5">
-          <span className="text-slate-400 flex items-center gap-1">
+          <span className="text-content-secondary flex items-center gap-1">
             Medication Level
             <HelpBox>
               This level is estimated by a pharmacokinetic engine calculating the remaining active concentration based on your medication's half-life decay.
@@ -91,7 +91,7 @@ export function MedicationCard({ medId, onClick }: MedicationCardProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 text-xs text-slate-400">
+      <div className="flex items-center gap-1.5 text-xs text-content-secondary">
         <Clock size={12} />
         <span>
           {timeUntil === 'Not started'
@@ -104,12 +104,12 @@ export function MedicationCard({ medId, onClick }: MedicationCardProps) {
 
       {recentDoses.length > 0 && (
         <div className="mt-3 pt-3 border-t border-white/5">
-          <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1.5">Recent Doses</p>
+          <p className="text-[10px] uppercase tracking-wider text-content-muted mb-1.5">Recent Doses</p>
           <div className="flex flex-wrap gap-1.5">
             {recentDoses.map((d) => (
               <span
                 key={d.id}
-                className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-slate-300"
+                className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-content-secondary"
               >
                 {d.dosage}{med.unit} · {format(new Date(d.dateTime), 'MMM d')}
               </span>

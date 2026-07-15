@@ -25,11 +25,7 @@ export function BottomNav() {
             <button
               key={item.id}
               onClick={() => setPage(item.id)}
-              className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-200 ${
-                isActive
-                  ? 'text-primary-400 scale-105'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-200 ${ isActive ? 'text-primary-400 scale-105' : 'text-content-secondary hover:text-content-primary' }`}
             >
               <Icon
                 size={22}

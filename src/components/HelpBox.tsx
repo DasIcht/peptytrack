@@ -34,9 +34,7 @@ export function HelpBox({ children, className = '' }: HelpBoxProps) {
           e.stopPropagation();
           setIsExpanded(!isExpanded);
         }}
-        className={`transition-colors inline-flex items-center justify-center rounded-full p-1 -m-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 self-start ${
-          isExpanded ? 'text-primary-400' : 'text-slate-400 hover:text-slate-300'
-        }`}
+        className={`transition-colors inline-flex items-center justify-center rounded-full p-1 -m-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 self-start ${ isExpanded ? 'text-primary-400' : 'text-content-secondary hover:text-content-primary' }`}
         aria-label={isExpanded ? "Hide help" : "Show help"}
         aria-expanded={isExpanded}
       >
@@ -44,11 +42,9 @@ export function HelpBox({ children, className = '' }: HelpBoxProps) {
       </button>
 
       <div
-        className={`absolute z-[100] top-full left-1/2 -translate-x-1/2 mt-2 w-64 max-w-[85vw] shadow-xl transition-all duration-200 ease-out ${
-          isExpanded ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'
-        }`}
+        className={`absolute z-[100] top-full left-1/2 -translate-x-1/2 mt-2 w-64 max-w-[85vw] shadow-xl transition-all duration-200 ease-out ${ isExpanded ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2' }`}
       >
-        <div className="p-3 bg-surface-800 border border-white/10 rounded-xl text-sm leading-relaxed text-slate-300 shadow-elevated">
+        <div className="p-3 bg-surface-800 border border-white/10 rounded-xl text-sm leading-relaxed text-content-secondary shadow-elevated">
           {children}
         </div>
       </div>

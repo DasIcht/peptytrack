@@ -239,7 +239,7 @@ interface EditForm {
   return (
     <div className="min-h-full pb-24 px-5 pt-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">Medications</h1>
+        <h1 className="text-2xl font-bold text-content-primary">Medications</h1>
         <button
           onClick={() => setShowAddModal(true)}
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-sm font-medium transition-all active:scale-[0.98]"
@@ -270,16 +270,12 @@ interface EditForm {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-white text-sm">{med.name}</h3>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
-                        med.enabled
-                          ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-slate-600/20 text-slate-500'
-                      }`}>
+                      <h3 className="font-semibold text-content-primary text-sm">{med.name}</h3>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${ med.enabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-600/20 text-slate-500' }`}>
                         {med.enabled ? 'Active' : 'Inactive'}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400">{med.brand}</p>
+                    <p className="text-xs text-content-secondary">{med.brand}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -300,11 +296,7 @@ interface EditForm {
                   )}
                   <button
                     onClick={() => enableMedication(med.id, !med.enabled)}
-                    className={`p-2 rounded-lg text-xs font-medium transition-colors ${
-                      med.enabled
-                        ? 'text-emerald-400 hover:bg-emerald-500/10'
-                        : 'text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10'
-                    }`}
+                    className={`p-2 rounded-lg text-xs font-medium transition-colors ${ med.enabled ? 'text-emerald-400 hover:bg-emerald-500/10' : 'text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10' }`}
                   >
                     {med.enabled ? 'On' : 'Off'}
                   </button>
@@ -326,14 +318,14 @@ interface EditForm {
                       value={editForm.name || ''}
                       onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
                       placeholder="Name"
-                      className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                      className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                     />
                     <input
                       type="text"
                       value={editForm.brand || ''}
                       onChange={(e) => setEditForm((f) => ({ ...f, brand: e.target.value }))}
                       placeholder="Brand"
-                      className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                      className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                     />
                   </div>
                   <input
@@ -341,7 +333,7 @@ interface EditForm {
                     value={editForm.activeIngredient || ''}
                     onChange={(e) => setEditForm((f) => ({ ...f, activeIngredient: e.target.value }))}
                     placeholder="Active ingredient"
-                    className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                    className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                   />
                   <div className="grid grid-cols-3 gap-2">
                     <input
@@ -349,12 +341,12 @@ interface EditForm {
                       value={editForm.dosageOptions || ''}
                       onChange={(e) => setEditForm((f) => ({ ...f, dosageOptions: e.target.value }))}
                       placeholder="Dosages (comma)"
-                      className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                      className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                     />
                     <select
                       value={editForm.unit || 'mg'}
                       onChange={(e) => setEditForm((f) => ({ ...f, unit: e.target.value }))}
-                      className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                      className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                     >
                       <option value="mg">mg</option>
                       <option value="mcg">mcg</option>
@@ -369,14 +361,14 @@ interface EditForm {
                       value={editForm.halfLifeHours || ''}
                       onChange={(e) => setEditForm((f) => ({ ...f, halfLifeHours: e.target.value }))}
                       placeholder="Half-life (h)"
-                      className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                      className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                     />
                   </div>
                   <div className={`grid ${editForm.frequency === 'custom' ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
                     <select
                       value={editForm.frequency || 'weekly'}
                       onChange={(e) => setEditForm((f) => ({ ...f, frequency: e.target.value }))}
-                      className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                      className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                     >
                       <option value="daily">Daily</option>
                       <option value="twice-daily">Twice Daily</option>
@@ -391,7 +383,7 @@ interface EditForm {
                         value={editForm.customFrequencyDays || ''}
                         onChange={(e) => setEditForm((f) => ({ ...f, customFrequencyDays: Number(e.target.value) }))}
                         placeholder="Days (e.g. 5)"
-                        className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                        className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                       />
                     )}
                     <input
@@ -401,19 +393,17 @@ interface EditForm {
                       value={editForm.reminderHoursBefore || 24}
                       onChange={(e) => setEditForm((f) => ({ ...f, reminderHoursBefore: Number(e.target.value) }))}
                       placeholder="Reminder (h before)"
-                      className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                      className="bg-surface-900 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                     />
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-500 mb-1.5 uppercase tracking-wider">Color</p>
+                    <p className="text-[10px] text-content-muted mb-1.5 uppercase tracking-wider">Color</p>
                     <div className="flex flex-wrap gap-2">
                       {COLOR_PRESETS.map((color) => (
                         <button
                           key={color}
                           onClick={() => setEditForm((f) => ({ ...f, color }))}
-                          className={`w-7 h-7 rounded-full border-2 transition-all ${
-                            editForm.color === color ? 'border-white scale-110' : 'border-transparent hover:scale-105'
-                          }`}
+                          className={`w-7 h-7 rounded-full border-2 transition-all ${ editForm.color === color ? 'border-white scale-110' : 'border-transparent hover:scale-105' }`}
                           style={{ backgroundColor: color }}
                         />
                       ))}
@@ -421,7 +411,7 @@ interface EditForm {
                   </div>
                   <button
                     onClick={() => setEditingId(null)}
-                    className="self-start text-xs text-slate-400 hover:text-white transition-colors"
+                    className="self-start text-xs text-content-secondary hover:text-content-primary transition-colors"
                   >
                     Cancel
                   </button>
@@ -430,21 +420,21 @@ interface EditForm {
                 <>
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     <div className="bg-white/5 rounded-lg p-2 text-center">
-                      <p className="text-[10px] text-slate-500 uppercase">Frequency</p>
-                      <p className="text-xs font-medium text-white capitalize">
+                      <p className="text-[10px] text-content-muted uppercase">Frequency</p>
+                      <p className="text-xs font-medium text-content-primary capitalize">
                         {med.frequency === 'custom' ? `Every ${med.customFrequencyDays}d` : med.frequency.replace('-', ' ')}
                       </p>
                     </div>
                     <div className="bg-white/5 rounded-lg p-2 text-center">
-                      <p className="text-[10px] text-slate-500 uppercase">Half-Life</p>
-                      <p className="text-xs font-medium text-white">{med.halfLifeHours}h</p>
+                      <p className="text-[10px] text-content-muted uppercase">Half-Life</p>
+                      <p className="text-xs font-medium text-content-primary">{med.halfLifeHours}h</p>
                     </div>
                     <div className="bg-white/5 rounded-lg p-2 text-center">
-                      <p className="text-[10px] text-slate-500 uppercase">Dosages</p>
-                      <p className="text-xs font-medium text-white">{med.dosageOptions.join(', ')} {med.unit}</p>
+                      <p className="text-[10px] text-content-muted uppercase">Dosages</p>
+                      <p className="text-xs font-medium text-content-primary">{med.dosageOptions.join(', ')} {med.unit}</p>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-slate-400 mb-3">
+                  <div className="flex items-center justify-between text-xs text-content-secondary mb-3">
                     <div className="flex items-center gap-2">
                       <Clock size={14} />
                       Reminder: {med.reminderHoursBefore}h before dose
@@ -458,7 +448,7 @@ interface EditForm {
                   {settings.titrationWizardEnabled && (
                     <button
                       onClick={() => setWizardMedId(med.id)}
-                      className="w-full py-2 rounded-xl border border-white/10 bg-surface-900/50 hover:bg-surface-800 text-slate-300 text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+                      className="w-full py-2 rounded-xl border border-white/10 bg-surface-900/50 hover:bg-surface-800 text-content-secondary text-xs font-semibold flex items-center justify-center gap-2 transition-all"
                     >
                       <Activity size={14} /> Manage Titration Protocol
                     </button>
@@ -470,7 +460,7 @@ interface EditForm {
         })}
 
         {medications.length === 0 && (
-          <div className="text-center py-16 text-slate-500">
+          <div className="text-center py-16 text-content-muted">
             <Pill size={40} className="mx-auto mb-3 opacity-30" />
             <p>No medications configured.</p>
             <button
@@ -489,9 +479,9 @@ interface EditForm {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={resetModal} />
           <div className="relative w-full max-w-lg mx-4 mb-8 bg-surface-800 rounded-2xl border border-white/10 shadow-2xl max-h-[80vh] overflow-y-auto animate-slide-up">
             <div className="sticky top-0 bg-surface-800 border-b border-white/5 px-5 py-4 flex items-center justify-between z-10">
-              <h2 className="text-lg font-bold text-white">Add Medication</h2>
+              <h2 className="text-lg font-bold text-content-primary">Add Medication</h2>
               <button onClick={resetModal} className="p-2 rounded-lg bg-white/5 hover:bg-white/10">
-                <X size={16} className="text-slate-400" />
+                <X size={16} className="text-content-secondary" />
               </button>
             </div>
 
@@ -499,21 +489,13 @@ interface EditForm {
             <div className="px-5 pt-4 flex gap-2">
               <button
                 onClick={() => setAddMode('library')}
-                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
-                  addMode === 'library'
-                    ? 'bg-primary-600/20 text-primary-400 border border-primary-500/30'
-                    : 'bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10'
-                }`}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${ addMode === 'library' ? 'bg-primary-600/20 text-primary-400 border border-primary-500/30' : 'bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10' }`}
               >
                 Library
               </button>
               <button
                 onClick={() => setAddMode('custom')}
-                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
-                  addMode === 'custom'
-                    ? 'bg-primary-600/20 text-primary-400 border border-primary-500/30'
-                    : 'bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10'
-                }`}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${ addMode === 'custom' ? 'bg-primary-600/20 text-primary-400 border border-primary-500/30' : 'bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10' }`}
               >
                 Custom
               </button>
@@ -522,9 +504,9 @@ interface EditForm {
             <div className="p-5 flex flex-col gap-3">
               {addMode === 'library' ? (
                 <>
-                  <p className="text-xs text-slate-400 mb-1">Select from the GLP-1 library:</p>
+                  <p className="text-xs text-content-secondary mb-1">Select from the GLP-1 library:</p>
                   {MEDICATION_LIBRARY.every((t) => medications.some((m) => m.templateId === t.id)) && (
-                    <div className="text-center py-6 text-slate-500">
+                    <div className="text-center py-6 text-content-muted">
                       <Pill size={32} className="mx-auto mb-2 opacity-30" />
                       <p className="text-sm">All medications are already in your list.</p>
                     </div>
@@ -536,11 +518,7 @@ interface EditForm {
                         key={template.id}
                         onClick={() => !exists && handleAddFromLibrary(template)}
                         disabled={exists}
-                        className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
-                          exists
-                            ? 'border-white/5 bg-white/[0.02] opacity-40 cursor-not-allowed'
-                            : 'border-white/10 bg-surface-900 hover:border-primary-500/40 hover:bg-surface-800'
-                        }`}
+                        className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${ exists ? 'border-white/5 bg-white/[0.02] opacity-40 cursor-not-allowed' : 'border-white/10 bg-surface-900 hover:border-primary-500/40 hover:bg-surface-800' }`}
                       >
                         <div
                           className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
@@ -549,13 +527,13 @@ interface EditForm {
                           <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: template.color }} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white">{template.name}</p>
-                          <p className="text-xs text-slate-400 truncate">{template.brand} · {template.frequency} · {template.halfLifeHours}h half-life</p>
+                          <p className="text-sm font-medium text-content-primary">{template.name}</p>
+                          <p className="text-xs text-content-secondary truncate">{template.brand} · {template.frequency} · {template.halfLifeHours}h half-life</p>
                         </div>
                         {exists ? (
-                          <span className="text-[10px] text-slate-500 shrink-0">Added</span>
+                          <span className="text-[10px] text-content-muted shrink-0">Added</span>
                         ) : (
-                          <ChevronRight size={14} className="text-slate-500 shrink-0" />
+                          <ChevronRight size={14} className="text-content-muted shrink-0" />
                         )}
                       </button>
                     );
@@ -564,55 +542,55 @@ interface EditForm {
               ) : (
                 <div className="flex flex-col gap-3">
                   <div>
-                    <label className="text-xs text-slate-400 block mb-1">Name *</label>
+                    <label className="text-xs text-content-secondary block mb-1">Name *</label>
                     <input
                       type="text"
                       value={customForm.name}
                       onChange={(e) => setCustomForm((f) => ({ ...f, name: e.target.value }))}
                       placeholder="e.g. Retatrutide"
-                      className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-primary-500/50"
+                      className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-content-primary text-sm focus:outline-none focus:border-primary-500/50"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs text-slate-400 block mb-1">Brand</label>
+                    <label className="text-xs text-content-secondary block mb-1">Brand</label>
                     <input
                       type="text"
                       value={customForm.brand}
                       onChange={(e) => setCustomForm((f) => ({ ...f, brand: e.target.value }))}
                       placeholder="e.g. MyBrand"
-                      className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-primary-500/50"
+                      className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-content-primary text-sm focus:outline-none focus:border-primary-500/50"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs text-slate-400 block mb-1">Active Ingredient</label>
+                    <label className="text-xs text-content-secondary block mb-1">Active Ingredient</label>
                     <input
                       type="text"
                       value={customForm.activeIngredient}
                       onChange={(e) => setCustomForm((f) => ({ ...f, activeIngredient: e.target.value }))}
                       placeholder="e.g. Retatrutide"
-                      className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-primary-500/50"
+                      className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-content-primary text-sm focus:outline-none focus:border-primary-500/50"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1">Dosages * (comma separated)</label>
+                      <label className="text-xs text-content-secondary block mb-1">Dosages * (comma separated)</label>
                       <input
                         type="text"
                         value={customForm.dosageOptions}
                         onChange={(e) => setCustomForm((f) => ({ ...f, dosageOptions: e.target.value }))}
                         placeholder="e.g. 2.5, 5, 10"
-                        className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-primary-500/50"
+                        className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-content-primary text-sm focus:outline-none focus:border-primary-500/50"
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1">Unit</label>
+                      <label className="text-xs text-content-secondary block mb-1">Unit</label>
                       <select
                         value={customForm.unit}
                         onChange={(e) => setCustomForm((f) => ({ ...f, unit: e.target.value as 'mg' | 'mcg' | 'units' }))}
-                        className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-primary-500/50"
+                        className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-content-primary text-sm focus:outline-none focus:border-primary-500/50"
                       >
                         <option value="mg">mg</option>
                         <option value="mcg">mcg</option>
@@ -625,11 +603,11 @@ interface EditForm {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1">Frequency</label>
+                      <label className="text-xs text-content-secondary block mb-1">Frequency</label>
                       <select
                         value={customForm.frequency}
                         onChange={(e) => setCustomForm((f) => ({ ...f, frequency: e.target.value as Frequency }))}
-                        className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-primary-500/50"
+                        className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-content-primary text-sm focus:outline-none focus:border-primary-500/50"
                       >
                         <option value="daily">Daily</option>
                         <option value="twice-daily">Twice Daily</option>
@@ -640,7 +618,7 @@ interface EditForm {
                     </div>
                     {customForm.frequency === 'custom' ? (
                       <div>
-                        <label className="text-xs text-slate-400 block mb-1">Every X Days</label>
+                        <label className="text-xs text-content-secondary block mb-1">Every X Days</label>
                         <input
                           type="number"
                           min={1}
@@ -648,12 +626,12 @@ interface EditForm {
                           value={customForm.customFrequencyDays}
                           onChange={(e) => setCustomForm((f) => ({ ...f, customFrequencyDays: Number(e.target.value) }))}
                           placeholder="e.g. 5"
-                          className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-primary-500/50"
+                          className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-content-primary text-sm focus:outline-none focus:border-primary-500/50"
                         />
                       </div>
                     ) : (
                       <div>
-                        <label className="text-xs text-slate-400 flex items-center gap-1 mb-1">
+                        <label className="text-xs text-content-secondary flex items-center gap-1 mb-1">
                           Half-Life (hours) *
                           <HelpBox>
                             Half-life is the time required for the concentration of the medication in your body to reduce by half. This value is critical for the app to accurately calculate and graph your estimated blood levels over time.
@@ -666,7 +644,7 @@ interface EditForm {
                           value={customForm.halfLifeHours}
                           onChange={(e) => setCustomForm((f) => ({ ...f, halfLifeHours: e.target.value }))}
                           placeholder="e.g. 120"
-                          className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-primary-500/50"
+                          className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-content-primary text-sm focus:outline-none focus:border-primary-500/50"
                         />
                       </div>
                     )}
@@ -674,7 +652,7 @@ interface EditForm {
 
                   {customForm.frequency === 'custom' && (
                     <div>
-                      <label className="text-xs text-slate-400 flex items-center gap-1 mb-1">
+                      <label className="text-xs text-content-secondary flex items-center gap-1 mb-1">
                         Half-Life (hours) *
                         <HelpBox>
                           Half-life is the time required for the concentration of the medication in your body to reduce by half. This value is critical for the app to accurately calculate and graph your estimated blood levels over time.
@@ -687,21 +665,19 @@ interface EditForm {
                         value={customForm.halfLifeHours}
                         onChange={(e) => setCustomForm((f) => ({ ...f, halfLifeHours: e.target.value }))}
                         placeholder="e.g. 120"
-                        className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-primary-500/50"
+                        className="w-full bg-surface-900 border border-white/10 rounded-xl px-3 py-2 text-content-primary text-sm focus:outline-none focus:border-primary-500/50"
                       />
                     </div>
                   )}
 
                   <div>
-                    <label className="text-xs text-slate-400 block mb-1.5">Color</label>
+                    <label className="text-xs text-content-secondary block mb-1.5">Color</label>
                     <div className="flex flex-wrap gap-2">
                       {COLOR_PRESETS.map((color) => (
                         <button
                           key={color}
                           onClick={() => setCustomForm((f) => ({ ...f, color }))}
-                          className={`w-7 h-7 rounded-full border-2 transition-all ${
-                            customForm.color === color ? 'border-white scale-110' : 'border-transparent hover:scale-105'
-                          }`}
+                          className={`w-7 h-7 rounded-full border-2 transition-all ${ customForm.color === color ? 'border-white scale-110' : 'border-transparent hover:scale-105' }`}
                           style={{ backgroundColor: color }}
                         />
                       ))}

@@ -195,12 +195,12 @@ export function Vials() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">Vials</h1>
+            <h1 className="text-2xl font-bold text-content-primary">Vials</h1>
             <HelpBox>
               Reconstitution is the process of mixing your freeze-dried peptide (mg) with bacteriostatic water (ml). Fill out the total mg of peptide and the total ml of water added to calculate your vial's concentration.
             </HelpBox>
           </div>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-content-secondary">
             {totalVials} vial{totalVials !== 1 ? 's' : ''} across {medications.length} medication{medications.length !== 1 ? 's' : ''}
           </p>
         </div>
@@ -209,11 +209,11 @@ export function Vials() {
       {/* Filter */}
       {medications.length > 0 && (
         <div className="mb-4">
-          <label className="block text-xs text-slate-400 mb-1.5 uppercase tracking-wider">Filter by Medication</label>
+          <label className="block text-xs text-content-secondary mb-1.5 uppercase tracking-wider">Filter by Medication</label>
           <select
             value={filterMedId}
             onChange={(e) => setFilterMedId(e.target.value)}
-            className="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary-500"
+            className="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-content-primary text-sm focus:outline-none focus:border-primary-500"
           >
             <option value="all">All Medications</option>
             {medications.map((med) => (
@@ -248,8 +248,8 @@ export function Vials() {
                     <FlaskConical size={16} style={{ color: med.color }} />
                   </div>
                   <div className="text-left">
-                    <p className="text-sm font-semibold text-white">{med.name}</p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-sm font-semibold text-content-primary">{med.name}</p>
+                    <p className="text-xs text-content-secondary">
                       {medVials.length} vial{medVials.length !== 1 ? 's' : ''} · {med.dosageOptions.join(', ')} {med.unit}
                     </p>
                   </div>
@@ -266,7 +266,7 @@ export function Vials() {
                   </span>
                   <ChevronRight
                     size={16}
-                    className={`text-slate-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                    className={`text-content-muted transition-transform ${isExpanded ? 'rotate-90' : ''}`}
                   />
                 </div>
               </button>
@@ -294,7 +294,7 @@ export function Vials() {
                             value={editVialForm.name}
                             onChange={(e) => setEditVialForm((f) => ({ ...f, name: e.target.value }))}
                             placeholder="Vial name"
-                            className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                            className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                           />
                           <div className="grid grid-cols-2 gap-2">
                             <input
@@ -303,12 +303,12 @@ export function Vials() {
                               value={editVialForm.peptideAmount}
                               onChange={(e) => setEditVialForm((f) => ({ ...f, peptideAmount: e.target.value }))}
                               placeholder="Peptide amount"
-                              className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                              className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                             />
                             <select
                               value={editVialForm.peptideUnit}
                               onChange={(e) => setEditVialForm((f) => ({ ...f, peptideUnit: e.target.value as 'mg' | 'mcg' | 'units' }))}
-                              className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                              className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                             >
                               <option value="mg">mg</option>
                               <option value="mcg">mcg</option>
@@ -321,13 +321,13 @@ export function Vials() {
                             value={editVialForm.bacWaterAmount}
                             onChange={(e) => setEditVialForm((f) => ({ ...f, bacWaterAmount: e.target.value }))}
                             placeholder="Bac water (ml)"
-                            className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                            className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                           />
                           <input
                             type="date"
                             value={editVialForm.reconstitutedAt}
                             onChange={(e) => setEditVialForm((f) => ({ ...f, reconstitutedAt: e.target.value }))}
-                            className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                            className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                           />
                           <input
                             type="number"
@@ -335,14 +335,14 @@ export function Vials() {
                             value={editVialForm.remainingOverride}
                             onChange={(e) => setEditVialForm((f) => ({ ...f, remainingOverride: e.target.value }))}
                             placeholder={`Remaining override (auto: ${remaining.toFixed(2)})`}
-                            className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                            className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                           />
                           <input
                             type="text"
                             value={editVialForm.notes}
                             onChange={(e) => setEditVialForm((f) => ({ ...f, notes: e.target.value }))}
                             placeholder="Notes"
-                            className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                            className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                           />
                           <div className="flex gap-2">
                             <button
@@ -353,7 +353,7 @@ export function Vials() {
                             </button>
                             <button
                               onClick={() => setEditingVialId(null)}
-                              className="px-3 py-2 rounded-lg bg-surface-800 hover:bg-surface-700 border border-white/10 text-slate-300 text-xs transition-all"
+                              className="px-3 py-2 rounded-lg bg-surface-800 hover:bg-surface-700 border border-white/10 text-content-secondary text-xs transition-all"
                             >
                               Cancel
                             </button>
@@ -369,9 +369,9 @@ export function Vials() {
                       >
                         <div className="flex items-center justify-between mb-1.5">
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-white truncate">{vial.name}</p>
+                            <p className="text-xs font-medium text-content-primary truncate">{vial.name}</p>
                             {reconstitutedDate && (
-                              <p className="text-[10px] text-slate-500">Reconstituted: {reconstitutedDate}</p>
+                              <p className="text-[10px] text-content-muted">Reconstituted: {reconstitutedDate}</p>
                             )}
                           </div>
                           <div className="flex items-center gap-1">
@@ -392,25 +392,19 @@ export function Vials() {
                         {/* Progress Bar */}
                         <div className="mb-1">
                           <div className="flex items-center justify-between text-[10px] mb-0.5">
-                            <span className="text-slate-400">
+                            <span className="text-content-secondary">
                               {remaining.toFixed(2)} {vial.peptideUnit} remaining
                             </span>
-                            <span className="text-slate-500">{percentage.toFixed(0)}%</span>
+                            <span className="text-content-muted">{percentage.toFixed(0)}%</span>
                           </div>
                           <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                             <div
-                              className={`h-full rounded-full transition-all ${
-                                percentage > 50
-                                  ? 'bg-emerald-500'
-                                  : percentage > 25
-                                  ? 'bg-amber-500'
-                                  : 'bg-red-500'
-                              }`}
+                              className={`h-full rounded-full transition-all ${ percentage > 50 ? 'bg-emerald-500' : percentage > 25 ? 'bg-amber-500' : 'bg-red-500' }`}
                               style={{ width: `${percentage}%` }}
                             />
                           </div>
                         </div>
-                        <p className="text-[10px] text-slate-500">
+                        <p className="text-[10px] text-content-muted">
                           {concentration > 0 && `~${remainingMl.toFixed(2)} ml · `}
                           {vial.peptideAmount} {vial.peptideUnit} / {vial.bacWaterAmount} ml
                         </p>
@@ -419,7 +413,7 @@ export function Vials() {
                   })}
 
                   {medVials.length === 0 && (
-                    <p className="text-xs text-slate-500 py-2 text-center">No vials for this medication yet.</p>
+                    <p className="text-xs text-content-muted py-2 text-center">No vials for this medication yet.</p>
                   )}
 
                   {/* Add vial form */}
@@ -430,7 +424,7 @@ export function Vials() {
                         value={vialForm.name}
                         onChange={(e) => setVialForm((f) => ({ ...f, name: e.target.value }))}
                         placeholder={`Vial name (e.g., Vial #${getNextVialNumber(med.id)})`}
-                        className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                        className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <input
@@ -439,12 +433,12 @@ export function Vials() {
                           value={vialForm.peptideAmount}
                           onChange={(e) => setVialForm((f) => ({ ...f, peptideAmount: e.target.value }))}
                           placeholder="Peptide amount"
-                          className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                          className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                         />
                         <select
                           value={vialForm.peptideUnit}
                           onChange={(e) => setVialForm((f) => ({ ...f, peptideUnit: e.target.value as 'mg' | 'mcg' | 'units' }))}
-                          className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                          className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                         >
                           <option value="mg">mg</option>
                           <option value="mcg">mcg</option>
@@ -457,20 +451,20 @@ export function Vials() {
                         value={vialForm.bacWaterAmount}
                         onChange={(e) => setVialForm((f) => ({ ...f, bacWaterAmount: e.target.value }))}
                         placeholder="Bac water (ml)"
-                        className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                        className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                       />
                       <input
                         type="date"
                         value={vialForm.reconstitutedAt}
                         onChange={(e) => setVialForm((f) => ({ ...f, reconstitutedAt: e.target.value }))}
-                        className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                        className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                       />
                       <input
                         type="text"
                         value={vialForm.notes}
                         onChange={(e) => setVialForm((f) => ({ ...f, notes: e.target.value }))}
                         placeholder="Notes (optional)"
-                        className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-primary-500"
+                        className="bg-surface-800 border border-white/10 rounded-lg px-3 py-2 text-content-primary text-xs focus:outline-none focus:border-primary-500"
                       />
                       <div className="flex gap-2">
                         <button
@@ -484,7 +478,7 @@ export function Vials() {
                             setAddingForMedId(null);
                             resetVialForm();
                           }}
-                          className="px-3 py-2 rounded-lg bg-surface-800 hover:bg-surface-700 border border-white/10 text-slate-300 text-xs transition-all"
+                          className="px-3 py-2 rounded-lg bg-surface-800 hover:bg-surface-700 border border-white/10 text-content-secondary text-xs transition-all"
                         >
                           Cancel
                         </button>
@@ -509,7 +503,7 @@ export function Vials() {
         })}
 
         {filteredMeds.length === 0 && (
-          <div className="text-center py-16 text-slate-500">
+          <div className="text-center py-16 text-content-muted">
             <FlaskConical size={40} className="mx-auto mb-3 opacity-30" />
             <p>No medications configured.</p>
             <p className="text-xs mt-1">Add a medication first to manage vials.</p>

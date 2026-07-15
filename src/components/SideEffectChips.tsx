@@ -68,7 +68,7 @@ export function SideEffectChips({ sideEffects, selected, onToggle, onAddCustom }
       <div className="flex flex-wrap gap-2">
         {displayEffects.map((label) => {
           const activeLog = selected.find(s => s.label === label);
-          const severityClass = activeLog ? SEVERITY_STYLES[activeLog.severity] : 'bg-surface-900/50 border-white/5 text-slate-400 hover:border-white/15 hover:bg-surface-800';
+          const severityClass = activeLog ? SEVERITY_STYLES[activeLog.severity] : 'bg-surface-900/50 border-white/5 text-content-secondary hover:border-white/15 hover:bg-surface-800';
 
           return (
             <button
@@ -100,14 +100,14 @@ export function SideEffectChips({ sideEffects, selected, onToggle, onAddCustom }
               onKeyDown={handleKeyDown}
               onBlur={handleAdd}
               placeholder="New symptom..."
-              className="w-40 bg-surface-900/50 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
+              className="w-40 bg-surface-900/50 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-content-primary placeholder:text-content-muted focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
             />
           </div>
         ) : (
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="btn-tactile inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-900/50 border border-dashed border-white/10 text-slate-500 hover:text-slate-300 hover:border-white/20 hover:bg-surface-800 transition-all"
+            className="btn-tactile inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-900/50 border border-dashed border-white/10 text-content-muted hover:text-slate-300 hover:border-white/20 hover:bg-surface-800 transition-all"
           >
             <Plus size={12} />
             Add Custom
