@@ -17,7 +17,7 @@ export function Modal() {
       <div className="relative w-full max-w-lg mx-4 mb-8 bg-surface-800 rounded-2xl border border-white/10 shadow-2xl animate-slide-up overflow-hidden max-h-[85vh] overflow-y-auto">
         <button
           onClick={closeModal}
-          className="absolute top-3 right-3 p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors z-10"
+          className="absolute top-3 right-3 p-2 rounded-lg bg-white/5 hover:bg-white/10 text-content-secondary hover:text-content-primary transition-colors z-10"
         >
           <X size={18} />
         </button>

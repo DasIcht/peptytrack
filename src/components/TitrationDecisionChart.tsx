@@ -107,7 +107,7 @@ export function TitrationDecisionChart({
             sublabel="Left"
             color={metrics.timeProgressPercent >= 100 ? '#10b981' : '#14b8a6'}
           />
-          <div className="text-[10px] text-slate-400 mt-2 font-semibold uppercase tracking-widest text-center">Time Progress</div>
+          <div className="text-[10px] text-content-secondary mt-2 font-semibold uppercase tracking-widest text-center">Time Progress</div>
         </div>
         <div className="flex flex-col items-center justify-center">
           <CircularProgress
@@ -118,7 +118,7 @@ export function TitrationDecisionChart({
             sublabel="Score"
             color={!metrics.hasSymptomData ? '#64748b' : metrics.symptomScore >= severeThreshold ? '#ef4444' : metrics.symptomScore > 3 ? '#f59e0b' : '#10b981'}
           />
-          <div className="text-[10px] text-slate-400 mt-2 font-semibold uppercase tracking-widest text-center">Side Effects</div>
+          <div className="text-[10px] text-content-secondary mt-2 font-semibold uppercase tracking-widest text-center">Side Effects</div>
         </div>
         <div className="flex flex-col items-center justify-center">
           <CircularProgress
@@ -129,7 +129,7 @@ export function TitrationDecisionChart({
             sublabel="kg/wk"
             color={!metrics.hasWeightData ? '#64748b' : metrics.weightLossRateKgPerWeek > 1.0 ? '#ef4444' : '#10b981'}
           />
-          <div className="text-[10px] text-slate-400 mt-2 font-semibold uppercase tracking-widest text-center">Weight Rate</div>
+          <div className="text-[10px] text-content-secondary mt-2 font-semibold uppercase tracking-widest text-center">Weight Rate</div>
         </div>
       </div>
     );

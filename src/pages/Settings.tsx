@@ -11,6 +11,7 @@ import { generatePDF, downloadPDF } from '../lib/pdfExport';
 import { requestNotificationPermission } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { HelpBox } from '../components/HelpBox';
+import { ThemeSection } from '../components/ThemeSection';
 import {
   Bell, FileText, Download, Upload,
   RotateCw, MapPin, Wand2,
@@ -142,19 +143,22 @@ export function Settings() {
 
   return (
     <div className="min-h-full pb-24 px-5 pt-6">
-      <h1 className="text-2xl font-bold text-white mb-6">Settings</h1>
+      <h1 className="text-2xl font-bold mb-6" style={{ color: 'var(--color-text-primary)' }}>Settings</h1>
+
+      {/* Appearance — theme selector */}
+      <ThemeSection />
 
       {/* Preferences */}
       <div className="mb-6">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Preferences</h2>
+        <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3">Preferences</h2>
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
           {/* Weight Unit */}
           <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/5">
             <div className="flex items-center gap-3">
               <Scale size={18} className="text-primary-400" />
               <div className="text-left">
-                <p className="text-sm font-medium text-white">Default Weight Unit</p>
-                <p className="text-xs text-slate-400">
+                <p className="text-sm font-medium text-content-primary">Default Weight Unit</p>
+                <p className="text-xs text-content-secondary">
                   Used when logging new weight entries
                 </p>
               </div>
@@ -164,11 +168,7 @@ export function Settings() {
                 <button
                   key={u}
                   onClick={() => updateSetting('weightUnit', u)}
-                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                    settings.weightUnit === u
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-surface-700 text-slate-400 hover:text-white'
-                  }`}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${ settings.weightUnit === u ? 'bg-primary-600 text-white' : 'bg-surface-700 text-content-secondary hover:text-content-primary' }`}
                 >
                   {u.toUpperCase()}
                 </button>
@@ -181,8 +181,8 @@ export function Settings() {
             <div className="flex items-center gap-3">
               <Pill size={18} className="text-primary-400" />
               <div className="text-left">
-                <p className="text-sm font-medium text-white">Default Medication Unit</p>
-                <p className="text-xs text-slate-400">
+                <p className="text-sm font-medium text-content-primary">Default Medication Unit</p>
+                <p className="text-xs text-content-secondary">
                   Used when adding custom medications and vials
                 </p>
               </div>
@@ -192,11 +192,7 @@ export function Settings() {
                 <button
                   key={u}
                   onClick={() => updateSetting('medicationUnit', u)}
-                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                    settings.medicationUnit === u
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-surface-700 text-slate-400 hover:text-white'
-                  }`}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${ settings.medicationUnit === u ? 'bg-primary-600 text-white' : 'bg-surface-700 text-content-secondary hover:text-content-primary' }`}
                 >
                   {u}
                 </button>
@@ -223,8 +219,8 @@ export function Settings() {
             <div className="flex items-center gap-3">
               <Bell size={18} className="text-primary-400" />
               <div className="text-left">
-                <p className="text-sm font-medium text-white">Dose Reminders</p>
-                <p className="text-xs text-slate-400">
+                <p className="text-sm font-medium text-content-primary">Dose Reminders</p>
+                <p className="text-xs text-content-secondary">
                   {settings.notificationsEnabled
                     ? notificationsEnabled
                       ? 'Enabled'
@@ -236,7 +232,7 @@ export function Settings() {
             {settings.notificationsEnabled ? (
               <ToggleRight size={22} className="text-primary-400" />
             ) : (
-              <ToggleLeft size={22} className="text-slate-500" />
+              <ToggleLeft size={22} className="text-content-muted" />
             )}
           </button>
         </div>
@@ -244,15 +240,15 @@ export function Settings() {
 
       {/* Injection Rotation */}
       <div className="mb-6">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Injection Rotation</h2>
+        <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3">Injection Rotation</h2>
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
           {/* Strategy Selector */}
           <div className="px-4 py-3.5 border-b border-white/5">
             <div className="flex items-center gap-3 mb-2">
               <RotateCw size={18} className="text-primary-400" />
               <div className="text-left">
-                <p className="text-sm font-medium text-white">Rotation Strategy</p>
-                <p className="text-xs text-slate-400">How the next injection site is chosen</p>
+                <p className="text-sm font-medium text-content-primary">Rotation Strategy</p>
+                <p className="text-xs text-content-secondary">How the next injection site is chosen</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
@@ -260,11 +256,7 @@ export function Settings() {
                 <button
                   key={s}
                   onClick={() => updateSetting('injectionRotationStrategy', s)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    settings.injectionRotationStrategy === s
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-surface-700 text-slate-400 hover:text-white'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${ settings.injectionRotationStrategy === s ? 'bg-primary-600 text-white' : 'bg-surface-700 text-content-secondary hover:text-content-primary' }`}
                 >
                   {s === 'sequential' && 'Sequential'}
                   {s === 'quadrant' && 'Quadrant'}
@@ -279,8 +271,8 @@ export function Settings() {
             <div className="flex items-center gap-3 mb-2">
               <MapPin size={18} className="text-primary-400" />
               <div className="text-left">
-                <p className="text-sm font-medium text-white">Active Sites</p>
-                <p className="text-xs text-slate-400">
+                <p className="text-sm font-medium text-content-primary">Active Sites</p>
+                <p className="text-xs text-content-secondary">
                   Select at least 2 sites to rotate between
                 </p>
               </div>
@@ -300,11 +292,7 @@ export function Settings() {
                 return (
                   <label
                     key={site.id}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors ${
-                      checked
-                        ? 'bg-primary-600/15 text-primary-300 border border-primary-500/30'
-                        : 'bg-surface-700/50 text-slate-500 border border-white/5'
-                    }`}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors ${ checked ? 'bg-primary-600/15 text-primary-300 border border-primary-500/30' : 'bg-surface-700/50 text-slate-500 border border-white/5' }`}
                   >
                     <input
                       type="checkbox"
@@ -335,7 +323,7 @@ export function Settings() {
 
       {/* Global Safety Settings */}
       <div className="mb-6">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Global Safety Settings</h2>
+        <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3">Global Safety Settings</h2>
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden card-premium">
           {/* Toggle */}
           <button
@@ -345,8 +333,8 @@ export function Settings() {
             <div className="flex items-center gap-3">
               <Wand2 size={18} className="text-accent-400" />
               <div className="text-left">
-                <p className="text-sm font-medium text-white">Enable Titration Wizard</p>
-                <p className="text-xs text-slate-400">
+                <p className="text-sm font-medium text-content-primary">Enable Titration Wizard</p>
+                <p className="text-xs text-content-secondary">
                   Step-up recommendations and safety warnings
                 </p>
               </div>
@@ -354,7 +342,7 @@ export function Settings() {
             {settings.titrationWizardEnabled ? (
               <ToggleRight size={22} className="text-accent-400" />
             ) : (
-              <ToggleLeft size={22} className="text-slate-500" />
+              <ToggleLeft size={22} className="text-content-muted" />
             )}
           </button>
 
@@ -363,13 +351,13 @@ export function Settings() {
             <div className="flex items-center gap-3">
               <AlertTriangle size={18} className="text-red-400" />
               <div className="text-left">
-                <div className="text-sm font-medium text-white flex items-center gap-2">
+                <div className="text-sm font-medium text-content-primary flex items-center gap-2">
                   Severe Side Effect Threshold
                   <HelpBox>
                     This threshold acts as a global warning system. Points are accumulated based on symptom severity (Mild=1, Mod=2, Sev=3) over recent logs. If the total score exceeds this value, a medical warning is triggered.
                   </HelpBox>
                 </div>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-content-secondary">
                   Points required to trigger a medical warning
                 </p>
               </div>
@@ -385,7 +373,7 @@ export function Settings() {
                   updateSetting('severeSideEffectThreshold', val);
                 }
               }}
-              className="w-16 input-premium border border-white/10 rounded-lg px-2 py-1 text-white text-sm text-center focus:outline-none focus:border-primary-500 bg-surface-900"
+              className="w-16 input-premium border border-white/10 rounded-lg px-2 py-1 text-content-primary text-sm text-center focus:outline-none focus:border-primary-500 bg-surface-900"
             />
           </div>
         </div>
@@ -393,7 +381,7 @@ export function Settings() {
 
       {/* Reports */}
       <div className="mb-6">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Reports</h2>
+        <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3">Reports</h2>
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
           <button
             onClick={handleExportPDF}
@@ -402,18 +390,18 @@ export function Settings() {
             <div className="flex items-center gap-3">
               <FileText size={18} className="text-accent-500" />
               <div className="text-left">
-                <p className="text-sm font-medium text-white">Export PDF Report</p>
-                <p className="text-xs text-slate-400">Doctor-ready summary</p>
+                <p className="text-sm font-medium text-content-primary">Export PDF Report</p>
+                <p className="text-xs text-content-secondary">Doctor-ready summary</p>
               </div>
             </div>
-            <ChevronRight size={16} className="text-slate-500" />
+            <ChevronRight size={16} className="text-content-muted" />
           </button>
         </div>
       </div>
 
       {/* Data Management */}
       <div className="mb-6">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Data</h2>
+        <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3">Data</h2>
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
           <button
             onClick={handleExportJSON}
@@ -423,19 +411,19 @@ export function Settings() {
             <div className="flex items-center gap-3">
               <Download size={18} className="text-emerald-400" />
               <div className="text-left">
-                <p className="text-sm font-medium text-white">Backup Data</p>
-                <p className="text-xs text-slate-400">Download JSON backup file</p>
+                <p className="text-sm font-medium text-content-primary">Backup Data</p>
+                <p className="text-xs text-content-secondary">Download JSON backup file</p>
               </div>
             </div>
-            <ChevronRight size={16} className="text-slate-500" />
+            <ChevronRight size={16} className="text-content-muted" />
           </button>
 
           <label className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors cursor-pointer border-b border-white/5">
             <div className="flex items-center gap-3">
               <Upload size={18} className="text-primary-400" />
               <div className="text-left">
-                <p className="text-sm font-medium text-white">Restore Data</p>
-                <p className="text-xs text-slate-400">Upload JSON backup file</p>
+                <p className="text-sm font-medium text-content-primary">Restore Data</p>
+                <p className="text-xs text-content-secondary">Upload JSON backup file</p>
               </div>
             </div>
             <input
@@ -447,7 +435,7 @@ export function Settings() {
             {importing ? (
               <span className="text-xs text-primary-400">Restoring...</span>
             ) : (
-              <ChevronRight size={16} className="text-slate-500" />
+              <ChevronRight size={16} className="text-content-muted" />
             )}
           </label>
 
@@ -459,7 +447,7 @@ export function Settings() {
               <Trash2 size={18} className="text-red-400" />
               <div className="text-left">
                 <p className="text-sm font-medium text-red-400">Clear All Data</p>
-                <p className="text-xs text-slate-400">Permanently delete everything</p>
+                <p className="text-xs text-content-secondary">Permanently delete everything</p>
               </div>
             </div>
             <ChevronRight size={16} className="text-red-400/50" />
@@ -469,20 +457,20 @@ export function Settings() {
 
       {/* Stats */}
       <div className="mb-6">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Stats</h2>
+        <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3">Stats</h2>
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-4">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-xl font-bold text-white">{medications.length}</p>
-              <p className="text-[10px] text-slate-400 uppercase">Meds</p>
+              <p className="text-xl font-bold text-content-primary">{medications.length}</p>
+              <p className="text-[10px] text-content-secondary uppercase">Meds</p>
             </div>
             <div>
-              <p className="text-xl font-bold text-white">{doses.length}</p>
-              <p className="text-[10px] text-slate-400 uppercase">Doses</p>
+              <p className="text-xl font-bold text-content-primary">{doses.length}</p>
+              <p className="text-[10px] text-content-secondary uppercase">Doses</p>
             </div>
             <div>
-              <p className="text-xl font-bold text-white">{weightEntries.length}</p>
-              <p className="text-[10px] text-slate-400 uppercase">Weights</p>
+              <p className="text-xl font-bold text-content-primary">{weightEntries.length}</p>
+              <p className="text-[10px] text-content-secondary uppercase">Weights</p>
             </div>
           </div>
         </div>
@@ -493,9 +481,9 @@ export function Settings() {
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-4">
           <div className="flex items-center gap-2 mb-2">
             <Shield size={14} className="text-primary-400" />
-            <p className="text-sm font-medium text-white">Privacy First</p>
+            <p className="text-sm font-medium text-content-primary">Privacy First</p>
           </div>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <p className="text-xs text-content-secondary leading-relaxed">
             All your data stays on this device. PeptyTrack does not send any health information to external servers.
             Internet is only used for optional cloud backup when you explicitly choose to sync.
           </p>
@@ -503,10 +491,10 @@ export function Settings() {
       </div>
 
       <div className="text-center pb-4">
-        <p className="text-[10px] text-slate-600">
+        <p className="text-[10px] text-content-muted">
           PeptyTrack v1.0 — Free GLP-1 tracker
         </p>
-        <p className="text-[10px] text-slate-600 mt-0.5">
+        <p className="text-[10px] text-content-muted mt-0.5">
           Not medical advice. Consult your healthcare provider.
         </p>
       </div>

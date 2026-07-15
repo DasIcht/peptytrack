@@ -60,13 +60,13 @@ export function CircularProgress({
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-xs font-bold text-white">{Math.round(displayPct)}%</span>
+          <span className="text-xs font-bold text-content-primary">{Math.round(displayPct)}%</span>
         </div>
       </div>
       {(label || sublabel) && (
         <div className="flex flex-col min-w-0">
-          {label && <span className="text-sm font-semibold text-white truncate">{label}</span>}
-          {sublabel && <span className="text-xs text-slate-400 truncate">{sublabel}</span>}
+          {label && <span className="text-sm font-semibold text-content-primary truncate">{label}</span>}
+          {sublabel && <span className="text-xs text-content-secondary truncate">{sublabel}</span>}
         </div>
       )}
     </div>

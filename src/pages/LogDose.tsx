@@ -563,7 +563,7 @@ export function LogDose() {
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold tracking-tight">
               <span className="text-gradient">Log</span>
-              <span className="text-white ml-1">Dose</span>
+              <span className="text-content-primary ml-1">Dose</span>
             </h1>
             <div className="mode-toggle">
               <button
@@ -595,33 +595,27 @@ export function LogDose() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="p-2 rounded-xl bg-surface-800/60 border border-white/5 text-slate-400 hover:text-white hover:bg-surface-700 transition-all btn-tactile"
+                  className="p-2 rounded-xl bg-surface-800/60 border border-white/5 text-content-secondary hover:text-content-primary hover:bg-surface-700 transition-all btn-tactile"
                 >
                   <ArrowLeft size={18} />
                 </button>
               )}
               <h1 className="text-3xl font-extrabold tracking-tight">
                 <span className="text-gradient">{editingId ? 'Update' : 'Log'}</span>
-                <span className="text-white ml-2">Dose</span>
+                <span className="text-content-primary ml-2">Dose</span>
               </h1>
             </div>
             <div className="flex items-center gap-2">
               <span
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider ${
-                  editingId
-                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                    : 'bg-primary-500/10 text-primary-400 border border-primary-500/20'
-                }`}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider ${ editingId ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-primary-500/10 text-primary-400 border border-primary-500/20' }`}
               >
                 <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    editingId ? 'bg-amber-400' : 'bg-primary-400 animate-pulse'
-                  }`}
+                  className={`w-1.5 h-1.5 rounded-full ${ editingId ? 'bg-amber-400' : 'bg-primary-400 animate-pulse' }`}
                 />
                 {editingId ? (isEditingSymptom ? 'Editing Symptoms' : 'Editing Entry') : 'New Dose'}
               </span>
               {selectedMed && (
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-content-muted">
                   {selectedMed.name} — {selectedMed.brand}
                 </span>
               )}
@@ -685,7 +679,7 @@ export function LogDose() {
                </button>
                <button 
                  type="button"
-                 className="px-4 py-2.5 bg-surface-800 text-white rounded-lg text-xs font-medium hover:bg-surface-700 border border-white/10 flex-1 transition-colors"
+                 className="px-4 py-2.5 bg-surface-800 text-content-primary rounded-lg text-xs font-medium hover:bg-surface-700 border border-white/10 flex-1 transition-colors"
                  onClick={() => {
                     setTitrationAlert(null);
                  }}
@@ -704,11 +698,7 @@ export function LogDose() {
 
       {timingWarning && (
         <div 
-          className={`mb-4 p-4 rounded-xl border ${
-            timingWarning.type === 'early' 
-              ? 'bg-red-500/10 border-red-500/20 text-red-300 shadow-[0_0_12px_rgba(239,68,68,0.1)]' 
-              : 'bg-amber-500/10 border-amber-500/20 text-amber-300'
-          } flex flex-col gap-2 animate-slide-up`}
+          className={`mb-4 p-4 rounded-xl border ${ timingWarning.type === 'early' ? 'bg-red-500/10 border-red-500/20 text-red-300 shadow-[0_0_12px_rgba(239,68,68,0.1)]' : 'bg-amber-500/10 border-amber-500/20 text-amber-300' } flex flex-col gap-2 animate-slide-up`}
           aria-label="Dose Timing Warning"
         >
           <div className="flex items-center gap-2 font-bold text-sm">
@@ -724,7 +714,7 @@ export function LogDose() {
       <form onSubmit={handleSubmit} className={`flex flex-col ${isQuick ? 'gap-2.5' : 'gap-5'} mode-content ${switchingMode ? 'switching' : ''}`}>
         {/* Medication Select */}
         <div className="card-premium p-5">
-          <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-widest">
+          <label className="flex items-center gap-1.5 text-[11px] font-semibold text-content-secondary mb-2 uppercase tracking-widest">
             <PillIcon size={12} className="text-primary-400" />
             Medication
           </label>
@@ -741,29 +731,29 @@ export function LogDose() {
                 hasAutoProposedForMedRef.current = {};
               }}
               disabled={!!editingId}
-              className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-4 py-3.5 text-white text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all disabled:opacity-50"
+              className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-4 py-3.5 text-content-primary text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all disabled:opacity-50"
             >
               {medsWithDoses.map((m) => (
                 <option key={m.id} value={m.id}>{m.name} — {m.brand}</option>
               ))}
             </select>
-            <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-content-secondary pointer-events-none" />
           </div>
           {settings.titrationWizardEnabled && activeProtocol && selectedMed && (
             <div className="mt-4 pt-4 border-t border-white/5 space-y-2" aria-label="Titration Protocol Info">
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-slate-400">
+                <div className="flex items-center gap-1.5 text-content-secondary">
                   <ActivityIcon size={13} className="text-amber-400 animate-pulse" />
-                  <span className="font-semibold text-slate-300">Titration Protocol:</span>
-                  <span className="text-slate-400 truncate max-w-[150px]">{activeProtocol.name}</span>
+                  <span className="font-semibold text-content-secondary">Titration Protocol:</span>
+                  <span className="text-content-secondary truncate max-w-[150px]">{activeProtocol.name}</span>
                 </div>
                 <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold text-[10px] uppercase tracking-wider whitespace-nowrap">
                   Step {activeProtocol.currentStepIndex + 1} of {activeProtocol.steps.length}
                 </span>
               </div>
               <div className="flex items-center justify-between text-[11px] bg-surface-900/40 rounded-lg p-2.5 border border-white/5">
-                <span className="text-slate-400">Current Step Target:</span>
-                <span className="font-semibold text-white">
+                <span className="text-content-secondary">Current Step Target:</span>
+                <span className="font-semibold text-content-primary">
                   {activeProtocol.targetType === 'steady-state-concentration' ? (
                     <>Maintain <span className="text-primary-300">{activeProtocol.steps[activeProtocol.currentStepIndex]?.targetConcentration} ng/ml</span> PK Target</>
                   ) : (
@@ -780,7 +770,7 @@ export function LogDose() {
         {/* Date & Time (Full Log) */}
         {!isQuick && (
           <div className="card-premium p-4" aria-label="Date & Time">
-            <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2 px-1 sr-only">Date & Time</div>
+            <div className="text-[10px] font-semibold text-content-muted uppercase tracking-widest mb-2 px-1 sr-only">Date & Time</div>
             <div className="flex items-center gap-2">
               <Calendar size={14} className="text-primary-400" />
               <input
@@ -803,7 +793,7 @@ export function LogDose() {
         {/* Vial — Quick Log: compact summary; Full Log: select + dashboard */}
         {selectedMed && vialsForMed.length > 0 && !isEditingSymptom && (
           <div className="card-premium p-5">
-            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-widest">
+            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-content-secondary mb-2 uppercase tracking-widest">
               <FlaskConical size={12} className="text-primary-400" />
               Vial
               <HelpBox>
@@ -818,7 +808,7 @@ export function LogDose() {
                     <select
                       value={selectedVialId}
                       onChange={(e) => setSelectedVialId(e.target.value)}
-                      className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-3 py-3 text-white text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
+                      className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-3 py-3 text-content-primary text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
                     >
                       <option value="">No vial</option>
                       {vialsForMed.map((v) => {
@@ -830,14 +820,14 @@ export function LogDose() {
                         );
                       })}
                     </select>
-                    <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-content-secondary pointer-events-none" />
                   </div>
                   {selectedVial ? (
                     <div className="vial-summary !flex-col !items-stretch !gap-1 justify-center">
                       <span className="vial-name truncate text-[11px] leading-tight">
                         {selectedVial.name}
                         {doseUnits > 0 && (
-                          <span className="text-slate-400 font-normal ml-1">
+                          <span className="text-content-secondary font-normal ml-1">
                             · {doseUnits} units
                           </span>
                         )}
@@ -845,21 +835,17 @@ export function LogDose() {
                       <div className="w-full flex items-center gap-1.5">
                         <div className="flex-1 h-1.5 rounded-full bg-surface-700/50 overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              vialPercentage < 25 ? 'bg-red-500' : vialPercentage < 50 ? 'bg-amber-500' : 'bg-emerald-500'
-                            }`}
+                            className={`h-full rounded-full transition-all duration-500 ${ vialPercentage < 25 ? 'bg-red-500' : vialPercentage < 50 ? 'bg-amber-500' : 'bg-emerald-500' }`}
                             style={{ width: `${Math.max(vialPercentage, 3)}%` }}
                           />
                         </div>
-                        <span className={`text-[10px] font-bold whitespace-nowrap ${
-                          vialPercentage < 25 ? 'text-red-400' : vialPercentage < 50 ? 'text-amber-400' : 'text-emerald-400'
-                        }`}>
+                        <span className={`text-[10px] font-bold whitespace-nowrap ${ vialPercentage < 25 ? 'text-red-400' : vialPercentage < 50 ? 'text-amber-400' : 'text-emerald-400' }`}>
                           {Math.round(vialPercentage)}%
                         </span>
                       </div>
                     </div>
                   ) : (
-                    <div className="vial-summary justify-center text-slate-500 text-xs">
+                    <div className="vial-summary justify-center text-content-muted text-xs">
                       Select a vial
                     </div>
                   )}
@@ -879,7 +865,7 @@ export function LogDose() {
                     <select
                       value={selectedVialId}
                       onChange={(e) => setSelectedVialId(e.target.value)}
-                      className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-3 py-3.5 text-white text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
+                      className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-3 py-3.5 text-content-primary text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
                     >
                       <option value="">No vial — generic dose</option>
                       {vialsForMed.map((v) => {
@@ -891,7 +877,7 @@ export function LogDose() {
                         );
                       })}
                     </select>
-                    <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-content-secondary pointer-events-none" />
                   </div>
                   {selectedVial ? (
                     <div className="vial-summary justify-between">
@@ -906,7 +892,7 @@ export function LogDose() {
                       </span>
                     </div>
                   ) : (
-                    <div className="vial-summary justify-center text-slate-500 text-xs">
+                    <div className="vial-summary justify-center text-content-muted text-xs">
                       Select a vial
                     </div>
                   )}
@@ -922,14 +908,14 @@ export function LogDose() {
                         sublabel={`${remainingPeptide.toFixed(2)} ${selectedVial.peptideUnit}`}
                       />
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-white tabular-nums">
+                        <div className="text-2xl font-bold text-content-primary tabular-nums">
                           {animatedRemaining.toFixed(2)}
                         </div>
-                        <div className="text-xs text-slate-400">
+                        <div className="text-xs text-content-secondary">
                           {selectedVial.peptideUnit} remaining
                         </div>
                         {selectedVial.bacWaterAmount > 0 && concentrationPerMl > 0 && (
-                          <div className="text-[11px] text-slate-500 mt-0.5">
+                          <div className="text-[11px] text-content-muted mt-0.5">
                             ≈ {animatedRemainingMl.toFixed(2)} ml
                           </div>
                         )}
@@ -947,10 +933,10 @@ export function LogDose() {
                           <Syringe size={18} className="text-primary-400" />
                         </div>
                         <div className="min-w-0">
-                          <div className="text-sm text-white">
+                          <div className="text-sm text-content-primary">
                             Inject <strong className="text-primary-300">{animatedInjectMl.toFixed(2)} ml</strong>
                           </div>
-                          <div className="text-xs text-slate-400">
+                          <div className="text-xs text-content-secondary">
                             {Math.round((parseFloat(dosage) / concentrationPerMl) * 100)} units (U-100) · {concentrationPerMl.toFixed(2)} {selectedVial.peptideUnit}/ml
                           </div>
                         </div>
@@ -966,7 +952,7 @@ export function LogDose() {
         {/* Dosage */}
         {selectedMed && !isEditingSymptom && (
           <div className="card-premium p-5">
-            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-3 uppercase tracking-widest">
+            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-content-secondary mb-3 uppercase tracking-widest">
               <Syringe size={12} className="text-primary-400" />
               Dosage ({selectedMed.unit})
             </label>
@@ -983,13 +969,7 @@ export function LogDose() {
                       key={d}
                       type="button"
                       onClick={() => setDosage(String(d))}
-                      className={`btn-tactile flex-shrink-0 h-9 px-3 rounded-lg text-xs font-semibold transition-all ${
-                        dosage === String(d)
-                          ? 'bg-primary-600 text-white shadow-md shadow-primary-900/30 ring-1 ring-primary-400/30'
-                          : isRecommended
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)] ring-1 ring-amber-500/20'
-                          : 'bg-surface-900/50 border border-white/8 text-slate-300 hover:border-white/15 hover:bg-surface-800'
-                      }`}
+                      className={`btn-tactile flex-shrink-0 h-9 px-3 rounded-lg text-xs font-semibold transition-all ${ dosage === String(d) ? 'bg-primary-600 text-white shadow-md shadow-primary-900/30 ring-1 ring-primary-400/30' : isRecommended ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)] ring-1 ring-amber-500/20' : 'bg-surface-900/50 border border-white/8 text-slate-300 hover:border-white/15 hover:bg-surface-800' }`}
                     >
                       {d} {isRecommended && <Zap size={10} className="inline ml-1 mb-0.5" />}
                     </button>
@@ -998,7 +978,7 @@ export function LogDose() {
                 <button
                   type="button"
                   onClick={() => { setCustomDosage(true); setDosage(''); }}
-                  className="btn-tactile flex-shrink-0 h-9 px-3 rounded-lg text-xs font-semibold bg-surface-900/50 border border-dashed border-white/10 text-slate-500 hover:text-slate-300 hover:border-white/20 transition-all"
+                  className="btn-tactile flex-shrink-0 h-9 px-3 rounded-lg text-xs font-semibold bg-surface-900/50 border border-dashed border-white/10 text-content-muted hover:text-slate-300 hover:border-white/20 transition-all"
                 >
                   Custom
                 </button>
@@ -1017,7 +997,7 @@ export function LogDose() {
                 <button
                   type="button"
                   onClick={() => { setCustomDosage(false); setDosage(''); }}
-                  className="btn-tactile px-3 py-2 rounded-lg text-xs font-medium bg-surface-800 border border-white/10 text-slate-400 hover:text-white"
+                  className="btn-tactile px-3 py-2 rounded-lg text-xs font-medium bg-surface-800 border border-white/10 text-content-secondary hover:text-content-primary"
                 >
                   Presets
                 </button>
@@ -1042,7 +1022,7 @@ export function LogDose() {
 
             {isQuick && (
               <div className="mt-6 pt-6 border-t border-white/5">
-                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-3 uppercase tracking-widest">
+                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-content-secondary mb-3 uppercase tracking-widest">
                   <ActivityIcon size={12} className="text-primary-400" />
                   Symptoms
                 </label>
@@ -1061,7 +1041,7 @@ export function LogDose() {
         {!isEditingSymptom && (
           <div className="card-premium p-5">
           <div className="flex items-center justify-between mb-3">
-            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
+            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-content-secondary uppercase tracking-widest">
               <MapPin size={12} className="text-primary-400" />
               Injection Site
               <HelpBox>
@@ -1086,11 +1066,7 @@ export function LogDose() {
                     key={siteId}
                     type="button"
                     onClick={() => setInjectionSite(siteId)}
-                    className={`btn-tactile flex-shrink-0 h-7 px-2 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all ${
-                      isSelected
-                        ? 'bg-primary-600/20 border border-primary-500/50 text-primary-300 shadow-[0_0_8px_rgba(20,184,166,0.12)]'
-                        : 'bg-surface-800/50 border border-white/5 text-slate-500 hover:border-white/15 hover:bg-surface-700 hover:text-slate-300'
-                    }`}
+                    className={`btn-tactile flex-shrink-0 h-7 px-2 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all ${ isSelected ? 'bg-primary-600/20 border border-primary-500/50 text-primary-300 shadow-[0_0_8px_rgba(20,184,166,0.12)]' : 'bg-surface-800/50 border border-white/5 text-slate-500 hover:border-white/15 hover:bg-surface-700 hover:text-slate-300' }`}
                   >
                     {site.emoji} {site.label}
                   </button>
@@ -1115,11 +1091,7 @@ export function LogDose() {
                             if (firstActive) setInjectionSite(firstActive);
                           }
                         }}
-                        className={`btn-tactile flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all ${
-                          isActive
-                            ? 'bg-primary-600/15 border border-primary-500/40 text-primary-300 shadow-[0_0_12px_rgba(20,184,166,0.12)]'
-                            : 'bg-surface-900/50 border border-white/5 text-slate-400 hover:border-white/15 hover:bg-surface-800'
-                        }`}
+                        className={`btn-tactile flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all ${ isActive ? 'bg-primary-600/15 border border-primary-500/40 text-primary-300 shadow-[0_0_12px_rgba(20,184,166,0.12)]' : 'bg-surface-900/50 border border-white/5 text-slate-400 hover:border-white/15 hover:bg-surface-800' }`}
                       >
                         <span className="text-base leading-none">{zone.emoji}</span>
                         <span className="text-[11px] font-semibold">{zone.label}</span>
@@ -1143,11 +1115,7 @@ export function LogDose() {
                             key={siteId}
                             type="button"
                             onClick={() => setInjectionSite(siteId)}
-                            className={`btn-tactile flex items-center justify-center gap-1 px-1.5 py-2 rounded-lg text-[10px] font-semibold text-center transition-all ${
-                              isSelected
-                                ? 'bg-primary-600/20 border border-primary-500/50 text-primary-300 shadow-[0_0_8px_rgba(20,184,166,0.12)]'
-                                : 'bg-surface-800/50 border border-white/5 text-slate-500 hover:border-white/15 hover:bg-surface-700 hover:text-slate-300'
-                            }`}
+                            className={`btn-tactile flex items-center justify-center gap-1 px-1.5 py-2 rounded-lg text-[10px] font-semibold text-center transition-all ${ isSelected ? 'bg-primary-600/20 border border-primary-500/50 text-primary-300 shadow-[0_0_8px_rgba(20,184,166,0.12)]' : 'bg-surface-800/50 border border-white/5 text-slate-500 hover:border-white/15 hover:bg-surface-700 hover:text-slate-300' }`}
                           >
                             {isSelected && <Check size={10} className="text-primary-400 flex-shrink-0" />}
                             <span className="truncate">{site.label}</span>
@@ -1161,10 +1129,10 @@ export function LogDose() {
 
               {/* Current Selection Summary */}
               <div className="mt-3 pt-3 border-t border-white/5">
-                <div className="flex items-center gap-2 text-xs text-slate-400">
+                <div className="flex items-center gap-2 text-xs text-content-secondary">
                   <MapPin size={12} className="text-primary-400" />
                   <span>Selected:</span>
-                  <span className="text-white font-medium capitalize">
+                  <span className="text-content-primary font-medium capitalize">
                     {selectedZone?.label} · {INJECTION_SITES.find((s) => s.id === injectionSite)?.label}
                   </span>
                 </div>
@@ -1179,10 +1147,10 @@ export function LogDose() {
           <>
             {/* Side Effects */}
             <div className="card-premium p-5">
-              <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-3 uppercase tracking-widest">
+              <label className="flex items-center gap-1.5 text-[11px] font-semibold text-content-secondary mb-3 uppercase tracking-widest">
                 <ActivityIcon size={12} className="text-primary-400" />
                 Side Effects
-                <span className="text-slate-600 font-normal normal-case ml-1">(tap to log)</span>
+                <span className="text-content-muted font-normal normal-case ml-1">(tap to log)</span>
               </label>
               <SideEffectChips
                 sideEffects={orderedSideEffects}
@@ -1199,16 +1167,14 @@ export function LogDose() {
                 onClick={() => setNotesExpanded((p) => !p)}
                 className="w-full flex items-center justify-between"
               >
-                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-widest cursor-pointer">
+                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-content-secondary uppercase tracking-widest cursor-pointer">
                   <FileText size={12} className="text-primary-400" />
                   Notes {notes && <span className="text-primary-400 text-[10px]">({notes.length})</span>}
                 </label>
-                {notesExpanded ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
+                {notesExpanded ? <ChevronUp size={14} className="text-content-muted" /> : <ChevronDown size={14} className="text-content-muted" />}
               </button>
               <div
-                className={`overflow-hidden transition-all duration-300 ease-out ${
-                  notesExpanded ? 'max-h-48 opacity-100 mt-3' : 'max-h-0 opacity-0'
-                }`}
+                className={`overflow-hidden transition-all duration-300 ease-out ${ notesExpanded ? 'max-h-48 opacity-100 mt-3' : 'max-h-0 opacity-0' }`}
               >
                 <textarea
                   value={notes}
@@ -1217,7 +1183,7 @@ export function LogDose() {
                   rows={3}
                   className="w-full input-premium resize-none"
                 />
-                <div className="text-right text-[10px] text-slate-600 mt-1">
+                <div className="text-right text-[10px] text-content-muted mt-1">
                   {notes.length} / 500
                 </div>
               </div>
@@ -1230,15 +1196,7 @@ export function LogDose() {
           <button
             type="submit"
             disabled={(!dosage && selectedSideEffects.length === 0) || submitting || submitSuccess}
-            className={`btn-tactile flex-1 ${isQuick ? 'py-2.5' : 'py-4'} rounded-xl font-semibold text-sm transition-all shadow-lg ${
-              submitSuccess
-                ? 'bg-emerald-600 text-white shadow-emerald-900/30'
-                : editingId
-                ? 'bg-amber-600 text-white shadow-amber-900/30'
-                : !dosage && selectedSideEffects.length > 0
-                ? 'bg-primary-700 text-white shadow-primary-900/30'
-                : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white shadow-primary-900/30'
-            } disabled:bg-slate-700 disabled:text-slate-500 disabled:shadow-none`}
+            className={`btn-tactile flex-1 ${isQuick ? 'py-2.5' : 'py-4'} rounded-xl font-semibold text-sm transition-all shadow-lg ${ submitSuccess ? 'bg-emerald-600 text-white shadow-emerald-900/30' : editingId ? 'bg-amber-600 text-white shadow-amber-900/30' : !dosage && selectedSideEffects.length > 0 ? 'bg-primary-700 text-white shadow-primary-900/30' : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white shadow-primary-900/30' } disabled:bg-slate-700 disabled:text-slate-500 disabled:shadow-none`}
           >
             <span className="flex items-center justify-center gap-2">
               {submitSuccess ? (
@@ -1269,7 +1227,7 @@ export function LogDose() {
             <button
               type="button"
               onClick={resetForm}
-              className="btn-tactile px-5 py-4 rounded-xl bg-surface-800 hover:bg-surface-700 border border-white/10 text-slate-300 text-sm font-medium transition-all"
+              className="btn-tactile px-5 py-4 rounded-xl bg-surface-800 hover:bg-surface-700 border border-white/10 text-content-secondary text-sm font-medium transition-all"
             >
               Cancel
             </button>
@@ -1285,16 +1243,14 @@ export function LogDose() {
             onClick={() => setShowHistory((p) => !p)}
             className="w-full flex items-center justify-between mb-4"
           >
-            <h3 className="text-sm font-bold text-slate-300 uppercase tracking-widest">
+            <h3 className="text-sm font-bold text-content-secondary uppercase tracking-widest">
               {selectedMed.name} Activity
             </h3>
-            {showHistory ? <ChevronUp size={16} className="text-slate-500" /> : <ChevronDown size={16} className="text-slate-500" />}
+            {showHistory ? <ChevronUp size={16} className="text-content-muted" /> : <ChevronDown size={16} className="text-content-muted" />}
           </button>
 
           <div
-            className={`overflow-hidden transition-all duration-500 ease-out ${
-              showHistory ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
-            }`}
+            className={`overflow-hidden transition-all duration-500 ease-out ${ showHistory ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0' }`}
           >
             <div className="relative pl-4">
               {/* Timeline line */}
@@ -1340,38 +1296,30 @@ function DoseTimelineItem({
   const med = medications.find((m) => m.id === dose.medicationId);
   const vial = vials.find((v) => v.id === dose.vialId);
   return (
-    <div className={`relative flex gap-3 rounded-xl border px-4 py-3.5 transition-all ${
-      isEditing
-        ? 'border-primary-500/40 bg-primary-600/10 shadow-[0_0_16px_rgba(20,184,166,0.08)]'
-        : 'border-white/5 bg-surface-900/40 hover:border-white/10 hover:bg-surface-800/60'
-    }`}>
+    <div className={`relative flex gap-3 rounded-xl border px-4 py-3.5 transition-all ${ isEditing ? 'border-primary-500/40 bg-primary-600/10 shadow-[0_0_16px_rgba(20,184,166,0.08)]' : 'border-white/5 bg-surface-900/40 hover:border-white/10 hover:bg-surface-800/60' }`}>
       {/* Timeline dot */}
       <div className="absolute -left-[9px] top-5 w-[15px] h-[15px] rounded-full border-[3px] border-surface-950 bg-primary-500/80 z-10" />
 
       <button onClick={onEdit} className="flex-1 text-left min-w-0">
         <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="text-lg font-bold text-white">
+          <span className="text-lg font-bold text-content-primary">
             {dose.dosage} {med?.unit || dose.unit}
           </span>
           {vial && (
-            <span className="text-xs text-slate-500 font-medium">
+            <span className="text-xs text-content-muted font-medium">
               · {vial.name}
             </span>
           )}
         </div>
-        <p className="text-xs text-slate-400 mt-0.5">{format(new Date(dose.dateTime), 'PPP p')}</p>
-        <p className="text-xs text-slate-500 capitalize mt-0.5">
+        <p className="text-xs text-content-secondary mt-0.5">{format(new Date(dose.dateTime), 'PPP p')}</p>
+        <p className="text-xs text-content-muted capitalize mt-0.5">
           {dose.injectionSite.replace(/-/g, ' ')}
           {dose.notes && ` · ${dose.notes}`}
         </p>
         {dose.sideEffects && dose.sideEffects.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1.5">
             {dose.sideEffects.map((ef) => (
-              <span key={ef.label} className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-medium gap-1 ${
-                ef.severity === 'mild' ? 'bg-primary-500/10 border-primary-500/20 text-primary-400'
-                : ef.severity === 'moderate' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                : 'bg-red-500/10 border-red-500/20 text-red-400'
-              }`}>
+              <span key={ef.label} className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-medium gap-1 ${ ef.severity === 'mild' ? 'bg-primary-500/10 border-primary-500/20 text-primary-400' : ef.severity === 'moderate' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-red-500/10 border-red-500/20 text-red-400' }`}>
                 {ef.label}
                 <span className="opacity-60 text-[8px] uppercase">{ef.severity.slice(0, 3)}</span>
               </span>
@@ -1395,11 +1343,7 @@ function SymptomTimelineItem({
   log, isEditing, onEdit, onDelete,
 }: { log: SymptomLog; isEditing: boolean; onEdit: () => void; onDelete: () => void; }) {
   return (
-    <div className={`relative flex gap-3 rounded-xl border px-4 py-3.5 transition-all ${
-      isEditing
-        ? 'border-violet-500/40 bg-violet-600/10 shadow-[0_0_16px_rgba(139,92,246,0.08)]'
-        : 'border-white/5 bg-surface-900/40 hover:border-white/10 hover:bg-surface-800/60'
-    }`}>
+    <div className={`relative flex gap-3 rounded-xl border px-4 py-3.5 transition-all ${ isEditing ? 'border-violet-500/40 bg-violet-600/10 shadow-[0_0_16px_rgba(139,92,246,0.08)]' : 'border-white/5 bg-surface-900/40 hover:border-white/10 hover:bg-surface-800/60' }`}>
       {/* Violet dot to distinguish from teal dose dots */}
       <div className="absolute -left-[9px] top-5 w-[15px] h-[15px] rounded-full border-[3px] border-surface-950 bg-violet-500/80 z-10" />
 
@@ -1407,22 +1351,18 @@ function SymptomTimelineItem({
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-500/10 border border-violet-500/20 text-violet-400 mb-1.5">
           <ActivityIcon size={10} /> Symptom Log
         </span>
-        <p className="text-xs text-slate-400 mb-1.5">{format(new Date(log.dateTime), 'PPP p')}</p>
+        <p className="text-xs text-content-secondary mb-1.5">{format(new Date(log.dateTime), 'PPP p')}</p>
         {log.symptoms.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {log.symptoms.map(ef => (
-              <span key={ef.label} className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-medium gap-1 ${
-                ef.severity === 'mild'     ? 'bg-primary-500/10 border-primary-500/20 text-primary-400'
-                : ef.severity === 'moderate' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                : 'bg-red-500/10 border-red-500/20 text-red-400'
-              }`}>
+              <span key={ef.label} className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-medium gap-1 ${ ef.severity === 'mild' ? 'bg-primary-500/10 border-primary-500/20 text-primary-400' : ef.severity === 'moderate' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-red-500/10 border-red-500/20 text-red-400' }`}>
                 {ef.label}
                 <span className="opacity-60 text-[8px] uppercase">{ef.severity.slice(0, 3)}</span>
               </span>
             ))}
           </div>
         )}
-        {log.notes && <p className="text-xs text-slate-500 mt-1 italic">"{log.notes}"</p>}
+        {log.notes && <p className="text-xs text-content-muted mt-1 italic">"{log.notes}"</p>}
       </button>
 
       <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -1442,7 +1382,7 @@ import type { Medication, SymptomLog, Vial } from '../types';
 /* Inline spinner component */
 function Spinner() {
   return (
-    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <svg className="animate-spin h-4 w-4 text-content-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
     </svg>

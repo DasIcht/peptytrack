@@ -7,6 +7,7 @@ import { useSettingsStore } from './stores/settingsStore';
 import { useSideEffectsStore } from './stores/sideEffectsStore';
 import { useProtocolStore } from './stores/protocolStore';
 import { useSymptomLogStore } from './stores/symptomLogStore';
+import { useThemeStore } from './stores/themeStore';
 import { checkAndFireReminders, rescheduleAllReminders } from './lib/notifications';
 import { getAutoBackup, clearAutoBackup, saveAutoBackup } from './lib/autoBackup';
 import { importData, exportData } from './lib/cloudSync';
@@ -34,6 +35,7 @@ const PAGE_COMPONENTS = {
 
 function App() {
   const { activePage, addToast, nextPage, prevPage } = useUIStore();
+  const { initTheme } = useThemeStore();
   const { loadData: loadMeds, initialized: medsInitialized, medications, doses } = useMedicationStore();
   const { loadData: loadWeight, entries: weightEntries } = useWeightStore();
   const { loadData: loadVials, initialized: vialsInitialized, vials } = useVialStore();
@@ -57,13 +59,14 @@ function App() {
           await loadMeds();
         }
         await Promise.all([loadWeight(), loadVials(), loadSettings(), loadSideEffects(), loadProtocols(), loadSymptomLogs()]);
+        initTheme();
       } catch (err) {
         console.error('App initialization failed:', err);
         addToast('Failed to initialize app data', 'error');
       }
     };
     init();
-  }, [loadMeds, loadWeight, loadVials, loadSettings, loadSideEffects, loadProtocols, loadSymptomLogs, addToast]);
+  }, [loadMeds, loadWeight, loadVials, loadSettings, loadSideEffects, loadProtocols, loadSymptomLogs, addToast, initTheme]);
 
   useEffect(() => {
     if (!initialized) return;
@@ -133,13 +136,13 @@ function App() {
   const PageComponent = PAGE_COMPONENTS[activePage];
 
   return (
-    <div className="min-h-screen bg-surface-950 text-white font-sans overflow-x-hidden">
+    <div className="min-h-screen font-sans overflow-x-hidden" style={{ background: 'var(--color-surface-950)', color: 'var(--color-text-primary)' }}>
       <main className="max-w-lg mx-auto relative" onTouchStart={(e) => { touchStartX.current = e.changedTouches[0].screenX; touchStartY.current = e.changedTouches[0].screenY; }} onTouchEnd={(e) => { const deltaX = e.changedTouches[0].screenX - touchStartX.current; const deltaY = e.changedTouches[0].screenY - touchStartY.current; if (Math.abs(deltaX) > 80 && Math.abs(deltaX) > Math.abs(deltaY)) { if (deltaX < 0) nextPage(); else prevPage(); } }}>
         {restorePrompt && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center px-5 bg-black/70 backdrop-blur-sm">
             <div className="bg-surface-800 border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-              <h3 className="text-lg font-bold text-white mb-2">Restore Backup?</h3>
-              <p className="text-sm text-slate-400 mb-5">
+              <h3 className="text-lg font-bold text-content-primary mb-2">Restore Backup?</h3>
+              <p className="text-sm text-content-secondary mb-5">
                 We found a local backup from a previous session. Would you like to restore your medications, doses, and weight entries?
               </p>
               <div className="flex gap-3">
@@ -151,7 +154,7 @@ function App() {
                 </button>
                 <button
                   onClick={handleDismissRestore}
-                  className="flex-1 py-2.5 rounded-xl bg-surface-700 hover:bg-surface-600 text-slate-300 text-sm transition-all"
+                  className="flex-1 py-2.5 rounded-xl bg-surface-700 hover:bg-surface-600 text-content-secondary text-sm transition-all"
                 >
                   Start Fresh
                 </button>

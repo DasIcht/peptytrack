@@ -123,8 +123,8 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
 
   return (
     <div className="bg-surface-800 border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl relative">
-      <h3 className="text-xl font-bold text-white mb-1">Titration Protocol</h3>
-      <p className="text-sm text-slate-400 mb-6">Define a scheduled step-up plan for {medicationName}.</p>
+      <h3 className="text-xl font-bold text-content-primary mb-1">Titration Protocol</h3>
+      <p className="text-sm text-content-secondary mb-6">Define a scheduled step-up plan for {medicationName}.</p>
 
       <div className="space-y-4 mb-6">
         {steps.map((step, index) => (
@@ -149,7 +149,7 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
 
             <div className={`grid ${targetType === 'steady-state-concentration' ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
               <div>
-                <label className="text-[10px] font-semibold text-slate-400 mb-1 flex items-center gap-1">
+                <label className="text-[10px] font-semibold text-content-secondary mb-1 flex items-center gap-1">
                   <Syringe size={10} /> Dosage ({medicationUnit})
                 </label>
                 <input
@@ -162,7 +162,7 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
                 />
               </div>
               <div>
-                <label className="text-[10px] font-semibold text-slate-400 mb-1 flex items-center gap-1">
+                <label className="text-[10px] font-semibold text-content-secondary mb-1 flex items-center gap-1">
                   <Calendar size={10} /> Duration (Weeks)
                 </label>
                 <input
@@ -176,10 +176,10 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
               </div>
               {targetType === 'steady-state-concentration' && (
                 <div>
-                  <label className="text-[10px] font-semibold text-slate-400 mb-1 flex items-center gap-1">
+                  <label className="text-[10px] font-semibold text-content-secondary mb-1 flex items-center gap-1">
                     <Target size={10} /> Target (ng/ml)
                   </label>
-                  <div className="input-premium py-2 text-sm w-full bg-surface-900/50 text-slate-400 cursor-not-allowed flex items-center">
+                  <div className="input-premium py-2 text-sm w-full bg-surface-900/50 text-content-secondary cursor-not-allowed flex items-center">
                     {getComputedTarget(step.dosage || 0).toFixed(2)}
                   </div>
                 </div>
@@ -192,14 +192,14 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
       <button
         type="button"
         onClick={handleAddStep}
-        className="w-full py-3 mb-6 rounded-xl bg-surface-900 border border-dashed border-white/20 text-slate-400 hover:text-white hover:border-white/40 flex items-center justify-center gap-2 text-sm font-medium transition-all"
+        className="w-full py-3 mb-6 rounded-xl bg-surface-900 border border-dashed border-white/20 text-content-secondary hover:text-content-primary hover:border-white/40 flex items-center justify-center gap-2 text-sm font-medium transition-all"
       >
         <Plus size={16} /> Add Next Step
       </button>
 
       <div className="bg-surface-900/30 border border-white/5 rounded-xl p-4 mb-6">
         <div className="mb-4 pb-4 border-b border-white/5">
-          <label className="text-sm font-semibold text-white flex items-center gap-2 mb-2">
+          <label className="text-sm font-semibold text-content-primary flex items-center gap-2 mb-2">
             <Target size={14} className="text-primary-400" />
             Target Mode
             <HelpBox>
@@ -210,18 +210,14 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
             <button
               type="button"
               onClick={() => setTargetType('weekly-equivalent')}
-              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
-                targetType === 'weekly-equivalent' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
+              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${ targetType === 'weekly-equivalent' ? 'bg-primary-600 text-white' : 'text-content-secondary hover:text-content-primary' }`}
             >
               Clinical (Weekly)
             </button>
             <button
               type="button"
               onClick={() => setTargetType('steady-state-concentration')}
-              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
-                targetType === 'steady-state-concentration' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
+              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${ targetType === 'steady-state-concentration' ? 'bg-primary-600 text-white' : 'text-content-secondary hover:text-content-primary' }`}
             >
               Pharmacokinetic
             </button>
@@ -230,7 +226,7 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
 
         <label className="flex flex-col gap-2 cursor-pointer">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-white flex items-center gap-2">
+            <span className="text-sm font-semibold text-content-primary flex items-center gap-2">
               <Settings2 size={14} className="text-primary-400" />
               Auto-Advance Protocol
             </span>
@@ -244,13 +240,13 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
               onChange={(e) => setAutoAdvance(e.target.checked)}
             />
           </div>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-content-secondary">
             If enabled, the app will automatically move to the next step when the duration is met and conditions are safe. If disabled, you will be prompted to manually confirm.
           </span>
         </label>
         
         <div className="mt-4 pt-4 border-t border-white/5">
-          <label className="text-sm font-semibold text-white flex items-center gap-2 mb-2">
+          <label className="text-sm font-semibold text-content-primary flex items-center gap-2 mb-2">
             <PieChart size={14} className="text-primary-400" />
             Visualization Style
           </label>
@@ -258,32 +254,26 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
             <button
               type="button"
               onClick={() => setChartStyle('spider')}
-              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
-                chartStyle === 'spider' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
+              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${ chartStyle === 'spider' ? 'bg-primary-600 text-white' : 'text-content-secondary hover:text-content-primary' }`}
             >
               Spider
             </button>
             <button
               type="button"
               onClick={() => setChartStyle('gauges')}
-              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
-                chartStyle === 'gauges' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
+              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${ chartStyle === 'gauges' ? 'bg-primary-600 text-white' : 'text-content-secondary hover:text-content-primary' }`}
             >
               Gauges
             </button>
             <button
               type="button"
               onClick={() => setChartStyle('timeline')}
-              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
-                chartStyle === 'timeline' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
+              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${ chartStyle === 'timeline' ? 'bg-primary-600 text-white' : 'text-content-secondary hover:text-content-primary' }`}
             >
               Timeline
             </button>
           </div>
-          <p className="text-[10px] text-slate-500 mt-2 text-center">
+          <p className="text-[10px] text-content-muted mt-2 text-center">
             {chartStyle === 'spider' && 'Shows a readiness radar chart.'}
             {chartStyle === 'gauges' && 'Shows discrete dials for time, symptoms, and weight.'}
             {chartStyle === 'timeline' && 'Shows symptom history over the last 14 days.'}
@@ -296,7 +286,7 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-3 rounded-xl bg-surface-700 text-white font-medium hover:bg-surface-600 transition-colors"
+            className="flex-1 py-3 rounded-xl bg-surface-700 text-content-primary font-medium hover:bg-surface-600 transition-colors"
           >
             Cancel
           </button>
@@ -315,11 +305,7 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
             <button
               type="button"
               onClick={handleToggleState}
-              className={`flex-1 py-2.5 rounded-xl border flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors ${
-                existingProtocol.startDate 
-                  ? 'border-amber-500/20 text-amber-400 hover:bg-amber-500/10' 
-                  : 'border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10'
-              }`}
+              className={`flex-1 py-2.5 rounded-xl border flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors ${ existingProtocol.startDate ? 'border-amber-500/20 text-amber-400 hover:bg-amber-500/10' : 'border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10' }`}
             >
               {existingProtocol.startDate ? <><Square size={12} className="fill-current" /> Stop Protocol</> : <><Play size={12} className="fill-current" /> Start Protocol</>}
             </button>

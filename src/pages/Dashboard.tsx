@@ -29,10 +29,10 @@ export function Dashboard() {
     <div className="min-h-full pb-24">
       {/* Header */}
       <div className="px-5 pt-6 pb-4">
-        <h1 className="text-2xl font-bold text-white tracking-tight">
+        <h1 className="text-2xl font-bold text-content-primary tracking-tight">
           Pepty<span className="text-primary-400">Track</span>
         </h1>
-        <p className="text-sm text-slate-400 mt-1">Your GLP-1 companion</p>
+        <p className="text-sm text-content-secondary mt-1">Your GLP-1 companion</p>
       </div>
 
       <div className="px-5">
@@ -42,15 +42,15 @@ export function Dashboard() {
       {/* Quick Stats */}
       <div className="px-5 grid grid-cols-4 gap-3 mb-6">
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-3 text-center">
-          <p className="text-xs text-slate-400 mb-1">Medications</p>
-          <p className="text-xl font-bold text-white">{medications.length}</p>
+          <p className="text-xs text-content-secondary mb-1">Medications</p>
+          <p className="text-xl font-bold text-content-primary">{medications.length}</p>
         </div>
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-3 text-center">
-          <p className="text-xs text-slate-400 mb-1">Vials</p>
-          <p className="text-xl font-bold text-white">{vials.length}</p>
+          <p className="text-xs text-content-secondary mb-1">Vials</p>
+          <p className="text-xl font-bold text-content-primary">{vials.length}</p>
         </div>
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-3 text-center">
-          <p className="text-xs text-slate-400 mb-1">Weight Trend</p>
+          <p className="text-xs text-content-secondary mb-1">Weight Trend</p>
           <div className="flex items-center justify-center gap-1">
             {trend ? (
               trend.change < 0 ? (
@@ -58,22 +58,22 @@ export function Dashboard() {
               ) : trend.change > 0 ? (
                 <TrendingUp size={14} className="text-red-400" />
               ) : (
-                <Minus size={14} className="text-slate-400" />
+                <Minus size={14} className="text-content-secondary" />
               )
             ) : (
-              <Minus size={14} className="text-slate-400" />
+              <Minus size={14} className="text-content-secondary" />
             )}
-            <p className={`text-xl font-bold ${trend ? (trend.change < 0 ? 'text-emerald-400' : trend.change > 0 ? 'text-red-400' : 'text-slate-300') : 'text-slate-300'}`}>
+            <p className={`text-xl font-bold ${trend ? (trend.change < 0 ? 'text-emerald-400' : trend.change > 0 ? 'text-red-400' : 'text-content-secondary') : 'text-content-secondary'}`}>
               {trend ? `${Math.abs(trend.change)} ${latestWeight?.unit || 'kg'}` : '-'}
             </p>
           </div>
         </div>
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-3 text-center">
-          <p className="text-xs text-slate-400 mb-1">Latest</p>
-          <p className="text-xl font-bold text-white">
+          <p className="text-xs text-content-secondary mb-1">Latest</p>
+          <p className="text-xl font-bold text-content-primary">
             {latestWeight ? `${latestWeight.weight}` : '-'}
           </p>
-          {latestWeight && <p className="text-[10px] text-slate-500">{latestWeight.unit}</p>}
+          {latestWeight && <p className="text-[10px] text-content-muted">{latestWeight.unit}</p>}
         </div>
       </div>
 
@@ -81,7 +81,7 @@ export function Dashboard() {
       <div className="px-5 mb-6">
         <button
           onClick={() => setPage('weight')}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-surface-800 hover:bg-surface-700 border border-white/10 text-white font-medium text-sm transition-all active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-surface-800 hover:bg-surface-700 border border-white/10 text-content-primary font-medium text-sm transition-all active:scale-[0.98]"
         >
           <Weight size={16} />
           Log Weight
@@ -90,7 +90,7 @@ export function Dashboard() {
 
       {/* Medication Cards */}
       <div className="px-5">
-        <h2 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wider">Your Medications</h2>
+        <h2 className="text-sm font-semibold text-content-secondary mb-3 uppercase tracking-wider">Your Medications</h2>
         <div className="flex flex-col gap-3">
           {medications.map((med) => (
             <MedicationCard
@@ -103,7 +103,7 @@ export function Dashboard() {
             />
           ))}
           {medications.length === 0 && (
-            <div className="text-center py-10 text-slate-500">
+            <div className="text-center py-10 text-content-muted">
               <p>No medications yet.</p>
               <button
                 onClick={() => setPage('medications')}

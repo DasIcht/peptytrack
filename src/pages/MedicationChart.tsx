@@ -258,8 +258,8 @@ export function MedicationChart() {
   if (medications.length === 0) {
     return (
       <div className="min-h-full pb-24 px-5 pt-6">
-        <h1 className="text-2xl font-bold text-white mb-1">Medication Levels</h1>
-        <p className="text-sm text-slate-400 mb-6">No enabled medications to display.</p>
+        <h1 className="text-2xl font-bold text-content-primary mb-1">Medication Levels</h1>
+        <p className="text-sm text-content-secondary mb-6">No enabled medications to display.</p>
       </div>
     );
   }
@@ -267,12 +267,12 @@ export function MedicationChart() {
   return (
     <div className="min-h-full pb-24 px-3 pt-6">
       <div className="flex items-center gap-2 mb-1">
-        <h1 className="text-2xl font-bold text-white">Medication Levels</h1>
+        <h1 className="text-2xl font-bold text-content-primary">Medication Levels</h1>
         <HelpBox>
           This dual-axis chart maps your estimated medication levels on the left axis, and your weight/symptoms on the right axis.
         </HelpBox>
       </div>
-      <p className="text-sm text-slate-400 mb-6">Estimated concentration based on half-life</p>
+      <p className="text-sm text-content-secondary mb-6">Estimated concentration based on half-life</p>
 
       {/* Time range selector */}
       <div className="flex rounded-xl border border-white/10 overflow-hidden mb-5 self-start">
@@ -280,11 +280,7 @@ export function MedicationChart() {
           <button
             key={r.days}
             onClick={() => setRangeDays(r.days)}
-            className={`px-3 py-2.5 text-xs font-medium transition-colors ${
-              rangeDays === r.days
-                ? 'bg-primary-600 text-white'
-                : 'bg-surface-800 text-slate-400 hover:text-white'
-            }`}
+            className={`px-3 py-2.5 text-xs font-medium transition-colors ${ rangeDays === r.days ? 'bg-primary-600 text-white' : 'bg-surface-800 text-slate-400 hover:text-white' }`}
           >
             {r.label}
           </button>
@@ -439,7 +435,7 @@ export function MedicationChart() {
             </AreaChart>
           </ResponsiveContainer>
 
-          <p className="text-[10px] text-slate-500 mt-2 text-center">
+          <p className="text-[10px] text-content-muted mt-2 text-center">
             Dots indicate logged doses. Click legend items to toggle visibility.
           </p>
         </div>
@@ -450,16 +446,16 @@ export function MedicationChart() {
         <div className="mt-8">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <h2 className="text-lg font-bold text-content-primary flex items-center gap-2">
                 <Activity size={18} className="text-primary-400" />
                 Titration Parameters
               </h2>
-              <p className="text-xs text-slate-400">{currentProtocolMed.name}</p>
+              <p className="text-xs text-content-secondary">{currentProtocolMed.name}</p>
             </div>
             {activeProtocols.length > 1 && (
               <button
                 onClick={() => setTitrationChartIndex(prev => prev + 1)}
-                className="btn-tactile p-2 rounded-lg bg-surface-800 text-slate-400 hover:text-white border border-white/5"
+                className="btn-tactile p-2 rounded-lg bg-surface-800 text-content-secondary hover:text-content-primary border border-white/5"
               >
                 <RefreshCw size={16} />
               </button>

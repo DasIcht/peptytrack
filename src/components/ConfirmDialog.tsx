@@ -41,25 +41,21 @@ export function ConfirmDialog({
           </div>
         )}
         <div className="flex-1">
-          <h3 className="text-lg font-bold text-white mb-1">{title}</h3>
-          <p className="text-sm text-slate-400 leading-relaxed">{message}</p>
+          <h3 className="text-lg font-bold text-content-primary mb-1">{title}</h3>
+          <p className="text-sm text-content-secondary leading-relaxed">{message}</p>
         </div>
       </div>
 
       <div className="flex gap-3 mt-6">
         <button
           onClick={handleCancel}
-          className="flex-1 py-2.5 rounded-xl bg-surface-700 hover:bg-surface-600 text-slate-300 text-sm font-medium transition-all"
+          className="flex-1 py-2.5 rounded-xl bg-surface-700 hover:bg-surface-600 text-content-secondary text-sm font-medium transition-all"
         >
           {cancelLabel}
         </button>
         <button
           onClick={handleConfirm}
-          className={`flex-1 py-2.5 rounded-xl text-white text-sm font-medium transition-all active:scale-[0.98] ${
-            danger
-              ? 'bg-red-600 hover:bg-red-500'
-              : 'bg-primary-600 hover:bg-primary-500'
-          }`}
+          className={`flex-1 py-2.5 rounded-xl text-white text-sm font-medium transition-all active:scale-[0.98] ${ danger ? 'bg-red-600 hover:bg-red-500' : 'bg-primary-600 hover:bg-primary-500' }`}
         >
           {confirmLabel}
         </button>
