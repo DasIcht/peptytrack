@@ -55,6 +55,9 @@ const defaultSettings = {
   severeSideEffectThreshold: 5,
   theme: 'teal-night' as const,
   customAccentColor: null,
+    height: null,
+    heightUnit: 'cm' as 'cm',
+    gender: null,
 };
 
 describe('LogDose', () => {

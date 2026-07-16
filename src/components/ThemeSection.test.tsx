@@ -10,6 +10,9 @@ vi.mock('../stores/themeStore', () => ({
   useThemeStore: (selector: (s: object) => unknown) => selector({
     themeId: 'teal-night',
     customAccentColor: null,
+    height: null,
+    heightUnit: 'cm' as 'cm',
+    gender: null,
     setTheme: mockSetTheme,
     setCustomAccent: mockSetCustomAccent,
     clearCustomAccent: mockClearCustomAccent,

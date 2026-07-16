@@ -225,7 +225,7 @@ export function WeightTracker() {
                   fontSize: '12px',
                 }}
                 labelFormatter={(v) => format(new Date(Number(v)), 'PPP')}
-                formatter={(value: number, name: string, props: any) => {
+                formatter={(value: any, name: any, props: any) => {
                   if (name === 'weight') return [`${value} ${props.payload.unit}`, 'Weight'];
                   if (name === 'bmi') return [`${value}`, 'BMI'];
                   return [value, name];
