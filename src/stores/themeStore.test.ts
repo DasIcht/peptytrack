@@ -5,7 +5,7 @@ import { useThemeStore } from './themeStore';
 vi.mock('./settingsStore', () => ({
   useSettingsStore: {
     getState: vi.fn(() => ({
-      settings: { theme: 'teal-night', customAccentColor: null },
+      settings: { theme: 'teal-night', customAccentColor: null, },
       updateSetting: vi.fn().mockResolvedValue(undefined),
     })),
   },
@@ -21,7 +21,7 @@ vi.mock('../lib/themeUtils', () => ({
 
 describe('themeStore', () => {
   beforeEach(() => {
-    useThemeStore.setState({ themeId: 'teal-night', customAccentColor: null });
+    useThemeStore.setState({ themeId: 'teal-night', customAccentColor: null, });
   });
 
   it('has correct initial state', () => {
@@ -39,7 +39,7 @@ describe('themeStore', () => {
     const { useSettingsStore } = await import('./settingsStore');
     const updateSetting = vi.fn().mockResolvedValue(undefined);
     vi.mocked(useSettingsStore.getState).mockReturnValue({
-      settings: { theme: 'teal-night', customAccentColor: null } as never,
+      settings: { theme: 'teal-night', customAccentColor: null, } as never,
       updateSetting,
     } as never);
 

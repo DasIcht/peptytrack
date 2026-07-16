@@ -41,6 +41,9 @@ describe('notifications library', () => {
         severeSideEffectThreshold: 5,
         theme: 'teal-night' as const,
         customAccentColor: null,
+    height: null,
+    heightUnit: 'cm' as 'cm',
+    gender: null,
       },
       loading: false,
       initialized: true,
@@ -180,6 +183,9 @@ describe('notifications library', () => {
           severeSideEffectThreshold: 5,
           theme: 'teal-night' as const,
           customAccentColor: null,
+    height: null,
+    heightUnit: 'cm' as 'cm',
+    gender: null,
         }
       });
       useProtocolStore.setState({
