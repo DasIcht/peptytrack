@@ -140,16 +140,16 @@ export function TitrationDecisionChart({
       <div className="h-48 w-full mt-4">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={timelineData} margin={{ top: 5, right: 5, left: -25, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickMargin={8} />
-            <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} domain={[0, 'dataMax + 1']} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+            <XAxis dataKey="date" stroke="var(--color-text-secondary)" fontSize={10} tickLine={false} axisLine={false} tickMargin={8} />
+            <YAxis stroke="var(--color-text-secondary)" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} domain={[0, 'dataMax + 1']} />
             <RechartsTooltip
-              contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
-              itemStyle={{ color: '#14b8a6', fontWeight: 'bold' }}
-              labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
+              contentStyle={{ backgroundColor: 'var(--color-surface-800)', border: '1px solid var(--color-border)', borderRadius: '8px', fontSize: '12px' }}
+              itemStyle={{ color: 'var(--color-primary-500)', fontWeight: 'bold' }}
+              labelStyle={{ color: 'var(--color-text-secondary)', marginBottom: '4px' }}
               formatter={(val: any) => [`${val} points`, 'Symptom Score']}
             />
-            <Bar dataKey="score" fill="#14b8a6" radius={[4, 4, 0, 0]} maxBarSize={30} />
+            <Bar dataKey="score" fill="var(--color-primary-500)" radius={[4, 4, 0, 0]} maxBarSize={30} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -161,19 +161,19 @@ export function TitrationDecisionChart({
     <div className="h-56 w-full relative">
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={spiderData}>
-          <PolarGrid stroke="rgba(255,255,255,0.1)" />
-          <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} />
+          <PolarGrid stroke="var(--color-border)" />
+          <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10, fontWeight: 600 }} />
           <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
           <RechartsTooltip
-            contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
-            itemStyle={{ color: '#14b8a6', fontWeight: 'bold' }}
+            contentStyle={{ backgroundColor: 'var(--color-surface-800)', border: '1px solid var(--color-border)', borderRadius: '8px', fontSize: '12px' }}
+            itemStyle={{ color: 'var(--color-primary-500)', fontWeight: 'bold' }}
             formatter={(val: any) => [`${Number(val).toFixed(0)}%`, 'Readiness']}
           />
           <Radar
             name="Titration Readiness"
             dataKey="A"
-            stroke="#14b8a6"
-            fill="#14b8a6"
+            stroke="var(--color-primary-500)"
+            fill="var(--color-primary-500)"
             fillOpacity={0.3}
             strokeWidth={2}
           />

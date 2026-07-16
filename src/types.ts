@@ -130,6 +130,9 @@ export interface AppSettings {
   severeSideEffectThreshold: number;
   theme: ThemeId;
   customAccentColor: string | null;
+  height: number | null;
+  heightUnit: 'cm' | 'in';
+  gender: 'male' | 'female' | 'other' | null;
 }
 
 export interface MedLevelPoint {

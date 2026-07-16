@@ -4,10 +4,11 @@ import { useUIStore } from '../stores/uiStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts';
 import { format } from 'date-fns';
 import { TrendingDown, TrendingUp, Minus, Scale, Trash2, Pencil } from 'lucide-react';
+import { calculateBMI } from '../lib/bmi';
 
 export function WeightTracker() {
   const { entries, addEntry, updateEntry, deleteEntry, getTrend } = useWeightStore();
@@ -17,6 +18,7 @@ export function WeightTracker() {
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [weight, setWeight] = useState('');
   const [unit, setUnit] = useState<'kg' | 'lb'>('kg');
+  const [showBMI, setShowBMI] = useState(false);
 
   useEffect(() => {
     if (!editingEntryId) {
@@ -31,11 +33,15 @@ export function WeightTracker() {
   const trend = getTrend();
   const sortedEntries = [...entries].sort((a, b) => a.dateTime - b.dateTime);
 
-  const chartData = sortedEntries.map((e) => ({
-    date: e.dateTime,
-    weight: e.weight,
-    unit: e.unit,
-  }));
+  const chartData = sortedEntries.map((e) => {
+    const bmi = settings.height ? calculateBMI(e.weight, e.unit, settings.height, settings.heightUnit) : null;
+    return {
+      date: e.dateTime,
+      weight: e.weight,
+      unit: e.unit,
+      bmi: bmi
+    };
+  });
 
   const resetForm = () => {
     setEditingEntryId(null);
@@ -118,9 +124,19 @@ export function WeightTracker() {
 
   return (
     <div className="min-h-full pb-24 px-5 pt-6">
-      <h1 className="text-2xl font-bold text-content-primary mb-1">
-        {editingEntryId ? 'Update Weight' : 'Weight Tracker'}
-      </h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-2xl font-bold text-content-primary">
+          {editingEntryId ? 'Update Weight' : 'Weight Tracker'}
+        </h1>
+        {settings.height && (
+          <button
+            onClick={() => setShowBMI(!showBMI)}
+            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors border ${showBMI ? 'bg-primary-600 border-primary-500 text-white' : 'bg-surface-800 border-white/10 text-content-secondary hover:text-content-primary'}`}
+          >
+            {showBMI ? 'Hide BMI' : 'Show BMI'}
+          </button>
+        )}
+      </div>
       <p className="text-sm text-content-secondary mb-6">Monitor your progress over time</p>
 
       {/* Trend Card */}
@@ -160,33 +176,63 @@ export function WeightTracker() {
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-4 mb-5">
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis
                 dataKey="date"
                 tickFormatter={(v) => format(new Date(v), 'MMM d')}
-                stroke="rgba(255,255,255,0.15)"
+                stroke="var(--color-border)"
                 tick={{ fill: '#94a3b8', fontSize: 10 }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
-                stroke="rgba(255,255,255,0.15)"
+                yAxisId="left"
+                stroke="var(--color-border)"
                 tick={{ fill: '#94a3b8', fontSize: 10 }}
                 axisLine={false}
                 tickLine={false}
                 domain={['auto', 'auto']}
               />
+              {showBMI && (
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  stroke="var(--color-border)"
+                  tick={{ fill: '#94a3b8', fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                  domain={['auto', 'auto']}
+                />
+              )}
+              
+              {/* Normal Threshold (18.5) */}
+              {showBMI && <ReferenceLine yAxisId="right" y={18.5} stroke="#10b981" strokeDasharray="3 3" label={{ position: 'insideBottomLeft', value: 'Normal', fill: '#10b981', fontSize: 10 }} />}
+              {showBMI && <ReferenceLine yAxisId="right" y={18.5} stroke="none" label={{ position: 'insideTopLeft', value: 'Underweight', fill: '#3b82f6', fontSize: 10 }} />}
+              
+              {/* Overweight Threshold (25) */}
+              {showBMI && <ReferenceLine yAxisId="right" y={25} stroke="#f59e0b" strokeDasharray="3 3" label={{ position: 'insideBottomLeft', value: 'Overweight', fill: '#f59e0b', fontSize: 10 }} />}
+              {showBMI && <ReferenceLine yAxisId="right" y={25} stroke="none" label={{ position: 'insideTopLeft', value: 'Normal', fill: '#10b981', fontSize: 10 }} />}
+              
+              {/* Obese Threshold (30) */}
+              {showBMI && <ReferenceLine yAxisId="right" y={30} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'insideBottomLeft', value: 'Obese', fill: '#ef4444', fontSize: 10 }} />}
+              {showBMI && <ReferenceLine yAxisId="right" y={30} stroke="none" label={{ position: 'insideTopLeft', value: 'Overweight', fill: '#f59e0b', fontSize: 10 }} />}
+
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#1e293b',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  backgroundColor: 'var(--color-surface-800)',
+                  border: '1px solid var(--color-border)',
                   borderRadius: '12px',
                   fontSize: '12px',
                 }}
                 labelFormatter={(v) => format(new Date(Number(v)), 'PPP')}
-                formatter={(value, _name, props) => [`${value} ${(props as { payload: { unit: string } }).payload.unit}`, 'Weight']}
+                formatter={(value: number, name: string, props: any) => {
+                  if (name === 'weight') return [`${value} ${props.payload.unit}`, 'Weight'];
+                  if (name === 'bmi') return [`${value}`, 'BMI'];
+                  return [value, name];
+                }}
               />
               <Line
+                yAxisId="left"
                 type="monotone"
                 dataKey="weight"
                 stroke="#14b8a6"
@@ -194,6 +240,17 @@ export function WeightTracker() {
                 dot={{ r: 3, fill: '#14b8a6', stroke: '#0f172a', strokeWidth: 2 }}
                 activeDot={{ r: 5, fill: '#14b8a6', stroke: '#fff', strokeWidth: 2 }}
               />
+              {showBMI && (
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="bmi"
+                  stroke="#a855f7"
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: '#a855f7', stroke: '#0f172a', strokeWidth: 2 }}
+                  activeDot={{ r: 5, fill: '#a855f7', stroke: '#fff', strokeWidth: 2 }}
+                />
+              )}
             </LineChart>
           </ResponsiveContainer>
         </div>

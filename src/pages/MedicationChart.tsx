@@ -299,11 +299,11 @@ export function MedicationChart() {
                   </linearGradient>
                 ))}
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis
                 dataKey="date"
                 tickFormatter={(v) => format(new Date(v), 'MMM d')}
-                stroke="rgba(255,255,255,0.15)"
+                stroke="var(--color-border)"
                 tick={{ fill: '#94a3b8', fontSize: 10 }}
                 axisLine={false}
                 tickLine={false}
@@ -311,7 +311,7 @@ export function MedicationChart() {
               <YAxis
                 yAxisId="left"
                 domain={[0, visibleMaxLevel]}
-                stroke="rgba(255,255,255,0.15)"
+                stroke="var(--color-border)"
                 tick={{ fill: '#94a3b8', fontSize: 10 }}
                 axisLine={false}
                 tickLine={false}
@@ -323,7 +323,7 @@ export function MedicationChart() {
                   yAxisId="right"
                   orientation="right"
                   domain={[weightRange.min, weightRange.max]}
-                  stroke="rgba(255,255,255,0.15)"
+                  stroke="var(--color-border)"
                   tick={{ fill: '#94a3b8', fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
@@ -352,8 +352,8 @@ export function MedicationChart() {
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#1e293b',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  backgroundColor: 'var(--color-surface-800)',
+                  border: '1px solid var(--color-border)',
                   borderRadius: '12px',
                   fontSize: '12px',
                   boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
