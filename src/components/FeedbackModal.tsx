@@ -216,7 +216,14 @@ Screen: ${window.innerWidth}x${window.innerHeight}
           )}
         </button>
         
-        <p className="text-[10px] text-content-muted text-center mt-3 px-2 leading-relaxed">
+        <p className="text-[11px] text-content-primary text-center mt-3">
+          For more extensive feedback, you can email me directly at{' '}
+          <a href="mailto:DasIcht@proton.me" className="text-primary-400 hover:text-primary-300 transition-colors font-medium">
+            DasIcht@proton.me
+          </a>
+        </p>
+        
+        <p className="text-[10px] text-content-muted text-center mt-2 px-2 leading-relaxed">
           Your feedback is sent anonymously. No personal data is collected. The only information sent is the text typed in the form above and any attachments you include.
         </p>
       </form>
