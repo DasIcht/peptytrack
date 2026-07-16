@@ -19,8 +19,11 @@ const DEFAULT_SETTINGS: AppSettings = {
   ],
   titrationWizardEnabled: false,
   severeSideEffectThreshold: 5,
-  theme: 'teal-night',           // ← ADD THIS
-  customAccentColor: null,       // ← ADD THIS
+  theme: 'teal-night',
+  customAccentColor: null,
+  height: null,
+  heightUnit: 'cm',
+  gender: null,
 };
 
 interface SettingsState {

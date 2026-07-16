@@ -12,11 +12,13 @@ import { requestNotificationPermission } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { HelpBox } from '../components/HelpBox';
 import { ThemeSection } from '../components/ThemeSection';
+import { FeedbackModal } from '../components/FeedbackModal';
 import {
   Bell, FileText, Download, Upload,
   RotateCw, MapPin, Wand2,
   Scale, Pill, ToggleRight, ToggleLeft,
-  Shield, ChevronRight, Trash2, AlertTriangle
+  Shield, ChevronRight, Trash2, AlertTriangle, MessageSquare,
+  User, Ruler
 } from 'lucide-react';
 
 export function Settings() {
@@ -147,6 +149,69 @@ export function Settings() {
 
       {/* Appearance — theme selector */}
       <ThemeSection />
+
+      {/* Profile */}
+      <div className="mb-6">
+        <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3">Profile</h2>
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
+          {/* Height */}
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/5">
+            <div className="flex items-center gap-3">
+              <Ruler size={18} className="text-primary-400" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-content-primary">Height</p>
+                <p className="text-xs text-content-secondary">Used for BMI calculation</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder="---"
+                value={settings.height || ''}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  updateSetting('height', isNaN(val) ? null : val);
+                }}
+                className="w-16 input-premium border border-white/10 rounded-lg px-2 py-1 text-content-primary text-sm text-center focus:outline-none focus:border-primary-500 bg-surface-900"
+              />
+              <div className="flex rounded-lg border border-white/10 overflow-hidden">
+                {(['cm', 'in'] as const).map((u) => (
+                  <button
+                    key={u}
+                    onClick={() => updateSetting('heightUnit', u)}
+                    className={`px-2 py-1 text-xs font-medium transition-colors ${ settings.heightUnit === u ? 'bg-primary-600 text-white' : 'bg-surface-700 text-content-secondary hover:text-content-primary' }`}
+                  >
+                    {u}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Gender */}
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/5">
+            <div className="flex items-center gap-3">
+              <User size={18} className="text-primary-400" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-content-primary">Biological Sex</p>
+                <p className="text-xs text-content-secondary">For reference</p>
+              </div>
+            </div>
+            <select
+              value={settings.gender || ''}
+              onChange={(e) => updateSetting('gender', e.target.value === '' ? null : e.target.value as any)}
+              className="bg-surface-900 border border-white/10 rounded-lg px-2 py-1.5 text-content-primary text-sm focus:outline-none focus:border-primary-500"
+            >
+              <option value="">Not specified</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
       {/* Preferences */}
       <div className="mb-6">
@@ -473,6 +538,26 @@ export function Settings() {
               <p className="text-[10px] text-content-secondary uppercase">Weights</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Support & Feedback */}
+      <div className="mb-6">
+        <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3">Support</h2>
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
+          <button
+            onClick={() => openModal(<FeedbackModal />)}
+            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <MessageSquare size={18} className="text-primary-400" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-content-primary">Submit Feedback</p>
+                <p className="text-xs text-content-secondary">Report bugs or request features</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-content-muted" />
+          </button>
         </div>
       </div>
 
