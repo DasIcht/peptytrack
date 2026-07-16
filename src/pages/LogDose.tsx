@@ -796,7 +796,7 @@ export function LogDose() {
             <label className="flex items-center gap-1.5 text-[11px] font-semibold text-content-secondary mb-2 uppercase tracking-widest">
               <FlaskConical size={12} className="text-primary-400" />
               Vial
-              <HelpBox>
+              <HelpBox position="left">
                 To calculate units: Divide your dose by the vial concentration. For example, a 5mg dose from a 2mg/0.1ml vial equals 0.25ml or 25 units.
               </HelpBox>
             </label>
