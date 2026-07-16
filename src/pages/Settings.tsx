@@ -152,7 +152,12 @@ export function Settings() {
 
       {/* Profile */}
       <div className="mb-6">
-        <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3">Profile</h2>
+        <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3 flex items-center gap-2">
+          Profile
+          <HelpBox position="center">
+            We collect basic biological information like height and sex to provide more accurate BMI calculations and personalized medication safety recommendations.
+          </HelpBox>
+        </h2>
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
           {/* Height */}
           <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/5">
@@ -266,7 +271,9 @@ export function Settings() {
           </div>
 
           {/* Notification Master Switch */}
-          <button
+          <div
+            role="button"
+            tabIndex={0}
             onClick={async () => {
               const newValue = !settings.notificationsEnabled;
               await updateSetting('notificationsEnabled', newValue);
@@ -279,12 +286,17 @@ export function Settings() {
                 addToast('Notifications disabled', 'info');
               }
             }}
-            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors cursor-pointer text-left"
           >
             <div className="flex items-center gap-3">
               <Bell size={18} className="text-primary-400" />
               <div className="text-left">
-                <p className="text-sm font-medium text-content-primary">Dose Reminders</p>
+                <div className="text-sm font-medium text-content-primary flex items-center gap-2">
+                  Dose Reminders
+                  <HelpBox position="left">
+                    If you don't receive reminders, ensure notifications are enabled in your device settings for your browser (or for PeptyTrack if installed as an app).
+                  </HelpBox>
+                </div>
                 <p className="text-xs text-content-secondary">
                   {settings.notificationsEnabled
                     ? notificationsEnabled
@@ -299,13 +311,19 @@ export function Settings() {
             ) : (
               <ToggleLeft size={22} className="text-content-muted" />
             )}
-          </button>
+          </div>
         </div>
       </div>
 
       {/* Injection Rotation */}
       <div className="mb-6">
-        <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3">Injection Rotation</h2>
+        <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3 flex items-center gap-2">
+          Injection Rotation
+          <HelpBox position="center">
+            Rotating injection sites prevents lipohypertrophy (lumps under the skin) and ensures consistent medication absorption. 
+            Sequential rotates in order, Quadrant alternates sides, and Least Used picks the site you haven't used in the longest time.
+          </HelpBox>
+        </h2>
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
           {/* Strategy Selector */}
           <div className="px-4 py-3.5 border-b border-white/5">
@@ -391,14 +409,21 @@ export function Settings() {
         <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3">Global Safety Settings</h2>
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden card-premium">
           {/* Toggle */}
-          <button
+          <div
+            role="button"
+            tabIndex={0}
             onClick={() => handleTitrationWizardToggle(!settings.titrationWizardEnabled)}
-            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors border-b border-white/5"
+            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors border-b border-white/5 cursor-pointer text-left"
           >
             <div className="flex items-center gap-3">
               <Wand2 size={18} className="text-accent-400" />
               <div className="text-left">
-                <p className="text-sm font-medium text-content-primary">Enable Titration Wizard</p>
+                <div className="text-sm font-medium text-content-primary flex items-center gap-2">
+                  Enable Titration Wizard
+                  <HelpBox position="left">
+                    The Titration Wizard automatically calculates your next safe dose based on your active Titration Protocol, side effect logs, and weight stability. It helps guide you through your titration schedule safely.
+                  </HelpBox>
+                </div>
                 <p className="text-xs text-content-secondary">
                   Step-up recommendations and safety warnings
                 </p>
@@ -409,7 +434,7 @@ export function Settings() {
             ) : (
               <ToggleLeft size={22} className="text-content-muted" />
             )}
-          </button>
+          </div>
 
           {/* Severe Side Effect Threshold */}
           <div className="flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors">
