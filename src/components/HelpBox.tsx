@@ -26,13 +26,31 @@ export function HelpBox({ children, className = '', position = 'center' }: HelpB
     });
 
     const screenWidth = window.innerWidth;
-    if (rect.left < 140) {
-      setAlign('left');
-    } else if (screenWidth - rect.right < 140) {
-      setAlign('right');
-    } else {
-      setAlign(position);
+    const centerPoint = rect.left + (rect.width / 2);
+    let computedAlign = position;
+
+    if (computedAlign === 'center') {
+      if (centerPoint < 140) computedAlign = 'left';
+      else if (screenWidth - centerPoint < 140) computedAlign = 'right';
     }
+
+    if (computedAlign === 'left' && screenWidth - centerPoint < 260) {
+      computedAlign = 'right';
+    }
+
+    if (computedAlign === 'right' && centerPoint < 260) {
+      computedAlign = 'left';
+    }
+
+    // Final fallback
+    if (computedAlign === 'left' && screenWidth - centerPoint < 260) {
+       computedAlign = 'center';
+    }
+    if (computedAlign === 'right' && centerPoint < 260) {
+       computedAlign = 'center';
+    }
+
+    setAlign(computedAlign);
   };
 
   useEffect(() => {
