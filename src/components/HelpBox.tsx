@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { HelpCircle } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 export interface HelpBoxProps {
   children: React.ReactNode;
@@ -9,12 +10,57 @@ export interface HelpBoxProps {
 
 export function HelpBox({ children, className = '', position = 'center' }: HelpBoxProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const [align, setAlign] = useState<'left' | 'center' | 'right'>(position);
 
-  React.useEffect(() => {
+  const updatePosition = () => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const scrollY = window.scrollY || window.pageYOffset;
+    
+    setCoords({
+      top: rect.bottom + scrollY + 8,
+      left: rect.left + (rect.width / 2)
+    });
+
+    const screenWidth = window.innerWidth;
+    if (rect.left < 140) {
+      setAlign('left');
+    } else if (screenWidth - rect.right < 140) {
+      setAlign('right');
+    } else {
+      setAlign(position);
+    }
+  };
+
+  useEffect(() => {
+    if (isExpanded) {
+      updatePosition();
+      
+      const handleScrollOrResize = () => {
+        setIsExpanded(false);
+      };
+      
+      window.addEventListener('scroll', handleScrollOrResize, { passive: true, capture: true });
+      window.addEventListener('resize', handleScrollOrResize, { passive: true });
+      
+      return () => {
+        window.removeEventListener('scroll', handleScrollOrResize, { capture: true });
+        window.removeEventListener('resize', handleScrollOrResize);
+      };
+    }
+  }, [isExpanded, position]);
+
+  useEffect(() => {
     if (!isExpanded) return;
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        tooltipRef.current && !tooltipRef.current.contains(target)
+      ) {
         setIsExpanded(false);
       }
     };
@@ -26,35 +72,57 @@ export function HelpBox({ children, className = '', position = 'center' }: HelpB
     };
   }, [isExpanded]);
 
-  const positionClasses = {
-    left: 'left-0 mt-2 w-64 max-w-[85vw]',
-    center: 'left-1/2 -translate-x-1/2 mt-2 w-64 max-w-[85vw]',
-    right: 'right-0 mt-2 w-64 max-w-[85vw]',
+  const getTransform = () => {
+    switch(align) {
+      case 'left': return 'translateX(0)';
+      case 'right': return 'translateX(-100%)';
+      case 'center': default: return 'translateX(-50%)';
+    }
   };
 
   return (
-    <div ref={containerRef} className={`inline-flex relative ${className}`}>
+    <>
       <button
+        ref={buttonRef}
         type="button"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
           setIsExpanded(!isExpanded);
         }}
-        className={`transition-colors inline-flex items-center justify-center rounded-full p-1 -m-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 self-start ${ isExpanded ? 'text-primary-400' : 'text-content-secondary hover:text-content-primary' }`}
+        className={`inline-flex items-center justify-center rounded-full p-1 -m-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 self-start transition-colors ${ isExpanded ? 'text-primary-400' : 'text-content-secondary hover:text-content-primary' } ${className}`}
         aria-label={isExpanded ? "Hide help" : "Show help"}
         aria-expanded={isExpanded}
       >
         <HelpCircle size={18} />
       </button>
 
-      <div
-        className={`absolute z-[100] top-full ${positionClasses[position]} shadow-xl transition-all duration-200 ease-out origin-top ${ isExpanded ? 'opacity-100 visible translate-y-0 scale-100' : 'opacity-0 invisible -translate-y-2 scale-95' }`}
-      >
-        <div className="p-3 bg-surface-800 border border-white/10 rounded-xl text-sm leading-relaxed text-content-secondary shadow-elevated">
-          {children}
-        </div>
-      </div>
-    </div>
+      {isExpanded && createPortal(
+        <div
+          ref={tooltipRef}
+          style={{
+            position: 'absolute',
+            top: `${coords.top}px`,
+            left: align === 'left' ? `${coords.left - 16}px` : align === 'right' ? `${coords.left + 16}px` : `${coords.left}px`,
+            transform: getTransform(),
+            zIndex: 999999,
+          }}
+          className="w-64 max-w-[85vw] bg-surface-800 text-content-primary p-3 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/10 normal-case tracking-normal font-normal text-left"
+        >
+          {/* Arrow */}
+          <div 
+            className="absolute -top-[6px] w-3 h-3 bg-surface-800 border-t border-l border-white/10 rotate-45"
+            style={{
+              left: align === 'left' ? '10px' : align === 'right' ? 'calc(100% - 22px)' : '50%',
+              marginLeft: align === 'center' ? '-6px' : '0'
+            }}
+          />
+          <div className="relative z-10 text-[12px] leading-relaxed text-content-secondary">
+            {children}
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
