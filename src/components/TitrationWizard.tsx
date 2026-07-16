@@ -153,9 +153,9 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
             </div>
 
             <div className={`grid ${targetType === 'steady-state-concentration' ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
-              <div>
-                <label className="text-[10px] font-semibold text-content-secondary mb-1 flex items-center gap-1">
-                  <Syringe size={10} /> Dosage ({medicationUnit})
+              <div className="flex flex-col justify-end">
+                <label className="text-[10px] font-semibold text-content-secondary mb-2 flex items-center gap-1">
+                  <Syringe size={10} className="shrink-0" /> Dosage ({medicationUnit})
                 </label>
                 <input
                   type="number"
@@ -166,9 +166,9 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
                   className="input-premium py-2 text-sm w-full"
                 />
               </div>
-              <div>
-                <label className="text-[10px] font-semibold text-content-secondary mb-1 flex items-center gap-1">
-                  <Calendar size={10} /> Duration (Weeks)
+              <div className="flex flex-col justify-end">
+                <label className="text-[10px] font-semibold text-content-secondary mb-2 flex items-center gap-1">
+                  <Calendar size={10} className="shrink-0" /> Duration (Wks)
                 </label>
                 <input
                   type="number"
@@ -180,11 +180,11 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
                 />
               </div>
               {targetType === 'steady-state-concentration' && (
-                <div>
-                  <label className="text-[10px] font-semibold text-content-secondary mb-1 flex items-center gap-1">
-                    <Target size={10} /> Target (ng/ml)
+                <div className="flex flex-col justify-end">
+                  <label className="text-[10px] font-semibold text-content-secondary mb-2 flex items-center gap-1">
+                    <Target size={10} className="shrink-0" /> Target (ng/ml)
                   </label>
-                  <div className="input-premium py-2 text-sm w-full bg-surface-900/50 text-content-secondary cursor-not-allowed flex items-center">
+                  <div className="input-premium py-2 text-sm w-full bg-surface-900/50 text-content-secondary cursor-not-allowed flex items-center min-h-[38px]">
                     {getComputedTarget(step.dosage || 0).toFixed(2)}
                   </div>
                 </div>
