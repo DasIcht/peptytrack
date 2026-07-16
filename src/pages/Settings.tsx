@@ -577,7 +577,7 @@ export function Settings() {
 
       <div className="text-center pb-4">
         <p className="text-[10px] text-content-muted">
-          PeptyTrack v1.0 — Free GLP-1 tracker
+          PeptyTrack v2.2.0 — Free GLP-1 tracker
         </p>
         <p className="text-[10px] text-content-muted mt-0.5">
           Not medical advice. Consult your healthcare provider.
