@@ -30,6 +30,10 @@ export default {
           500: 'var(--color-accent-500)',
           600: 'var(--color-accent-600)',
         },
+        border: 'var(--color-border)',
+        'card-bg': 'var(--color-card-bg)',
+        'input-bg': 'var(--color-input-bg)',
+        'glass-bg': 'var(--color-glass-bg)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

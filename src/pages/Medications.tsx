@@ -239,7 +239,12 @@ interface EditForm {
   return (
     <div className="min-h-full pb-24 px-5 pt-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-content-primary">Medications</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-content-primary">Medications</h1>
+          <HelpBox position="left">
+            Manage your medication list here. Turn medications on or off, add custom dosages, and configure settings like frequency and half-life for the charts.
+          </HelpBox>
+        </div>
         <button
           onClick={() => setShowAddModal(true)}
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-sm font-medium transition-all active:scale-[0.98]"
@@ -257,7 +262,7 @@ interface EditForm {
           return (
             <div
               key={med.id}
-              className="rounded-2xl border border-white/5 bg-surface-800/50 p-4"
+              className="rounded-2xl border border-border bg-surface-800/50 p-4"
             >
               {/* Header row */}
               <div className="flex items-start justify-between mb-3">
@@ -419,17 +424,17 @@ interface EditForm {
               ) : (
                 <>
                   <div className="grid grid-cols-3 gap-2 mb-3">
-                    <div className="bg-white/5 rounded-lg p-2 text-center">
+                    <div className="bg-black/5 dark:bg-white/5 rounded-lg p-2 text-center">
                       <p className="text-[10px] text-content-muted uppercase">Frequency</p>
                       <p className="text-xs font-medium text-content-primary capitalize">
                         {med.frequency === 'custom' ? `Every ${med.customFrequencyDays}d` : med.frequency.replace('-', ' ')}
                       </p>
                     </div>
-                    <div className="bg-white/5 rounded-lg p-2 text-center">
+                    <div className="bg-black/5 dark:bg-white/5 rounded-lg p-2 text-center">
                       <p className="text-[10px] text-content-muted uppercase">Half-Life</p>
                       <p className="text-xs font-medium text-content-primary">{med.halfLifeHours}h</p>
                     </div>
-                    <div className="bg-white/5 rounded-lg p-2 text-center">
+                    <div className="bg-black/5 dark:bg-white/5 rounded-lg p-2 text-center">
                       <p className="text-[10px] text-content-muted uppercase">Dosages</p>
                       <p className="text-xs font-medium text-content-primary">{med.dosageOptions.join(', ')} {med.unit}</p>
                     </div>
@@ -448,7 +453,7 @@ interface EditForm {
                   {settings.titrationWizardEnabled && (
                     <button
                       onClick={() => setWizardMedId(med.id)}
-                      className="w-full py-2 rounded-xl border border-white/10 bg-surface-900/50 hover:bg-surface-800 text-content-secondary text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+                      className="w-full py-2 rounded-xl border border-border/50 bg-surface-900/50 hover:bg-surface-800 text-content-secondary text-xs font-semibold flex items-center justify-center gap-2 transition-all"
                     >
                       <Activity size={14} /> Manage Titration Protocol
                     </button>
@@ -489,13 +494,13 @@ interface EditForm {
             <div className="px-5 pt-4 flex gap-2">
               <button
                 onClick={() => setAddMode('library')}
-                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${ addMode === 'library' ? 'bg-primary-600/20 text-primary-400 border border-primary-500/30' : 'bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10' }`}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${ addMode === 'library' ? 'bg-primary-600/20 text-primary-400 border border-primary-500/30' : 'bg-black/5 dark:bg-white/5 text-slate-400 border border-border/50 hover:bg-black/10 dark:hover:bg-white/10' }`}
               >
                 Library
               </button>
               <button
                 onClick={() => setAddMode('custom')}
-                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${ addMode === 'custom' ? 'bg-primary-600/20 text-primary-400 border border-primary-500/30' : 'bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10' }`}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${ addMode === 'custom' ? 'bg-primary-600/20 text-primary-400 border border-primary-500/30' : 'bg-black/5 dark:bg-white/5 text-slate-400 border border-border/50 hover:bg-black/10 dark:hover:bg-white/10' }`}
               >
                 Custom
               </button>
@@ -518,7 +523,7 @@ interface EditForm {
                         key={template.id}
                         onClick={() => !exists && handleAddFromLibrary(template)}
                         disabled={exists}
-                        className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${ exists ? 'border-white/5 bg-white/[0.02] opacity-40 cursor-not-allowed' : 'border-white/10 bg-surface-900 hover:border-primary-500/40 hover:bg-surface-800' }`}
+                        className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${ exists ? 'border-border/50 bg-black/5 dark:bg-white/[0.02] opacity-40 cursor-not-allowed' : 'border-border/50 bg-surface-900 hover:border-primary-500/40 hover:bg-surface-800' }`}
                       >
                         <div
                           className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"

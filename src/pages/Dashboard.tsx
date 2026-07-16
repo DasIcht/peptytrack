@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useMedicationStore } from '../stores/medicationStore';
 import { useVialStore } from '../stores/vialStore';
@@ -6,9 +6,12 @@ import { useWeightStore } from '../stores/weightStore';
 import { useUIStore } from '../stores/uiStore';
 import { MedicationCard } from '../components/MedicationCard';
 import { MedicalWarningBanner } from '../components/MedicalWarningBanner';
-import { Weight, TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import { HelpBox } from '../components/HelpBox';
+import { Weight, TrendingDown, TrendingUp, Minus, Download } from 'lucide-react';
 
 export function Dashboard() {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
   const medications = useMedicationStore(
     useShallow((state) => state.medications.filter((m) => m.enabled))
   );
@@ -20,7 +23,26 @@ export function Dashboard() {
   useEffect(() => {
     if (!initialized) loadData();
     loadWeight();
+    
+    setIsStandalone(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true);
+
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
   }, [loadData, loadWeight, initialized]);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    }
+  };
 
   const trend = getTrend();
   const latestWeight = getLatest();
@@ -28,16 +50,46 @@ export function Dashboard() {
   return (
     <div className="min-h-full pb-24">
       {/* Header */}
-      <div className="px-5 pt-6 pb-4">
-        <h1 className="text-2xl font-bold text-content-primary tracking-tight">
-          Pepty<span className="text-primary-400">Track</span>
-        </h1>
-        <p className="text-sm text-content-secondary mt-1">Your GLP-1 companion</p>
+      <div className="px-5 pt-6 pb-4 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-content-primary tracking-tight">
+            Pepty<span className="text-primary-400">Track</span>
+          </h1>
+          <p className="text-sm text-content-secondary mt-1">Your GLP-1 companion</p>
+        </div>
+        <HelpBox position="left">
+          Welcome to PeptyTrack! Use the bottom navigation to manage your medications, vials, and charts. Log your doses consistently to get accurate half-life predictions.
+        </HelpBox>
       </div>
 
       <div className="px-5">
         <MedicalWarningBanner />
       </div>
+
+      {/* Install Banner */}
+      {!isStandalone && (
+        <div className="px-5 mb-6">
+          <div className="p-4 rounded-xl border border-primary-500/20 bg-primary-500/5 flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-primary-400">
+              <Download size={18} />
+              <h3 className="text-sm font-bold">Install PeptyTrack</h3>
+            </div>
+            <p className="text-xs text-content-secondary">
+              Install the app to your home screen for the best native experience and quick access.
+            </p>
+            {deferredPrompt ? (
+              <button onClick={handleInstallClick} className="w-full py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg text-sm font-bold transition-colors">
+                Install Now
+              </button>
+            ) : (
+              <div className="text-[11px] text-content-secondary bg-surface-900/50 p-2.5 rounded-lg border border-border">
+                <p className="mb-1"><strong>iOS / Safari:</strong> Tap the Share icon <span className="text-xl leading-none px-1">⍗</span> below, scroll down and select "Add to Home Screen".</p>
+                <p><strong>Android / Chrome:</strong> Tap the menu (⋮) and select "Install app" or "Add to Home screen".</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Quick Stats */}
       <div className="px-5 grid grid-cols-4 gap-3 mb-6">

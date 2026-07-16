@@ -449,6 +449,9 @@ export function MedicationChart() {
               <h2 className="text-lg font-bold text-content-primary flex items-center gap-2">
                 <Activity size={18} className="text-primary-400" />
                 Titration Parameters
+                <HelpBox position="left">
+                   This section displays your current titration protocol details. It uses your symptom logs and weight entries to recommend when it's safe to step up your dose based on the protocol.
+                </HelpBox>
               </h2>
               <p className="text-xs text-content-secondary">{currentProtocolMed.name}</p>
             </div>

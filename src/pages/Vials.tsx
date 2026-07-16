@@ -196,7 +196,7 @@ export function Vials() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-content-primary">Vials</h1>
-            <HelpBox>
+            <HelpBox position="left">
               Reconstitution is the process of mixing your freeze-dried peptide (mg) with bacteriostatic water (ml). Fill out the total mg of peptide and the total ml of water added to calculate your vial's concentration.
             </HelpBox>
           </div>
