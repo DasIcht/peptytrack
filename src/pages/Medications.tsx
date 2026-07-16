@@ -451,12 +451,17 @@ interface EditForm {
                     )}
                   </div>
                   {settings.titrationWizardEnabled && (
-                    <button
+                    <div
+                      role="button"
+                      tabIndex={0}
                       onClick={() => setWizardMedId(med.id)}
-                      className="w-full py-2 rounded-xl border border-border/50 bg-surface-900/50 hover:bg-surface-800 text-content-secondary text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+                      className="w-full py-2 rounded-xl border border-border/50 bg-surface-900/50 hover:bg-surface-800 text-content-secondary text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
                       <Activity size={14} /> Manage Titration Protocol
-                    </button>
+                      <HelpBox position="center">
+                        Set up a step-up schedule (Titration Protocol) for this medication to get automatic dosage recommendations and safety warnings.
+                      </HelpBox>
+                    </div>
                   )}
                 </>
               )}
@@ -484,7 +489,12 @@ interface EditForm {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={resetModal} />
           <div className="relative w-full max-w-lg mx-4 mb-8 bg-surface-800 rounded-2xl border border-white/10 shadow-2xl max-h-[80vh] overflow-y-auto animate-slide-up">
             <div className="sticky top-0 bg-surface-800 border-b border-white/5 px-5 py-4 flex items-center justify-between z-10">
-              <h2 className="text-lg font-bold text-content-primary">Add Medication</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-content-primary">Add Medication</h2>
+                <HelpBox position="center">
+                  Select a medication from the predefined library, or create a custom entry manually.
+                </HelpBox>
+              </div>
               <button onClick={resetModal} className="p-2 rounded-lg bg-white/5 hover:bg-white/10">
                 <X size={16} className="text-content-secondary" />
               </button>
