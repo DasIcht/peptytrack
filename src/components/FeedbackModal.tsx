@@ -31,6 +31,26 @@ export function FeedbackModal() {
 
     try {
       let fullMessage = message;
+      let imageUrl = '';
+
+      // Upload attachment to ImgBB if present
+      if (attachment) {
+        const imgData = new FormData();
+        imgData.append('image', attachment);
+        
+        const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=e9bd2e667c0a4d6057050b1a17ed0fd2`, {
+          method: 'POST',
+          body: imgData,
+        });
+        
+        const imgJson = await imgRes.json();
+        if (imgJson.success) {
+          imageUrl = imgJson.data.url;
+        } else {
+          console.error('ImgBB upload failed:', imgJson);
+          throw new Error('Failed to upload screenshot');
+        }
+      }
 
       // Include diagnostics for bug reports
       if (type === 'Bug Report') {
@@ -44,15 +64,15 @@ Screen: ${window.innerWidth}x${window.innerHeight}
         fullMessage = `${message}\n\n${diagnostics}`;
       }
 
+      if (imageUrl) {
+        fullMessage = `${fullMessage}\n\n--- \nScreenshot: ${imageUrl}`;
+      }
+
       const formData = new FormData();
       formData.append('access_key', WEB3FORMS_ACCESS_KEY);
       formData.append('subject', `PeptiTrack ${type}`);
       formData.append('from_name', 'PeptiTrack App');
       formData.append('message', fullMessage);
-      
-      if (attachment) {
-        formData.append('attachment', attachment);
-      }
 
       const response = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
@@ -196,8 +216,8 @@ Screen: ${window.innerWidth}x${window.innerHeight}
           )}
         </button>
         
-        <p className="text-[10px] text-content-muted text-center mt-2">
-          Your feedback is sent anonymously. No email address is collected.
+        <p className="text-[10px] text-content-muted text-center mt-3 px-2 leading-relaxed">
+          Your feedback is sent anonymously. No personal data is collected. The only information sent is the text typed in the form above and any attachments you include.
         </p>
       </form>
     </div>
