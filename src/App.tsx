@@ -135,6 +135,15 @@ function App() {
 
   const PageComponent = PAGE_COMPONENTS[activePage];
 
+  if (!initialized) {
+    return (
+      <div className="min-h-screen font-sans flex flex-col items-center justify-center bg-[#0a0a0b]">
+        <div className="w-10 h-10 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin mb-4"></div>
+        <p className="text-content-muted text-sm font-medium animate-pulse">Loading PeptyTrack...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen font-sans overflow-x-hidden" style={{ background: 'var(--color-surface-950)', color: 'var(--color-text-primary)' }}>
       <main className="max-w-lg mx-auto relative" onTouchStart={(e) => { touchStartX.current = e.changedTouches[0].screenX; touchStartY.current = e.changedTouches[0].screenY; }} onTouchEnd={(e) => { const deltaX = e.changedTouches[0].screenX - touchStartX.current; const deltaY = e.changedTouches[0].screenY - touchStartY.current; if (Math.abs(deltaX) > 80 && Math.abs(deltaX) > Math.abs(deltaY)) { if (deltaX < 0) nextPage(); else prevPage(); } }}>
