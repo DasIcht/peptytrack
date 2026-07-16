@@ -123,7 +123,12 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
 
   return (
     <div className="bg-surface-800 border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl relative">
-      <h3 className="text-xl font-bold text-content-primary mb-1">Titration Protocol</h3>
+      <div className="flex items-center gap-2 mb-1">
+        <h3 className="text-xl font-bold text-content-primary">Titration Protocol</h3>
+        <HelpBox position="center">
+          A titration protocol is a schedule for gradually increasing your medication dosage. This helps your body adjust to the medication and minimizes side effects. Define your planned step-up dosages and their durations below.
+        </HelpBox>
+      </div>
       <p className="text-sm text-content-secondary mb-6">Define a scheduled step-up plan for {medicationName}.</p>
 
       <div className="space-y-4 mb-6">

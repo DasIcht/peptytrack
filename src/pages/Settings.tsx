@@ -541,32 +541,6 @@ export function Settings() {
         </div>
       </div>
 
-      {/* Help & FAQ */}
-      <div className="mb-6">
-        <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3">Help & FAQ</h2>
-        <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
-          <div className="p-4 border-b border-white/5">
-            <h3 className="text-sm font-medium text-content-primary mb-1">How to Install the App</h3>
-            <p className="text-xs text-content-secondary leading-relaxed">
-              <strong>iOS / Safari:</strong> Tap the Share icon at the bottom of the screen, scroll down, and select "Add to Home Screen".<br/><br/>
-              <strong>Android / Chrome:</strong> Tap the menu (three dots) in the top right corner and select "Install app" or "Add to Home screen".
-            </p>
-          </div>
-          <div className="p-4 border-b border-white/5">
-            <h3 className="text-sm font-medium text-content-primary mb-1">Understanding Titration</h3>
-            <p className="text-xs text-content-secondary leading-relaxed">
-              Titration is the process of gradually adjusting your medication dose to find the most effective level with the fewest side effects. Enable the Titration Wizard to get step-up recommendations.
-            </p>
-          </div>
-          <div className="p-4">
-            <h3 className="text-sm font-medium text-content-primary mb-1">Vial Reconstitution</h3>
-            <p className="text-xs text-content-secondary leading-relaxed">
-              To calculate how many units to draw: divide your desired dose (mg) by the vial concentration (mg/ml). You can add a new vial in the Vials tab to calculate this automatically.
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Support & Feedback */}
       <div className="mb-6">
         <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3">Support</h2>
