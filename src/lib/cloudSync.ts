@@ -165,6 +165,31 @@ export async function importData(data: any): Promise<void> {
   });
 }
 
+/**
+ * Completely wipe the database and reset all settings to defaults.
+ */
+export async function clearAllData(): Promise<void> {
+  await db.transaction('rw', [
+    db.medications,
+    db.doses,
+    db.weightEntries,
+    db.vials,
+    db.settings,
+    db.customSideEffects,
+    db.protocols,
+    db.symptomLogs
+  ], async () => {
+    await db.medications.clear();
+    await db.doses.clear();
+    await db.weightEntries.clear();
+    await db.vials.clear();
+    await db.settings.clear();
+    await db.customSideEffects.clear();
+    await db.protocols.clear();
+    await db.symptomLogs.clear();
+  });
+}
+
 // --- Google Drive OAuth ---
 
 const GOOGLE_DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';

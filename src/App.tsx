@@ -10,7 +10,7 @@ import { useSymptomLogStore } from './stores/symptomLogStore';
 import { useThemeStore } from './stores/themeStore';
 import { checkAndFireReminders, rescheduleAllReminders } from './lib/notifications';
 import { getAutoBackup, clearAutoBackup, saveAutoBackup } from './lib/autoBackup';
-import { importData, exportData } from './lib/cloudSync';
+import { importData, exportData, clearAllData } from './lib/cloudSync';
 import { BottomNav } from './components/BottomNav';
 import { ToastContainer } from './components/Toast';
 import { Modal } from './components/Modal';
@@ -146,6 +146,24 @@ function App() {
 
   return (
     <div className="min-h-screen font-sans overflow-x-hidden" style={{ background: 'var(--color-surface-950)', color: 'var(--color-text-primary)' }}>
+      {settings.isDemoMode && (
+        <div className="sticky top-0 z-50 bg-amber-500/20 border-b border-amber-500/30 text-amber-200 px-4 py-2 flex flex-col sm:flex-row items-center justify-between text-xs backdrop-blur-md">
+          <span className="font-medium flex items-center gap-1">
+            👀 You are exploring Demo Data. Clear this data before entering your real information.
+          </span>
+          <button 
+            onClick={async () => {
+              if (window.confirm('Wipe demo data and start fresh?')) {
+                await clearAllData();
+                window.location.reload();
+              }
+            }}
+            className="mt-2 sm:mt-0 whitespace-nowrap bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-3 py-1 rounded-lg transition-colors font-bold"
+          >
+            Clear Demo Data
+          </button>
+        </div>
+      )}
       <main className="max-w-lg mx-auto relative" onTouchStart={(e) => { touchStartX.current = e.changedTouches[0].screenX; touchStartY.current = e.changedTouches[0].screenY; }} onTouchEnd={(e) => { const deltaX = e.changedTouches[0].screenX - touchStartX.current; const deltaY = e.changedTouches[0].screenY - touchStartY.current; if (Math.abs(deltaX) > 80 && Math.abs(deltaX) > Math.abs(deltaY)) { if (deltaX < 0) nextPage(); else prevPage(); } }}>
         {restorePrompt && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center px-5 bg-black/70 backdrop-blur-sm">
