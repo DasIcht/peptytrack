@@ -103,7 +103,7 @@ export const loadDemoData = async () => {
     startDate: now - 8 * WEEK,
     currentStepStartDate: now - 4 * WEEK,
     autoAdvance: false,
-    chartStyle: 'timeline',
+    chartStyle: 'spider',
     createdAt: now - 8 * WEEK,
   });
 
