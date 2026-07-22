@@ -24,6 +24,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   height: null,
   heightUnit: 'cm',
   gender: null,
+  isDemoMode: false,
 };
 
 interface SettingsState {

@@ -7,7 +7,8 @@ import { useUIStore } from '../stores/uiStore';
 import { MedicationCard } from '../components/MedicationCard';
 import { MedicalWarningBanner } from '../components/MedicalWarningBanner';
 import { HelpBox } from '../components/HelpBox';
-import { Weight, TrendingDown, TrendingUp, Minus, Download } from 'lucide-react';
+import { Weight, TrendingDown, TrendingUp, Minus, Download, Beaker } from 'lucide-react';
+import { loadDemoData } from '../lib/demoData';
 
 export function Dashboard() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -15,8 +16,8 @@ export function Dashboard() {
   const medications = useMedicationStore(
     useShallow((state) => state.medications.filter((m) => m.enabled))
   );
-  const { loadData, initialized } = useMedicationStore();
-  const { loadData: loadWeight, getTrend, getLatest } = useWeightStore();
+  const { loadData, initialized, doses } = useMedicationStore();
+  const { loadData: loadWeight, getTrend, getLatest, entries: weightEntries } = useWeightStore();
   const { vials } = useVialStore();
   const { setPage, setLogDoseMedId } = useUIStore();
 
@@ -46,6 +47,53 @@ export function Dashboard() {
 
   const trend = getTrend();
   const latestWeight = getLatest();
+
+  const showWelcomeState = medications.length === 0 && doses.length === 0 && vials.length === 0 && weightEntries.length === 0;
+
+  if (showWelcomeState) {
+    return (
+      <div className="min-h-full pb-24 flex flex-col items-center justify-center px-5 pt-12 animate-fade-in">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary-500/10 mb-6">
+            <Beaker className="w-10 h-10 text-primary-400" />
+          </div>
+          <h1 className="text-3xl font-bold text-content-primary tracking-tight mb-3">
+            Welcome to Pepty<span className="text-primary-400">Track</span>!
+          </h1>
+          <p className="text-content-secondary text-sm">Your private, offline-first GLP-1 companion.</p>
+        </div>
+
+        <div className="w-full max-w-sm space-y-5">
+          <button
+            onClick={() => setPage('medications')}
+            className="w-full py-4 rounded-2xl bg-primary-600 hover:bg-primary-500 text-white font-bold text-base transition-all shadow-lg shadow-primary-500/20 active:scale-[0.98]"
+          >
+            + Add Your First Medication
+          </button>
+          
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/10"></div>
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-surface-950 px-4 text-xs font-semibold text-content-muted uppercase tracking-wider">or</span>
+            </div>
+          </div>
+
+          <button
+            onClick={async () => {
+              if (window.confirm('This will load a fake 8-week history of Tirzepatide to help you explore the app. Proceed?')) {
+                await loadDemoData();
+              }
+            }}
+            className="w-full py-4 rounded-2xl bg-surface-800 hover:bg-surface-700 border border-white/10 text-content-primary font-bold text-base transition-all active:scale-[0.98]"
+          >
+            Load Demo Data to Explore
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full pb-24">

@@ -133,6 +133,7 @@ export interface AppSettings {
   height: number | null;
   heightUnit: 'cm' | 'in';
   gender: 'male' | 'female' | 'other' | null;
+  isDemoMode?: boolean;
 }
 
 export interface MedLevelPoint {
