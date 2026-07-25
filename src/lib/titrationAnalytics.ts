@@ -8,6 +8,8 @@ export interface TitrationRecommendation {
   recommendation: 'step-up' | 'hold' | 'none';
   reason: string;
   warningLevel?: 'none' | 'severe' | 'emergency';
+  hasSufficientData?: boolean;
+  dataWarning?: string;
 }
 
 export function calculateSideEffectScore(sideEffects: SideEffectLog[]): number {
@@ -363,10 +365,19 @@ export function evaluateTitration(
     };
   }
 
+  const fourWeeksAgo = now - 4 * 7 * 24 * 60 * 60 * 1000;
+  const recentWeights = weights.filter(w => w.dateTime >= fourWeeksAgo);
+  const hasSufficientData = recentWeights.length >= 3;
+  const dataWarning = !hasSufficientData
+    ? `Caution: Insufficient weight data (only ${recentWeights.length} weight ${recentWeights.length === 1 ? 'measurement' : 'measurements'} recorded in the last 4 weeks). More frequent weight tracking is recommended to verify weight loss stability.`
+    : undefined;
+
   return {
     ready: true,
     recommendation: 'step-up',
-    reason: `You have completed ${currentStep.durationWeeks} weeks. Based on your progress and tolerance, you are ready to advance to ${protocol.steps[protocol.currentStepIndex + 1].dosage}.`,
+    hasSufficientData,
+    dataWarning,
+    reason: `You have completed ${currentStep.durationWeeks} weeks. Based on your progress and tolerance, you are ready to advance to ${protocol.steps[protocol.currentStepIndex + 1].dosage}.` + (dataWarning ? ` (${dataWarning})` : ''),
   };
 }
 

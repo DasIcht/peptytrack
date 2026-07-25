@@ -37,10 +37,22 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
   },
 
   updateProtocol: async (id, updates) => {
-    await db.protocols.update(id, updates);
     set((state) => ({
       protocols: state.protocols.map((p) => (p.id === id ? { ...p, ...updates } : p)),
     }));
+    try {
+      const existing = await db.protocols.get(id);
+      if (existing) {
+        await db.protocols.update(id, updates);
+      } else {
+        const fullProtocol = get().protocols.find((p) => p.id === id);
+        if (fullProtocol) {
+          await db.protocols.put(fullProtocol);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to persist protocol update in DB:', err);
+    }
   },
 
   deleteProtocol: async (id) => {

@@ -9,6 +9,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useSideEffectsStore } from '../stores/sideEffectsStore';
 import { useSymptomLogStore } from '../stores/symptomLogStore';
 import { useProtocolStore } from '../stores/protocolStore';
+import { Modal } from '../components/Modal';
 import type { InjectionSite } from '../types';
 
 const mockMedication = {
@@ -613,15 +614,19 @@ describe('LogDose', () => {
         initialized: true
       });
 
-      render(<LogDose />);
+      render(<><LogDose /><Modal /></>);
 
       // Verify that Step 1 titration info is displayed
       expect(screen.getByText('Step 1 of 2')).toBeInTheDocument();
 
-      // Click "Advance to 5 mg" button
+      // Click "Advance to 5 mg" button which opens confirmation dialog
       const advanceBtn = screen.getByText(/Advance to 5/);
       expect(advanceBtn).toBeInTheDocument();
       fireEvent.click(advanceBtn);
+
+      // Confirm step-up in confirmation modal dialog
+      const confirmBtn = screen.getByText('Confirm Step-Up');
+      fireEvent.click(confirmBtn);
 
       // Now it should have updated protocol currentStepIndex to 1
       await waitFor(() => {

@@ -31,6 +31,9 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
     existingProtocol?.targetType ?? 'weekly-equivalent'
   );
 
+  const [currentStepIndex, setCurrentStepIndex] = useState(
+    existingProtocol?.currentStepIndex ?? 0
+  );
   const [steps, setSteps] = useState<ProtocolStep[]>(
     existingProtocol?.steps || [{ id: uuid(), dosage: 0.25, durationWeeks: 4 }]
   );
@@ -47,7 +50,11 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
 
   const handleRemoveStep = (id: string) => {
     if (steps.length <= 1) return;
-    setSteps(steps.filter(s => s.id !== id));
+    const newSteps = steps.filter(s => s.id !== id);
+    setSteps(newSteps);
+    if (currentStepIndex >= newSteps.length) {
+      setCurrentStepIndex(Math.max(0, newSteps.length - 1));
+    }
   };
 
   const handleStepChange = (id: string, field: keyof ProtocolStep, value: number) => {
@@ -68,16 +75,18 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
       targetConcentration: targetType === 'steady-state-concentration' ? getComputedTarget(s.dosage || 0) : s.targetConcentration
     }));
 
+    const safeIndex = Math.min(currentStepIndex, finalSteps.length - 1);
+
     try {
       if (existingProtocol) {
-        await updateProtocol(existingProtocol.id, { steps: finalSteps, autoAdvance, chartStyle, targetType });
+        await updateProtocol(existingProtocol.id, { steps: finalSteps, currentStepIndex: safeIndex, autoAdvance, chartStyle, targetType });
         addToast('Protocol updated', 'success');
       } else {
         await addProtocol({
           medicationId,
           name: `${medicationName} Protocol`,
           steps: finalSteps,
-          currentStepIndex: 0,
+          currentStepIndex: safeIndex,
           startDate: null,
           currentStepStartDate: null,
           autoAdvance,
@@ -135,12 +144,27 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
         {steps.map((step, index) => (
           <div key={step.id} className="bg-surface-900/50 rounded-xl p-4 border border-white/5 relative">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-primary-400 uppercase tracking-widest flex items-center gap-1.5">
-                <span className="w-4 h-4 rounded-full bg-primary-500/20 flex items-center justify-center text-[10px]">
-                  {index + 1}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-primary-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-primary-500/20 flex items-center justify-center text-[10px]">
+                    {index + 1}
+                  </span>
+                  Step {index + 1}
                 </span>
-                Step {index + 1}
-              </span>
+                {index === currentStepIndex ? (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider">
+                    Active Step
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStepIndex(index)}
+                    className="px-2 py-0.5 rounded-full bg-surface-800 text-content-secondary hover:text-content-primary border border-white/10 text-[10px] font-medium transition-colors"
+                  >
+                    Set Active
+                  </button>
+                )}
+              </div>
               {steps.length > 1 && (
                 <button
                   type="button"
@@ -246,7 +270,7 @@ export function TitrationWizard({ medicationId, medicationUnit, medicationName, 
             />
           </div>
           <span className="text-xs text-content-secondary">
-            If enabled, the app will automatically move to the next step when the duration is met and conditions are safe. If disabled, you will be prompted to manually confirm.
+            If enabled, PeptiTrack will prompt you with a confirmation request to advance to the next step when duration and safety conditions are met.
           </span>
         </label>
         

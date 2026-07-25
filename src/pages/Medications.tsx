@@ -9,7 +9,7 @@ import { TitrationWizard } from '../components/TitrationWizard';
 import { MEDICATION_LIBRARY } from '../db/seed';
 import { HelpBox } from '../components/HelpBox';
 import type { Frequency } from '../types';
-import { Pill, Trash2, Edit3, Clock, ChevronRight, X, Plus, Save, Activity } from 'lucide-react';
+import { Pill, Trash2, Edit3, Clock, ChevronRight, ChevronDown, X, Plus, Save, Activity } from 'lucide-react';
 
 const COLOR_PRESETS = [
   '#14b8a6', '#f59e0b', '#8b5cf6', '#ec4899',
@@ -39,7 +39,7 @@ function useCustomFormDefaults() {
 
 export function Medications() {
   const { medications, deleteMedication, updateMedication, enableMedication, loadData } = useMedicationStore();
-  const { protocols } = useProtocolStore();
+  const { protocols, updateProtocol } = useProtocolStore();
   const { addToast, openModal } = useUIStore();
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -445,9 +445,52 @@ interface EditForm {
                       Reminder: {med.reminderHoursBefore}h before dose
                     </div>
                     {settings.titrationWizardEnabled && activeProtocol && (
-                      <span className="flex items-center gap-1 text-primary-400 font-medium">
-                        <Activity size={12} /> Protocol Step {activeProtocol.currentStepIndex + 1}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {activeProtocol.steps.length > 1 && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              disabled={activeProtocol.currentStepIndex === 0}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                const newIndex = activeProtocol.currentStepIndex - 1;
+                                await updateProtocol(activeProtocol.id, {
+                                  currentStepIndex: newIndex,
+                                  currentStepStartDate: Date.now(),
+                                });
+                                addToast(`Protocol stepped down to Step ${newIndex + 1}`, 'info');
+                              }}
+                              className="px-2 py-0.5 text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed rounded bg-surface-900 border border-white/10 text-[10px] font-bold flex items-center gap-0.5 transition-all"
+                              title="Step Down Protocol"
+                            >
+                              <ChevronDown size={12} className="rotate-90" />
+                              Step Down
+                            </button>
+                            {activeProtocol.currentStepIndex < activeProtocol.steps.length - 1 && (
+                              <button
+                                type="button"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  const newIndex = activeProtocol.currentStepIndex + 1;
+                                  await updateProtocol(activeProtocol.id, {
+                                    currentStepIndex: newIndex,
+                                    currentStepStartDate: Date.now(),
+                                  });
+                                  addToast(`Protocol stepped up to Step ${newIndex + 1}`, 'info');
+                                }}
+                                className="px-2 py-0.5 text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed rounded bg-surface-900 border border-white/10 text-[10px] font-bold flex items-center gap-0.5 transition-all"
+                                title="Step Up Protocol"
+                              >
+                                Step Up
+                                <ChevronDown size={12} className="-rotate-90" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                        <span className="flex items-center gap-1 text-primary-400 font-medium">
+                          <Activity size={12} /> Step {activeProtocol.currentStepIndex + 1} of {activeProtocol.steps.length}
+                        </span>
+                      </div>
                     )}
                   </div>
                   {settings.titrationWizardEnabled && (

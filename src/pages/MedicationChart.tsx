@@ -13,7 +13,8 @@ import { useSymptomLogStore } from '../stores/symptomLogStore';
 import { TitrationDecisionChart } from '../components/TitrationDecisionChart';
 import { HelpBox } from '../components/HelpBox';
 import { calculateWeightedSymptomScore } from '../lib/titrationAnalytics';
-import { RefreshCw, Activity } from 'lucide-react';
+import { useUIStore } from '../stores/uiStore';
+import { RefreshCw, Activity, ChevronDown } from 'lucide-react';
 
 const TIME_RANGES = [
   { label: '7 Days', days: 7 },
@@ -50,8 +51,9 @@ export function MedicationChart() {
   const doses = useMedicationStore(useShallow((state) => state.doses));
   const { entries: weightEntries } = useWeightStore();
   const { logs: symptomLogs } = useSymptomLogStore();
-  const { protocols } = useProtocolStore();
+  const { protocols, updateProtocol } = useProtocolStore();
   const { settings } = useSettingsStore();
+  const { addToast } = useUIStore();
 
   const [rangeDays, setRangeDays] = useState(30);
   const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set());
@@ -453,7 +455,51 @@ export function MedicationChart() {
                    This section displays your current titration protocol details. It uses your symptom logs and weight entries to recommend when it's safe to step up your dose based on the protocol.
                 </HelpBox>
               </h2>
-              <p className="text-xs text-content-secondary">{currentProtocolMed.name}</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-xs text-content-secondary">{currentProtocolMed.name}</p>
+                {currentProtocol.steps.length > 1 && (
+                  <div className="flex items-center gap-1 ml-2">
+                    <button
+                      type="button"
+                      disabled={currentProtocol.currentStepIndex === 0}
+                      onClick={async () => {
+                        const newIndex = currentProtocol.currentStepIndex - 1;
+                        await updateProtocol(currentProtocol.id, {
+                          currentStepIndex: newIndex,
+                          currentStepStartDate: Date.now(),
+                        });
+                        addToast(`Protocol stepped down to Step ${newIndex + 1}`, 'info');
+                      }}
+                      className="px-2 py-0.5 text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed rounded bg-surface-800 border border-white/10 text-[10px] font-bold flex items-center gap-0.5 transition-all"
+                      title="Step Down Protocol"
+                    >
+                      <ChevronDown size={12} className="rotate-90" />
+                      Step Down
+                    </button>
+                    {currentProtocol.currentStepIndex < currentProtocol.steps.length - 1 && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const newIndex = currentProtocol.currentStepIndex + 1;
+                          await updateProtocol(currentProtocol.id, {
+                            currentStepIndex: newIndex,
+                            currentStepStartDate: Date.now(),
+                          });
+                          addToast(`Protocol stepped up to Step ${newIndex + 1}`, 'info');
+                        }}
+                        className="px-2 py-0.5 text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed rounded bg-surface-800 border border-white/10 text-[10px] font-bold flex items-center gap-0.5 transition-all"
+                        title="Step Up Protocol"
+                      >
+                        Step Up
+                        <ChevronDown size={12} className="-rotate-90" />
+                      </button>
+                    )}
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold text-[10px]">
+                      Step {currentProtocol.currentStepIndex + 1} of {currentProtocol.steps.length}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
             {activeProtocols.length > 1 && (
               <button

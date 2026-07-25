@@ -467,13 +467,31 @@ export function LogDose() {
           }]);
           
           if (activeProtocol) {
-            // Only advance protocol on submit if it wasn't already advanced when user clicked "Advance"
-            // (i.e., autoAdvance case where user didn't manually click the button)
+            // Require explicit user confirmation for auto-advance when step-up condition is met
             if (!didStepUp && activeProtocol.autoAdvance && titrationAlert?.recommendation === 'step-up') {
-              await updateProtocol(activeProtocol.id, {
-                currentStepIndex: activeProtocol.currentStepIndex + 1,
-                currentStepStartDate: Date.now()
-              });
+              const nextIndex = activeProtocol.currentStepIndex + 1;
+              const nextStep = activeProtocol.steps[nextIndex];
+              if (nextStep) {
+                openModal(
+                  <ConfirmDialog
+                    title="Confirm Protocol Advancement"
+                    message={
+                      `Your titration protocol is eligible to step up to Step ${nextIndex + 1} (${nextStep.dosage} ${selectedMed.unit}).` +
+                      (titrationAlert.dataWarning ? `\n\n⚠️ ${titrationAlert.dataWarning}` : '') +
+                      `\n\nWould you like to advance your active titration step now?`
+                    }
+                    confirmLabel="Confirm Step-Up"
+                    cancelLabel="Stay on Current Step"
+                    onConfirm={async () => {
+                      await updateProtocol(activeProtocol.id, {
+                        currentStepIndex: nextIndex,
+                        currentStepStartDate: Date.now(),
+                      });
+                      addToast(`Protocol advanced to Step ${nextIndex + 1} (${nextStep.dosage} ${selectedMed.unit})`, 'success');
+                    }}
+                  />
+                );
+              }
             }
           }
           
@@ -657,6 +675,12 @@ export function LogDose() {
               Titration Advice
            </div>
            <p className="text-xs leading-relaxed opacity-90">{titrationAlert.reason}</p>
+           {titrationAlert.dataWarning && (
+             <div className="p-2.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2 mt-1">
+               <AlertTriangle size={14} className="shrink-0 text-amber-400" />
+               <span>{titrationAlert.dataWarning}</span>
+             </div>
+           )}
            
            {titrationAlert.recommendation === 'step-up' && !didStepUp && (
              <div className="flex gap-2 mt-2">
@@ -665,14 +689,26 @@ export function LogDose() {
                  className="px-4 py-2.5 bg-primary-600 text-white rounded-lg text-xs font-bold hover:bg-primary-500 transition-colors flex-1 shadow-lg shadow-primary-900/20"
                  onClick={() => {
                     if (!activeProtocol) return;
-                    // Advance the protocol step immediately so the PK target updates
-                    updateProtocol(activeProtocol.id, {
-                      currentStepIndex: activeProtocol.currentStepIndex + 1,
-                      currentStepStartDate: Date.now()
-                    });
-                    // Don't set dosage here — let the useMemo recalculate recommendedPKDose
-                    // with the new step's target, then the useEffect below will auto-propose it
-                    setDidStepUp(true);
+                    const nextStep = activeProtocol.steps[activeProtocol.currentStepIndex + 1];
+                    openModal(
+                      <ConfirmDialog
+                        title="Confirm Protocol Step-Up"
+                        message={
+                          `Are you sure you want to advance to Step ${activeProtocol.currentStepIndex + 2} (${nextStep?.dosage} ${selectedMed?.unit})?` +
+                          (titrationAlert.dataWarning ? `\n\n⚠️ ${titrationAlert.dataWarning}` : '')
+                        }
+                        confirmLabel="Confirm Step-Up"
+                        cancelLabel="Cancel"
+                        onConfirm={async () => {
+                          await updateProtocol(activeProtocol.id, {
+                            currentStepIndex: activeProtocol.currentStepIndex + 1,
+                            currentStepStartDate: Date.now()
+                          });
+                          setDidStepUp(true);
+                          addToast(`Protocol advanced to Step ${activeProtocol.currentStepIndex + 2}`, 'success');
+                        }}
+                      />
+                    );
                  }}
                >
                  Advance to {activeProtocol?.steps[activeProtocol.currentStepIndex + 1]?.dosage} {selectedMed?.unit}
@@ -747,9 +783,64 @@ export function LogDose() {
                   <span className="font-semibold text-content-secondary">Titration Protocol:</span>
                   <span className="text-content-secondary truncate max-w-[150px]">{activeProtocol.name}</span>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold text-[10px] uppercase tracking-wider whitespace-nowrap">
-                  Step {activeProtocol.currentStepIndex + 1} of {activeProtocol.steps.length}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {activeProtocol.steps.length > 1 && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        aria-label="Step Down Protocol"
+                        disabled={activeProtocol.currentStepIndex === 0}
+                        onClick={async () => {
+                          const newIndex = activeProtocol.currentStepIndex - 1;
+                          hasAutoProposedForMedRef.current = {};
+                          await updateProtocol(activeProtocol.id, {
+                            currentStepIndex: newIndex,
+                            currentStepStartDate: Date.now(),
+                          });
+                          const prevStep = activeProtocol.steps[newIndex];
+                          if (prevStep && selectedMed) {
+                            setDosage(String(prevStep.dosage));
+                            setCustomDosage(!selectedMed.dosageOptions.includes(prevStep.dosage));
+                          }
+                          addToast(`Protocol stepped down to Step ${newIndex + 1}`, 'info');
+                        }}
+                        className="px-1.5 py-0.5 text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed rounded bg-surface-800 border border-white/10 text-[10px] font-bold flex items-center gap-0.5"
+                        title="Step Down Protocol"
+                      >
+                        <ChevronDown size={12} className="rotate-90" />
+                        Step Down
+                      </button>
+                      {activeProtocol.currentStepIndex < activeProtocol.steps.length - 1 && (
+                        <button
+                          type="button"
+                          aria-label="Step Up Protocol"
+                          onClick={async () => {
+                            const newIndex = activeProtocol.currentStepIndex + 1;
+                            hasAutoProposedForMedRef.current = {};
+                            await updateProtocol(activeProtocol.id, {
+                              currentStepIndex: newIndex,
+                              currentStepStartDate: Date.now(),
+                            });
+                            const nextStep = activeProtocol.steps[newIndex];
+                            if (nextStep && selectedMed) {
+                              setDosage(String(nextStep.dosage));
+                              setCustomDosage(!selectedMed.dosageOptions.includes(nextStep.dosage));
+                            }
+                            addToast(`Protocol stepped up to Step ${newIndex + 1}`, 'info');
+                          }}
+                          className="px-1.5 py-0.5 text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed rounded bg-surface-800 border border-white/10 text-[10px] font-bold flex items-center gap-0.5"
+                          title="Step Up Protocol"
+                        >
+                          Step Up
+                          <ChevronDown size={12} className="-rotate-90" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold text-[10px] uppercase tracking-wider whitespace-nowrap">
+                    Step {activeProtocol.currentStepIndex + 1} of {activeProtocol.steps.length}
+                  </span>
+                </div>
               </div>
               <div className="flex items-center justify-between text-[11px] bg-surface-900/40 rounded-lg p-2.5 border border-white/5">
                 <span className="text-content-secondary">Current Step Target:</span>

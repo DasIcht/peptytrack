@@ -62,11 +62,21 @@ describe('titrationAnalytics', () => {
     expect(res.reason).toContain('severe side effects detected');
   });
 
-  it('recommends step-up if time has passed and no flags', () => {
+  it('recommends step-up if time has passed and no flags but flags insufficient data if weight entries < 3', () => {
     const res = evaluateTitration(baseProtocol, [], [], [], [testMed]);
     expect(res.ready).toBe(true);
     expect(res.recommendation).toBe('step-up');
-    expect(res.reason).toContain('ready to advance');
+    expect(res.hasSufficientData).toBe(false);
+    expect(res.dataWarning).toContain('Insufficient weight data');
+
+    const sufficientWeights: WeightEntry[] = [
+      { id: 'w1', weight: 100, unit: 'kg', dateTime: Date.now() - 21 * 24 * 60 * 60 * 1000, notes: '', createdAt: 0 },
+      { id: 'w2', weight: 99.5, unit: 'kg', dateTime: Date.now() - 14 * 24 * 60 * 60 * 1000, notes: '', createdAt: 0 },
+      { id: 'w3', weight: 99.0, unit: 'kg', dateTime: Date.now() - 7 * 24 * 60 * 60 * 1000, notes: '', createdAt: 0 }
+    ];
+    const res2 = evaluateTitration(baseProtocol, [], [], sufficientWeights, [testMed]);
+    expect(res2.hasSufficientData).toBe(true);
+    expect(res2.dataWarning).toBeUndefined();
   });
 
   it('recommends hold if rapid relative weight loss (>1.5% body weight/week)', () => {
