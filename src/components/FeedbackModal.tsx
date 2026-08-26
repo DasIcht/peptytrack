@@ -2,7 +2,9 @@ import { useState, useRef } from 'react';
 import { X, Send, CheckCircle2, AlertCircle, ImagePlus, Trash2 } from 'lucide-react';
 import { useUIStore } from '../stores/uiStore';
 
-const WEB3FORMS_ACCESS_KEY = '72d665ca-a9a2-43e0-a872-baf046c09143';
+const WEB3FORMS_ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || '';
+const IMGBB_API_KEY = import.meta.env.VITE_IMGBB_API_KEY || '';
+const FEEDBACK_EMAIL = import.meta.env.VITE_FEEDBACK_EMAIL || '';
 
 export function FeedbackModal() {
   const { closeModal } = useUIStore();
@@ -38,7 +40,7 @@ export function FeedbackModal() {
         const imgData = new FormData();
         imgData.append('image', attachment);
         
-        const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=e9bd2e667c0a4d6057050b1a17ed0fd2`, {
+        const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
           method: 'POST',
           body: imgData,
         });
@@ -216,12 +218,14 @@ Screen: ${window.innerWidth}x${window.innerHeight}
           )}
         </button>
         
-        <p className="text-[11px] text-content-primary text-center mt-3">
-          For more extensive feedback, you can email me directly at{' '}
-          <a href="mailto:DasIcht@proton.me" className="text-primary-400 hover:text-primary-300 transition-colors font-medium">
-            DasIcht@proton.me
-          </a>
-        </p>
+        {FEEDBACK_EMAIL && (
+          <p className="text-[11px] text-content-primary text-center mt-3">
+            For more extensive feedback, you can email me directly at{' '}
+            <a href={`mailto:${FEEDBACK_EMAIL}`} className="text-primary-400 hover:text-primary-300 transition-colors font-medium">
+              {FEEDBACK_EMAIL}
+            </a>
+          </p>
+        )}
         
         <p className="text-[10px] text-content-muted text-center mt-2 px-2 leading-relaxed">
           Your feedback is sent anonymously. No personal data is collected. The only information sent is the text typed in the form above and any attachments you include.

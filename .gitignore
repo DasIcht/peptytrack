@@ -42,3 +42,8 @@ otherApps/
 # Private planning/superpowers directory
 .superpowers/
 
+# Local environment variables
+.env
+.env.local
+
+
