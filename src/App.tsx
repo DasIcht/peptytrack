@@ -9,7 +9,7 @@ import { useProtocolStore } from './stores/protocolStore';
 import { useSymptomLogStore } from './stores/symptomLogStore';
 import { useThemeStore } from './stores/themeStore';
 import { checkAndFireReminders, rescheduleAllReminders } from './lib/notifications';
-import { getAutoBackup, clearAutoBackup, runAutoBackup } from './lib/autoBackup';
+import { getAutoBackup, clearAutoBackup, saveAutoBackup } from './lib/autoBackup';
 import { importData, exportData, clearAllData } from './lib/cloudSync';
 import { BottomNav } from './components/BottomNav';
 import { ToastContainer } from './components/Toast';
@@ -86,31 +86,15 @@ function App() {
     }
   }, [initialized, medications, doses, settings.notificationsEnabled]);
 
-  // Auto-backup whenever data changes (local always, Google Drive when enabled)
+  // Auto-backup whenever data changes
   useEffect(() => {
     if (!initialized) return;
     const totalItems = medications.length + doses.length + weightEntries.length + vials.length + protocols.length + symptomLogs.length;
     if (totalItems === 0) return;
-    let cancelled = false;
-    exportData()
-      .then((data) =>
-        runAutoBackup(JSON.stringify(data), {
-          googleDriveEnabled: Boolean(settings.googleDriveBackupEnabled),
-        })
-      )
-      .then((result) => {
-        if (cancelled) return;
-        if (result.googleDrive.status === 'error') {
-          addToast(`Google Drive backup failed: ${result.googleDrive.error}`, 'error');
-        }
-      })
-      .catch(() => {
-        // Backup is best-effort — never break the app.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [initialized, medications.length, doses.length, weightEntries.length, vials.length, protocols.length, symptomLogs.length, settings.googleDriveBackupEnabled, addToast]);
+    exportData().then((data) => {
+      saveAutoBackup(JSON.stringify(data));
+    });
+  }, [initialized, medications.length, doses.length, weightEntries.length, vials.length, protocols.length, symptomLogs.length]);
 
   // Prompt to restore if DB is empty but localStorage backup exists
   useEffect(() => {

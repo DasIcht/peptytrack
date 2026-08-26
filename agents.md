@@ -400,18 +400,14 @@ export interface TitrationMetrics {
 - Multi-page aware (adds new pages when content overflows).
 
 ### 7.4 Cloud Sync (`lib/cloudSync.ts`)
-**Status: Google Drive auto-backup live (v2.2.0+). Requires a Google OAuth client ID (`VITE_GOOGLE_DRIVE_CLIENT_ID`). No API key needed.**
+**Status: Local-only backups. No cloud credentials. "Share to Google Drive" uses the OS-native share sheet (Web Share API) with a download fallback; no OAuth client ID or API key required.**
 
-| Function | Cloud |
-|----------|-------|
-| `authenticateGoogleDrive(clientId)` | Google Drive |
-| `uploadToGoogleDrive(token, filename, content)` | Google Drive |
-| `listBackupsOnGoogleDrive(token)` | Google Drive |
-| `downloadFromGoogleDrive(token, fileId)` | Google Drive |
-| `authenticateDropbox(clientId)` | Dropbox |
-| `uploadToDropbox(token, path, content)` | Dropbox |
-| `listDropboxFiles(token, path)` | Dropbox |
-| `downloadFromDropbox(token, path)` | Dropbox |
+| Function | Purpose |
+|----------|---------|
+| `exportData()` | Export all data as a BackupData object |
+| `downloadBackupJSON(data)` | Trigger a JSON file download |
+| `importData(data)` | Import + migrate a backup |
+| `clearAllData()` | Wipe the database |
 
 ### 7.5 Data Migration Engine (`lib/cloudSync.ts`)
 - **Versioned Migration:** Sequence of functions to upgrade data from v1 to vBACKUP_VERSION (currently v7).

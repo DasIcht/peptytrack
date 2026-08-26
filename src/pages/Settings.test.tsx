@@ -1,278 +1,156 @@
-import 'fake-indexeddb/auto';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-
-vi.mock('../lib/googleDriveBackup', () => ({
-  isGoogleDriveBackupConfigured: vi.fn(() => true),
-  authenticateGoogleDrive: vi.fn(async () => 'token-123'),
-  backupToGoogleDrive: vi.fn(async () => ({ success: true, fileId: 'file-1' })),
-  restoreFromGoogleDrive: vi.fn(async () => ({ success: true })),
-}));
-
 import { Settings } from './Settings';
-import { useSettingsStore } from '../stores/settingsStore';
 import { useMedicationStore } from '../stores/medicationStore';
 import { useWeightStore } from '../stores/weightStore';
 import { useVialStore } from '../stores/vialStore';
 import { useUIStore } from '../stores/uiStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { useSymptomLogStore } from '../stores/symptomLogStore';
-import * as gdrive from '../lib/googleDriveBackup';
+import { useProtocolStore } from '../stores/protocolStore';
+import * as cloudSync from '../lib/cloudSync';
+
+vi.mock('../lib/cloudSync', () => ({
+  exportData: vi.fn(),
+  downloadBackupJSON: vi.fn(),
+  importData: vi.fn(),
+}));
+
+vi.mock('../lib/pdfExport', () => ({
+  generatePDF: vi.fn(() => ({})),
+  downloadPDF: vi.fn(),
+}));
+
+vi.mock('../lib/notifications', () => ({
+  requestNotificationPermission: vi.fn(async () => false),
+}));
+
+vi.mock('../components/ThemeSection', () => ({
+  ThemeSection: () => null,
+}));
+
+vi.mock('../components/FeedbackModal', () => ({
+  FeedbackModal: () => null,
+}));
+
+vi.mock('../components/HelpBox', () => ({
+  HelpBox: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
+}));
+
+vi.mock('../components/ConfirmDialog', () => ({
+  ConfirmDialog: () => null,
+}));
 
 function baseSettings(overrides: Record<string, unknown> = {}) {
   return { ...useSettingsStore.getState().settings, ...overrides };
 }
 
-describe('Settings — Google Drive backup section', () => {
+describe('Settings — share backup to Google Drive', () => {
+  const originalShare = navigator.share;
+  const originalCanShare = navigator.canShare;
+  const originalDownload = cloudSync.downloadBackupJSON;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(gdrive.isGoogleDriveBackupConfigured).mockReturnValue(true);
-    vi.mocked(gdrive.authenticateGoogleDrive).mockResolvedValue('token-123');
-    vi.mocked(gdrive.backupToGoogleDrive).mockResolvedValue({ success: true, fileId: 'file-1' });
-    vi.mocked(gdrive.restoreFromGoogleDrive).mockResolvedValue({ success: true });
+    vi.mocked(cloudSync.exportData).mockResolvedValue({
+      version: 8,
+      appVersion: 'test',
+      exportedAt: 1000,
+      medications: [],
+      doses: [],
+      weightEntries: [],
+      vials: [],
+      settings: {},
+      customSideEffects: [],
+      protocols: [],
+      symptomLogs: [],
+    } as any);
+    vi.mocked(cloudSync.downloadBackupJSON).mockImplementation(originalDownload);
 
     useMedicationStore.setState({ medications: [], doses: [], loading: false, initialized: true });
     useWeightStore.setState({ entries: [], loading: false });
-    useVialStore.setState({ vials: [], loading: false, initialized: true });
+    useVialStore.setState({ vials: [], loading: false });
     useSymptomLogStore.setState({ logs: [], loading: false, initialized: true });
+    useProtocolStore.setState({ protocols: [], loading: false, initialized: true });
     useUIStore.setState({ isModalOpen: false, modalContent: null, toasts: [] });
     useSettingsStore.setState({
-      settings: baseSettings({ googleDriveBackupEnabled: false, notificationsEnabled: false }),
+      settings: baseSettings({ notificationsEnabled: false }),
       initialized: true,
     });
   });
 
-  it('renders a Google Drive backup toggle', () => {
-    render(<Settings />);
-    expect(screen.getByRole('button', { name: /google drive backup/i })).toBeInTheDocument();
+  afterEach(() => {
+    (navigator as any).share = originalShare;
+    (navigator as any).canShare = originalCanShare;
+    vi.restoreAllMocks();
   });
 
-  it('toggle reflects the disabled state via aria-pressed', () => {
+  it('renders a Share to Google Drive button in the Data section', () => {
     render(<Settings />);
-    const toggle = screen.getByRole('button', { name: /google drive backup/i });
-    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    expect(
+      screen.getByRole('button', { name: /share to google drive/i })
+    ).toBeInTheDocument();
   });
 
-  it('toggle reflects the enabled state via aria-pressed', () => {
-    useSettingsStore.setState({ settings: baseSettings({ googleDriveBackupEnabled: true }) });
+  it('uses the native share sheet with a backup JSON file when navigator.share is available', async () => {
+    const shareMock = vi.fn(async (_payload: ShareData) => undefined);
+    (navigator as any).share = shareMock;
+    (navigator as any).canShare = vi.fn(() => true);
+
     render(<Settings />);
-    const toggle = screen.getByRole('button', { name: /google drive backup/i });
-    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: /share to google drive/i }));
+
+    await waitFor(() => expect(shareMock).toHaveBeenCalledTimes(1));
+    const sharePayload = shareMock.mock.calls[0][0];
+    expect(sharePayload.title).toBe('PeptyTrack Backup');
+    expect(sharePayload.files).toHaveLength(1);
+    expect(sharePayload.files![0].name).toMatch(/^peptytrack-backup-\d{4}-\d{2}-\d{2}\.json$/);
+    expect(sharePayload.files![0].type).toBe('application/json');
+    // Should NOT fall back to a download when the share sheet was used
+    expect(cloudSync.downloadBackupJSON).not.toHaveBeenCalled();
   });
 
-  it('clicking the toggle persists googleDriveBackupEnabled = true', async () => {
-    const updateSetting = vi.fn(async () => {});
-    useSettingsStore.setState({ updateSetting } as never);
+  it('falls back to downloading the JSON when the native share sheet is unavailable', async () => {
+    (navigator as any).share = undefined;
+    (navigator as any).canShare = undefined;
+    const downloadSpy = vi.spyOn(cloudSync, 'downloadBackupJSON').mockImplementation(() => {});
 
     render(<Settings />);
-    fireEvent.click(screen.getByRole('button', { name: /google drive backup/i }));
+    fireEvent.click(screen.getByRole('button', { name: /share to google drive/i }));
 
-    await waitFor(() => {
-      expect(updateSetting).toHaveBeenCalledWith('googleDriveBackupEnabled', true);
+    await waitFor(() => expect(downloadSpy).toHaveBeenCalledTimes(1));
+    const [data] = downloadSpy.mock.calls[0];
+    expect((data as any).version).toBe(8);
+  });
+
+  it('silently ignores user cancellation of the share sheet (AbortError)', async () => {
+    const shareMock = vi.fn(async () => {
+      const err = new Error('Share cancelled');
+      err.name = 'AbortError';
+      throw err;
     });
-  });
-
-  it('clicking the toggle while enabled persists googleDriveBackupEnabled = false', async () => {
-    const updateSetting = vi.fn(async () => {});
-    useSettingsStore.setState({
-      settings: baseSettings({ googleDriveBackupEnabled: true }),
-      updateSetting,
-    } as never);
+    (navigator as any).share = shareMock;
+    (navigator as any).canShare = vi.fn(() => true);
 
     render(<Settings />);
-    fireEvent.click(screen.getByRole('button', { name: /google drive backup/i }));
+    fireEvent.click(screen.getByRole('button', { name: /share to google drive/i }));
 
-    await waitFor(() => {
-      expect(updateSetting).toHaveBeenCalledWith('googleDriveBackupEnabled', false);
+    await waitFor(() => expect(shareMock).toHaveBeenCalledTimes(1));
+    expect(useUIStore.getState().toasts).toEqual([]);
+    expect(cloudSync.downloadBackupJSON).not.toHaveBeenCalled();
+  });
+
+  it('shows an error toast when sharing fails for a real reason', async () => {
+    const shareMock = vi.fn(async () => {
+      throw new Error('NotAllowedError: permission denied');
     });
-  });
+    (navigator as any).share = shareMock;
+    (navigator as any).canShare = vi.fn(() => true);
 
-  it('hides the Google Drive section when the build is not configured', () => {
-    vi.mocked(gdrive.isGoogleDriveBackupConfigured).mockReturnValue(false);
     render(<Settings />);
-    expect(screen.queryByRole('button', { name: /google drive backup/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /share to google drive/i }));
+
+    await waitFor(() => expect(useUIStore.getState().toasts.length).toBeGreaterThan(0));
+    expect(useUIStore.getState().toasts.some((t) => t.message === 'Share failed')).toBe(true);
   });
 });
-
-describe('Settings — Backup Now button', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(gdrive.isGoogleDriveBackupConfigured).mockReturnValue(true);
-    vi.mocked(gdrive.authenticateGoogleDrive).mockResolvedValue('token-123');
-    vi.mocked(gdrive.backupToGoogleDrive).mockResolvedValue({ success: true, fileId: 'file-1' });
-    vi.mocked(gdrive.restoreFromGoogleDrive).mockResolvedValue({ success: true });
-
-    useMedicationStore.setState({ medications: [], doses: [], loading: false, initialized: true });
-    useWeightStore.setState({ entries: [], loading: false });
-    useVialStore.setState({ vials: [], loading: false, initialized: true });
-    useSymptomLogStore.setState({ logs: [], loading: false, initialized: true });
-    useUIStore.setState({ isModalOpen: false, modalContent: null, toasts: [] });
-    useSettingsStore.setState({
-      settings: baseSettings({ googleDriveBackupEnabled: true, notificationsEnabled: false }),
-      initialized: true,
-    });
-  });
-
-  it('renders a Backup Now button when Google Drive backup is enabled', () => {
-    render(<Settings />);
-    expect(screen.getByRole('button', { name: /backup now/i })).toBeInTheDocument();
-  });
-
-  it('is not rendered while Google Drive backup is disabled', () => {
-    useSettingsStore.setState({ settings: baseSettings({ googleDriveBackupEnabled: false }) });
-    render(<Settings />);
-    expect(screen.queryByRole('button', { name: /backup now/i })).not.toBeInTheDocument();
-  });
-
-  it('authenticates then uploads when clicked', async () => {
-    render(<Settings />);
-    fireEvent.click(screen.getByRole('button', { name: /backup now/i }));
-
-    await waitFor(() => {
-      expect(gdrive.authenticateGoogleDrive).toHaveBeenCalledTimes(1);
-      expect(gdrive.backupToGoogleDrive).toHaveBeenCalledWith('token-123');
-    });
-  });
-
-  it('persists the returned fileId to settings', async () => {
-    const updateSetting = vi.fn(async () => {});
-    useSettingsStore.setState({ updateSetting } as never);
-
-    render(<Settings />);
-    fireEvent.click(screen.getByRole('button', { name: /backup now/i }));
-
-    await waitFor(() => {
-      expect(updateSetting).toHaveBeenCalledWith('googleDriveBackupFileId', 'file-1');
-    });
-  });
-
-  it('shows a success toast on a successful backup', async () => {
-    render(<Settings />);
-    fireEvent.click(screen.getByRole('button', { name: /backup now/i }));
-
-    await waitFor(() => {
-      const toasts = useUIStore.getState().toasts;
-      expect(toasts.some((t) => t.type === 'success' && /backed up/i.test(t.message))).toBe(true);
-    });
-  });
-
-  it('shows an error toast when the upload fails', async () => {
-    vi.mocked(gdrive.backupToGoogleDrive).mockResolvedValue({ success: false, error: 'quota exceeded' });
-
-    render(<Settings />);
-    fireEvent.click(screen.getByRole('button', { name: /backup now/i }));
-
-    await waitFor(() => {
-      const toasts = useUIStore.getState().toasts;
-      expect(toasts.some((t) => t.type === 'error' && /quota exceeded/i.test(t.message))).toBe(true);
-    });
-  });
-
-  it('shows an error toast when authentication returns no token', async () => {
-    vi.mocked(gdrive.authenticateGoogleDrive).mockResolvedValue(null);
-
-    render(<Settings />);
-    fireEvent.click(screen.getByRole('button', { name: /backup now/i }));
-
-    await waitFor(() => {
-      const toasts = useUIStore.getState().toasts;
-      expect(toasts.some((t) => t.type === 'error')).toBe(true);
-    });
-    expect(gdrive.backupToGoogleDrive).not.toHaveBeenCalled();
-  });
-});
-
-describe('Settings — Restore from Google Drive button', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(gdrive.isGoogleDriveBackupConfigured).mockReturnValue(true);
-    vi.mocked(gdrive.authenticateGoogleDrive).mockResolvedValue('token-123');
-    vi.mocked(gdrive.backupToGoogleDrive).mockResolvedValue({ success: true, fileId: 'file-1' });
-    vi.mocked(gdrive.restoreFromGoogleDrive).mockResolvedValue({ success: true });
-
-    useMedicationStore.setState({ medications: [], doses: [], loading: false, initialized: true });
-    useWeightStore.setState({ entries: [], loading: false });
-    useVialStore.setState({ vials: [], loading: false, initialized: true });
-    useSymptomLogStore.setState({ logs: [], loading: false, initialized: true });
-    useUIStore.setState({ isModalOpen: false, modalContent: null, toasts: [] });
-    useSettingsStore.setState({
-      settings: baseSettings({ googleDriveBackupEnabled: true, notificationsEnabled: false }),
-      initialized: true,
-    });
-  });
-
-  it('renders a Restore from Google Drive button', () => {
-    render(<Settings />);
-    expect(screen.getByRole('button', { name: /restore from google drive/i })).toBeInTheDocument();
-  });
-
-  it('opens a confirmation dialog rather than restoring immediately', () => {
-    render(<Settings />);
-    fireEvent.click(screen.getByRole('button', { name: /restore from google drive/i }));
-
-    expect(useUIStore.getState().isModalOpen).toBe(true);
-    expect(gdrive.restoreFromGoogleDrive).not.toHaveBeenCalled();
-  });
-
-  it('restores after the confirmation dialog is confirmed', async () => {
-    render(
-      <>
-        <Settings />
-        <ModalHost />
-      </>
-    );
-    fireEvent.click(screen.getByRole('button', { name: /restore from google drive/i }));
-
-    const confirm = await screen.findByRole('button', { name: /overwrite local data/i });
-    fireEvent.click(confirm);
-
-    await waitFor(() => {
-      expect(gdrive.authenticateGoogleDrive).toHaveBeenCalled();
-      expect(gdrive.restoreFromGoogleDrive).toHaveBeenCalledWith('token-123');
-    });
-  });
-
-  it('shows an error toast when the restore fails', async () => {
-    vi.mocked(gdrive.restoreFromGoogleDrive).mockResolvedValue({ success: false, error: 'no backup found' });
-
-    render(
-      <>
-        <Settings />
-        <ModalHost />
-      </>
-    );
-    fireEvent.click(screen.getByRole('button', { name: /restore from google drive/i }));
-    fireEvent.click(await screen.findByRole('button', { name: /overwrite local data/i }));
-
-    await waitFor(() => {
-      const toasts = useUIStore.getState().toasts;
-      expect(toasts.some((t) => t.type === 'error' && /no backup found/i.test(t.message))).toBe(true);
-    });
-  });
-
-  it('reloads stores and toasts success after a successful restore', async () => {
-    const loadData = vi.fn(async () => {});
-    useMedicationStore.setState({ loadData } as never);
-
-    render(
-      <>
-        <Settings />
-        <ModalHost />
-      </>
-    );
-    fireEvent.click(screen.getByRole('button', { name: /restore from google drive/i }));
-    fireEvent.click(await screen.findByRole('button', { name: /overwrite local data/i }));
-
-    await waitFor(() => {
-      expect(loadData).toHaveBeenCalled();
-      const toasts = useUIStore.getState().toasts;
-      expect(toasts.some((t) => t.type === 'success' && /restored/i.test(t.message))).toBe(true);
-    });
-  });
-});
-
-/** Minimal host that renders whatever uiStore.openModal put in place. */
-function ModalHost() {
-  const modalContent = useUIStore((s) => s.modalContent);
-  const isModalOpen = useUIStore((s) => s.isModalOpen);
-  return isModalOpen ? <div data-testid="modal-host">{modalContent}</div> : null;
-}

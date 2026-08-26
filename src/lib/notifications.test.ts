@@ -44,7 +44,6 @@ describe('notifications library', () => {
     height: null,
     heightUnit: 'cm' as 'cm',
     gender: null,
-    googleDriveBackupEnabled: false,
       },
       loading: false,
       initialized: true,
@@ -187,7 +186,6 @@ describe('notifications library', () => {
     height: null,
     heightUnit: 'cm' as 'cm',
     gender: null,
-    googleDriveBackupEnabled: false,
         }
       });
       useProtocolStore.setState({
