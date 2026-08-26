@@ -111,7 +111,30 @@ describe('Settings — share backup to Google Drive', () => {
     await sharePayload.files![0].text().then((text: string) => {
       expect(text).toBe('{"cached":true}');
     });
-    expect(cloudSync.exportData).not.toHaveBeenCalled();
+    // exportData() runs once for the mount pre-warm, but never inside the tap
+    // (the share call stays synchronous within the user gesture).
+    expect(cloudSync.exportData).toHaveBeenCalledTimes(1);
+  });
+
+  it('shares synchronously using the JSON pre-computed on Settings mount when no cached auto-backup exists', async () => {
+    // No localStorage cache: the page itself pre-computes the export JSON
+    // on mount, so the tap handler never awaits before navigator.share().
+    const shareMock = vi.fn(async (_payload: ShareData) => undefined);
+    (navigator as any).share = shareMock;
+    (navigator as any).canShare = vi.fn(() => true);
+
+    render(<Settings />);
+    await waitFor(() => expect(cloudSync.exportData).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByRole('button', { name: /export backup/i }));
+    await waitFor(() => expect(shareMock).toHaveBeenCalledTimes(1));
+
+    // The tap itself must not trigger another IndexedDB read — the share
+    // payload comes from the pre-computed JSON (fully synchronous path).
+    expect(cloudSync.exportData).toHaveBeenCalledTimes(1);
+    const sharePayload = shareMock.mock.calls[0][0];
+    const text = await sharePayload.files![0].text();
+    expect(JSON.parse(text).version).toBe(8);
   });
 
   it('opens a native Save As dialog (showSaveFilePicker) when share is unavailable', async () => {

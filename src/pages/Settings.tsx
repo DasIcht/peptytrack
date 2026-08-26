@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMedicationStore } from '../stores/medicationStore';
 import { useWeightStore } from '../stores/weightStore';
 import { useVialStore } from '../stores/vialStore';
@@ -35,9 +35,29 @@ export function Settings() {
   const [exporting, setExporting] = useState(false);
   const [scheduledSnapshots, setScheduledSnapshots] = useState<ScheduledBackupSnapshot[]>([]);
   const [restoringSnapshot, setRestoringSnapshot] = useState(false);
+  // Pre-computed export JSON: guarantees navigator.share() is called
+  // synchronously inside the tap (no IndexedDB await before it), which
+  // iOS Safari requires — otherwise it throws NotAllowedError.
+  const precomputedExportRef = useRef<string | null>(null);
 
   useEffect(() => {
     setScheduledSnapshots(listScheduledSnapshots());
+  }, []);
+
+  // Warm the export payload while the user reads the page, so the Export
+  // tap below never has to await exportData() before calling share().
+  useEffect(() => {
+    let cancelled = false;
+    exportData()
+      .then((data) => {
+        if (!cancelled) precomputedExportRef.current = JSON.stringify(data, null, 2);
+      })
+      .catch(() => {
+        // Keep the cached auto-backup fallback; the tap path handles null.
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -67,9 +87,10 @@ export function Settings() {
   const handleExportBackup = async () => {
     setExporting(true);
     try {
-      // Synchronous path: the cached auto-backup avoids an IndexedDB await
-      // before navigator.share(), which iOS Safari would reject.
-      const cached = getAutoBackup();
+      // Synchronous path: use the JSON pre-computed when this page mounted
+      // (or the cached auto-backup) to avoid an IndexedDB await before
+      // navigator.share(), which iOS Safari would reject with NotAllowedError.
+      const cached = precomputedExportRef.current ?? getAutoBackup();
       let data: BackupData | null = null;
       let json: string;
       if (cached) {
