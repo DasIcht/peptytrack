@@ -39,3 +39,6 @@ otherApps/
 /playwright-report/
 /test-results/
 
+# Private planning/superpowers directory
+.superpowers/
+
