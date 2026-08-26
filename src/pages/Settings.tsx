@@ -7,6 +7,12 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useSymptomLogStore } from '../stores/symptomLogStore';
 import { useProtocolStore } from '../stores/protocolStore';
 import { exportData, downloadBackupJSON, importData } from '../lib/cloudSync';
+import {
+  isGoogleDriveBackupConfigured,
+  authenticateGoogleDrive,
+  backupToGoogleDrive,
+  restoreFromGoogleDrive,
+} from '../lib/googleDriveBackup';
 import { generatePDF, downloadPDF } from '../lib/pdfExport';
 import { requestNotificationPermission } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -18,7 +24,7 @@ import {
   RotateCw, MapPin, Wand2,
   Scale, Pill, ToggleRight, ToggleLeft,
   Shield, ChevronRight, Trash2, AlertTriangle, MessageSquare,
-  User, Ruler
+  User, Ruler, Cloud, CloudUpload, CloudDownload
 } from 'lucide-react';
 
 export function Settings() {
@@ -31,6 +37,9 @@ export function Settings() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [driveBusy, setDriveBusy] = useState(false);
+
+  const driveConfigured = isGoogleDriveBackupConfigured();
 
   useEffect(() => {
     if (settings.notificationsEnabled) {
@@ -119,6 +128,87 @@ export function Settings() {
               }}
             />
           );
+        }}
+      />
+    );
+  };
+
+  const reloadAllStores = async () => {
+    await useMedicationStore.getState().loadData();
+    await useWeightStore.getState().loadData();
+    await useVialStore.getState().loadData();
+    await useSettingsStore.getState().loadSettings();
+    await useSymptomLogStore.getState().loadData();
+    await useProtocolStore.getState().loadData();
+  };
+
+  const handleToggleGoogleDriveBackup = async () => {
+    const newValue = !settings.googleDriveBackupEnabled;
+    await updateSetting('googleDriveBackupEnabled', newValue);
+    addToast(
+      newValue ? 'Google Drive backup enabled' : 'Google Drive backup disabled',
+      newValue ? 'success' : 'info'
+    );
+  };
+
+  const handleBackupNow = async () => {
+    setDriveBusy(true);
+    try {
+      const token = await authenticateGoogleDrive();
+      if (!token) {
+        addToast('Google Drive authentication failed', 'error');
+        return;
+      }
+      const result = await backupToGoogleDrive(token);
+      if (!result.success) {
+        addToast(`Google Drive backup failed: ${result.error || 'unknown error'}`, 'error');
+        return;
+      }
+      if (result.fileId) {
+        await updateSetting('googleDriveBackupFileId', result.fileId);
+      }
+      addToast('Backed up to Google Drive', 'success');
+    } catch (err) {
+      addToast(
+        `Google Drive backup failed: ${err instanceof Error ? err.message : 'unknown error'}`,
+        'error'
+      );
+    } finally {
+      setDriveBusy(false);
+    }
+  };
+
+  const handleRestoreFromGoogleDrive = () => {
+    openModal(
+      <ConfirmDialog
+        title="Restore from Google Drive?"
+        message="This will replace ALL data currently on this device with the most recent Google Drive backup. This cannot be undone."
+        confirmLabel="Overwrite Local Data"
+        cancelLabel="Cancel"
+        danger
+        onConfirm={async () => {
+          setDriveBusy(true);
+          try {
+            const token = await authenticateGoogleDrive();
+            if (!token) {
+              addToast('Google Drive authentication failed', 'error');
+              return;
+            }
+            const result = await restoreFromGoogleDrive(token);
+            if (!result.success) {
+              addToast(`Restore failed: ${result.error || 'unknown error'}`, 'error');
+              return;
+            }
+            await reloadAllStores();
+            addToast('Data restored from Google Drive', 'success');
+          } catch (err) {
+            addToast(
+              `Restore failed: ${err instanceof Error ? err.message : 'unknown error'}`,
+              'error'
+            );
+          } finally {
+            setDriveBusy(false);
+          }
         }}
       />
     );
@@ -544,6 +634,94 @@ export function Settings() {
           </button>
         </div>
       </div>
+
+      {/* Cloud Backup — Google Drive */}
+      {driveConfigured && (
+        <div className="mb-6">
+          <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3 flex items-center gap-2">
+            Cloud Backup
+            <HelpBox position="center">
+              Google Drive backup is optional and off by default. When enabled, an encrypted-at-rest
+              copy of your data is uploaded to your own Google Drive so you can recover it on a new
+              device. Nothing is uploaded unless you turn this on.
+            </HelpBox>
+          </h2>
+          <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
+            {/* Toggle */}
+            <button
+              type="button"
+              aria-pressed={settings.googleDriveBackupEnabled ? 'true' : 'false'}
+              onClick={handleToggleGoogleDriveBackup}
+              className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors border-b border-white/5 text-left"
+            >
+              <div className="flex items-center gap-3">
+                <Cloud size={18} className="text-primary-400" />
+                <div className="text-left">
+                  <p className="text-sm font-medium text-content-primary">Google Drive Backup</p>
+                  <p className="text-xs text-content-secondary">
+                    {settings.googleDriveBackupEnabled
+                      ? 'Automatic backup after every change'
+                      : 'Disabled — your data stays on this device'}
+                  </p>
+                </div>
+              </div>
+              {settings.googleDriveBackupEnabled ? (
+                <ToggleRight size={22} className="text-primary-400" />
+              ) : (
+                <ToggleLeft size={22} className="text-content-muted" />
+              )}
+            </button>
+
+            {settings.googleDriveBackupEnabled && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleBackupNow}
+                  disabled={driveBusy}
+                  className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors border-b border-white/5 disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <CloudUpload size={18} className="text-emerald-400" />
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-content-primary">Backup Now</p>
+                      <p className="text-xs text-content-secondary">
+                        {settings.googleDriveBackupFileId
+                          ? 'Update the existing Drive backup'
+                          : 'Create the first Drive backup'}
+                      </p>
+                    </div>
+                  </div>
+                  {driveBusy ? (
+                    <span className="text-xs text-primary-400">Working...</span>
+                  ) : (
+                    <ChevronRight size={16} className="text-content-muted" />
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleRestoreFromGoogleDrive}
+                  disabled={driveBusy}
+                  className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <CloudDownload size={18} className="text-primary-400" />
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-content-primary">
+                        Restore from Google Drive
+                      </p>
+                      <p className="text-xs text-content-secondary">
+                        Replace local data with the latest Drive backup
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight size={16} className="text-content-muted" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="mb-6">
