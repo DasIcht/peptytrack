@@ -25,6 +25,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   heightUnit: 'cm',
   gender: null,
   isDemoMode: false,
+  googleDriveBackupEnabled: false,
+  googleDriveBackupFileId: null,
 };
 
 interface SettingsState {

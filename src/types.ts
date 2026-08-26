@@ -134,6 +134,8 @@ export interface AppSettings {
   heightUnit: 'cm' | 'in';
   gender: 'male' | 'female' | 'other' | null;
   isDemoMode?: boolean;
+  googleDriveBackupEnabled: boolean;
+  googleDriveBackupFileId?: string | null;
 }
 
 export interface MedLevelPoint {
