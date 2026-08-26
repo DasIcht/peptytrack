@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { db } from '../db/database';
-import { exportData, importData } from './cloudSync';
+import { exportData, importData, authenticateGoogleDrive } from './cloudSync';
 
 describe('cloudSync', () => {
   beforeEach(async () => {
@@ -166,5 +166,79 @@ describe('cloudSync', () => {
   it('rejects future versions', async () => {
     const futureData = { version: 99 };
     await expect(importData(futureData)).rejects.toThrow('Unsupported backup version');
+  });
+});
+
+describe('cloudSync — authenticateGoogleDrive', () => {
+  const originalGoogle = (window as any).google;
+  const originalHeadAppend = document.head.appendChild;
+
+  afterEach(() => {
+    (window as any).google = originalGoogle;
+    document.head.appendChild = originalHeadAppend;
+    vi.restoreAllMocks();
+  });
+
+  it('loads the Google Identity script when window.google is missing, then authenticates', async () => {
+    (window as any).google = undefined;
+
+    // Fake script element that triggers onload synchronously
+    let appendedScript: HTMLScriptElement | null = null;
+    document.head.appendChild = vi.fn((el: Node) => {
+      appendedScript = el as HTMLScriptElement;
+      // Simulate successful script load
+      setTimeout(() => {
+        (window as any).google = {
+          accounts: {
+            oauth2: {
+              initTokenClient: (config: any) => ({
+                requestAccessToken: () => {
+                  config.callback({ access_token: 'tok-from-gsi' });
+                },
+              }),
+            },
+          },
+        };
+        if (appendedScript?.onload) appendedScript.onload(new Event('load'));
+      }, 0);
+      return el;
+    }) as any;
+
+    const token = await authenticateGoogleDrive('client-123');
+
+    expect(appendedScript).not.toBeNull();
+    expect((appendedScript as HTMLScriptElement | null)?.src).toContain('accounts.google.com/gsi/client');
+    expect(token).toBe('tok-from-gsi');
+  });
+
+  it('does not append the script when window.google already exists', async () => {
+    const initTokenClient = vi.fn((config: any) => ({
+      requestAccessToken: () => config.callback({ access_token: 'tok-existing' }),
+    }));
+    (window as any).google = { accounts: { oauth2: { initTokenClient } } };
+    const appendSpy = vi.fn();
+    document.head.appendChild = appendSpy as any;
+
+    const token = await authenticateGoogleDrive('client-123');
+
+    expect(appendSpy).not.toHaveBeenCalled();
+    expect(initTokenClient).toHaveBeenCalledWith(
+      expect.objectContaining({ client_id: 'client-123' })
+    );
+    expect(token).toBe('tok-existing');
+  });
+
+  it('rejects when the script fails to load', async () => {
+    (window as any).google = undefined;
+    document.head.appendChild = vi.fn((el: any) => {
+      setTimeout(() => {
+        if (el.onerror) el.onerror(new Event('error'));
+      }, 0);
+      return el;
+    }) as any;
+
+    await expect(authenticateGoogleDrive('client-123')).rejects.toThrow(
+      /Failed to load Google Identity script/
+    );
   });
 });

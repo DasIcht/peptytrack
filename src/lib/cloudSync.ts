@@ -210,22 +210,59 @@ declare global {
   }
 }
 
-export function authenticateGoogleDrive(clientId: string): Promise<string> {
+const GOOGLE_GSI_SRC = 'https://accounts.google.com/gsi/client';
+const GSI_SCRIPT_ID = 'peptytrack-gsi';
+
+/**
+ * Load the Google Identity Services (GSI) script dynamically if it is not
+ * already present on the page. Resolves when `window.google` is available.
+ */
+export function loadGoogleIdentityScript(): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (!window.google) {
-      reject(new Error('Google Identity script not loaded'));
+    if (window.google?.accounts?.oauth2) {
+      resolve();
       return;
     }
-    const client = window.google.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: GOOGLE_SCOPES,
-      callback: (resp) => {
-        if (resp.error) reject(new Error(resp.error));
-        else if (resp.access_token) resolve(resp.access_token);
-        else reject(new Error('No access token received'));
-      },
-    });
-    client.requestAccessToken();
+
+    const existing = document.getElementById(GSI_SCRIPT_ID) as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener('load', () => resolve());
+      existing.addEventListener('error', () =>
+        reject(new Error('Failed to load Google Identity script'))
+      );
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.id = GSI_SCRIPT_ID;
+    script.src = GOOGLE_GSI_SRC;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load Google Identity script'));
+    document.head.appendChild(script);
+  });
+}
+
+export function authenticateGoogleDrive(clientId: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    loadGoogleIdentityScript()
+      .then(() => {
+        if (!window.google) {
+          reject(new Error('Google Identity script not loaded'));
+          return;
+        }
+        const client = window.google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: GOOGLE_SCOPES,
+          callback: (resp) => {
+            if (resp.error) reject(new Error(resp.error));
+            else if (resp.access_token) resolve(resp.access_token);
+            else reject(new Error('No access token received'));
+          },
+        });
+        client.requestAccessToken();
+      })
+      .catch(reject);
   });
 }
 
