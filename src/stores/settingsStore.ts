@@ -25,6 +25,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   heightUnit: 'cm',
   gender: null,
   isDemoMode: false,
+  scheduledBackupsEnabled: false,
+  scheduledBackupsIntervalDays: 7,
 };
 
 interface SettingsState {

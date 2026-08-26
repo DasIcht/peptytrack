@@ -134,6 +134,8 @@ export interface AppSettings {
   heightUnit: 'cm' | 'in';
   gender: 'male' | 'female' | 'other' | null;
   isDemoMode?: boolean;
+  scheduledBackupsEnabled: boolean;
+  scheduledBackupsIntervalDays: number;
 }
 
 export interface MedLevelPoint {

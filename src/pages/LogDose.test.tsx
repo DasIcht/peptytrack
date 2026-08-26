@@ -59,6 +59,8 @@ const defaultSettings = {
     height: null,
     heightUnit: 'cm' as 'cm',
     gender: null,
+    scheduledBackupsEnabled: false,
+    scheduledBackupsIntervalDays: 7,
 };
 
 describe('LogDose', () => {

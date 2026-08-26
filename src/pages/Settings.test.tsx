@@ -1,3 +1,4 @@
+import 'fake-indexeddb/auto';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Settings } from './Settings';
@@ -146,11 +147,95 @@ describe('Settings — share backup to Google Drive', () => {
     });
     (navigator as any).share = shareMock;
     (navigator as any).canShare = vi.fn(() => true);
+    const downloadSpy = vi.spyOn(cloudSync, 'downloadBackupJSON').mockImplementation(() => {});
 
     render(<Settings />);
     fireEvent.click(screen.getByRole('button', { name: /share to google drive/i }));
 
-    await waitFor(() => expect(useUIStore.getState().toasts.length).toBeGreaterThan(0));
-    expect(useUIStore.getState().toasts.some((t) => t.message === 'Share failed')).toBe(true);
+    await waitFor(() => expect(shareMock).toHaveBeenCalledTimes(1));
+    // The backup must never be lost: fall back to a download
+    expect(downloadSpy).toHaveBeenCalledTimes(1);
+    expect(useUIStore.getState().toasts.some((t) => t.message.includes('Share failed'))).toBe(true);
+  });
+});
+
+describe('Settings — scheduled local backup', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+
+    useMedicationStore.setState({ medications: [], doses: [], loading: false, initialized: true });
+    useWeightStore.setState({ entries: [], loading: false });
+    useVialStore.setState({ vials: [], loading: false });
+    useSymptomLogStore.setState({ logs: [], loading: false, initialized: true });
+    useProtocolStore.setState({ protocols: [], loading: false, initialized: true });
+    useUIStore.setState({ isModalOpen: false, modalContent: null, toasts: [] });
+    useSettingsStore.setState({
+      settings: baseSettings({
+        notificationsEnabled: false,
+        scheduledBackupsEnabled: false,
+        scheduledBackupsIntervalDays: 1,
+      }),
+      initialized: true,
+    });
+  });
+
+  it('renders a Scheduled Local Backup toggle', () => {
+    render(<Settings />);
+    expect(
+      screen.getByRole('button', { name: /scheduled local backup/i })
+    ).toBeInTheDocument();
+  });
+
+  it('enables scheduled backups when toggled on', async () => {
+    render(<Settings />);
+    fireEvent.click(screen.getByRole('button', { name: /scheduled local backup/i }));
+    await waitFor(() =>
+      expect(useSettingsStore.getState().settings.scheduledBackupsEnabled).toBe(true)
+    );
+  });
+
+  it('offers Daily and Weekly interval choices and defaults to the stored value', () => {
+    useSettingsStore.setState({
+      settings: baseSettings({ scheduledBackupsEnabled: true, scheduledBackupsIntervalDays: 1 }),
+    });
+    render(<Settings />);
+    expect(screen.getByRole('button', { name: /daily/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /weekly/i })).toBeInTheDocument();
+  });
+
+  it('switching to Weekly stores interval 7 days', async () => {
+    useSettingsStore.setState({
+      settings: baseSettings({ scheduledBackupsEnabled: true, scheduledBackupsIntervalDays: 1 }),
+    });
+    render(<Settings />);
+    fireEvent.click(screen.getByRole('button', { name: /weekly/i }));
+    await waitFor(() =>
+      expect(useSettingsStore.getState().settings.scheduledBackupsIntervalDays).toBe(7)
+    );
+  });
+
+  it('lists existing scheduled snapshots with their dates', () => {
+    localStorage.setItem(
+      'peptytrack-scheduled-backups',
+      JSON.stringify([
+        { timestamp: Date.UTC(2026, 7, 26), json: '{"v":1}' },
+        { timestamp: Date.UTC(2026, 7, 19), json: '{"v":2}' },
+      ])
+    );
+    render(<Settings />);
+    expect(screen.getByText(/aug 26, 2026/i)).toBeInTheDocument();
+    expect(screen.getByText(/aug 19, 2026/i)).toBeInTheDocument();
+  });
+
+  it('opens a restore confirmation when a snapshot is tapped', () => {
+    localStorage.setItem(
+      'peptytrack-scheduled-backups',
+      JSON.stringify([{ timestamp: Date.UTC(2026, 7, 26), json: '{"v":1}' }])
+    );
+    const openModalSpy = vi.spyOn(useUIStore.getState(), 'openModal').mockImplementation(() => {});
+    render(<Settings />);
+    fireEvent.click(screen.getByRole('button', { name: /restore/i }));
+    expect(openModalSpy).toHaveBeenCalledTimes(1);
   });
 });

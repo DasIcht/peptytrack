@@ -44,6 +44,8 @@ describe('notifications library', () => {
     height: null,
     heightUnit: 'cm' as 'cm',
     gender: null,
+    scheduledBackupsEnabled: false,
+    scheduledBackupsIntervalDays: 7,
       },
       loading: false,
       initialized: true,
@@ -186,6 +188,8 @@ describe('notifications library', () => {
     height: null,
     heightUnit: 'cm' as 'cm',
     gender: null,
+    scheduledBackupsEnabled: false,
+    scheduledBackupsIntervalDays: 7,
         }
       });
       useProtocolStore.setState({

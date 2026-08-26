@@ -9,7 +9,7 @@ import { useProtocolStore } from './stores/protocolStore';
 import { useSymptomLogStore } from './stores/symptomLogStore';
 import { useThemeStore } from './stores/themeStore';
 import { checkAndFireReminders, rescheduleAllReminders } from './lib/notifications';
-import { getAutoBackup, clearAutoBackup, saveAutoBackup } from './lib/autoBackup';
+import { getAutoBackup, clearAutoBackup, saveAutoBackup, saveScheduledSnapshot, isScheduledBackupDue } from './lib/autoBackup';
 import { importData, exportData, clearAllData } from './lib/cloudSync';
 import { BottomNav } from './components/BottomNav';
 import { ToastContainer } from './components/Toast';
@@ -92,9 +92,19 @@ function App() {
     const totalItems = medications.length + doses.length + weightEntries.length + vials.length + protocols.length + symptomLogs.length;
     if (totalItems === 0) return;
     exportData().then((data) => {
-      saveAutoBackup(JSON.stringify(data));
+      const json = JSON.stringify(data);
+      saveAutoBackup(json);
+      // Scheduled local snapshot (daily/weekly) — localStorage needs no user gesture
+      if (
+        settings.scheduledBackupsEnabled &&
+        isScheduledBackupDue(settings.scheduledBackupsIntervalDays)
+      ) {
+        if (saveScheduledSnapshot(json)) {
+          addToast('Scheduled backup saved', 'info');
+        }
+      }
     });
-  }, [initialized, medications.length, doses.length, weightEntries.length, vials.length, protocols.length, symptomLogs.length]);
+  }, [initialized, medications.length, doses.length, weightEntries.length, vials.length, protocols.length, symptomLogs.length, settings.scheduledBackupsEnabled, settings.scheduledBackupsIntervalDays, addToast]);
 
   // Prompt to restore if DB is empty but localStorage backup exists
   useEffect(() => {

@@ -29,6 +29,8 @@ describe('SettingsStore', () => {
     height: null,
     heightUnit: 'cm' as 'cm',
     gender: null,
+    scheduledBackupsEnabled: false,
+    scheduledBackupsIntervalDays: 7,
       },
       loading: false,
       initialized: false,
@@ -80,6 +82,8 @@ describe('SettingsStore', () => {
     height: null,
     heightUnit: 'cm' as 'cm',
     gender: null,
+    scheduledBackupsEnabled: false,
+    scheduledBackupsIntervalDays: 7,
       },
       initialized: false,
     });

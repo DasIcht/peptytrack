@@ -7,6 +7,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useSymptomLogStore } from '../stores/symptomLogStore';
 import { useProtocolStore } from '../stores/protocolStore';
 import { exportData, downloadBackupJSON, importData } from '../lib/cloudSync';
+import { listScheduledSnapshots, type ScheduledBackupSnapshot } from '../lib/autoBackup';
 import { generatePDF, downloadPDF } from '../lib/pdfExport';
 import { requestNotificationPermission } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -14,7 +15,7 @@ import { HelpBox } from '../components/HelpBox';
 import { ThemeSection } from '../components/ThemeSection';
 import { FeedbackModal } from '../components/FeedbackModal';
 import {
-  Bell, FileText, Download, Upload, Share2,
+  Bell, FileText, Download, Upload, Share2, Clock,
   RotateCw, MapPin, Wand2,
   Scale, Pill, ToggleRight, ToggleLeft,
   Shield, ChevronRight, Trash2, AlertTriangle, MessageSquare,
@@ -31,6 +32,12 @@ export function Settings() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [scheduledSnapshots, setScheduledSnapshots] = useState<ScheduledBackupSnapshot[]>([]);
+  const [restoringSnapshot, setRestoringSnapshot] = useState(false);
+
+  useEffect(() => {
+    setScheduledSnapshots(listScheduledSnapshots());
+  }, []);
 
   useEffect(() => {
     if (settings.notificationsEnabled) {
@@ -87,7 +94,17 @@ export function Settings() {
         // User dismissed the share sheet — not an error.
         return;
       }
-      addToast('Share failed', 'error');
+      // Never lose the backup: fall back to a download and surface the reason.
+      try {
+        const data = await exportData();
+        downloadBackupJSON(data);
+        addToast(
+          `Share failed (${err instanceof Error ? err.message : 'unknown error'}) — backup downloaded instead`,
+          'error'
+        );
+      } catch {
+        addToast('Share failed', 'error');
+      }
     } finally {
       setExporting(false);
     }
@@ -153,6 +170,52 @@ export function Settings() {
               }}
             />
           );
+        }}
+      />
+    );
+  };
+
+  const handleToggleScheduledBackups = async () => {
+    const newValue = !settings.scheduledBackupsEnabled;
+    await updateSetting('scheduledBackupsEnabled', newValue);
+    addToast(
+      newValue ? 'Scheduled local backup enabled' : 'Scheduled local backup disabled',
+      newValue ? 'success' : 'info'
+    );
+  };
+
+  const handleSetBackupInterval = async (days: number) => {
+    await updateSetting('scheduledBackupsIntervalDays', days);
+    addToast(days === 7 ? 'Backups every week' : 'Backups every day', 'success');
+  };
+
+  const handleRestoreSnapshot = (snapshot: ScheduledBackupSnapshot) => {
+    openModal(
+      <ConfirmDialog
+        title="Restore this backup?"
+        message={`This will replace ALL data currently on this device with the backup from ${new Date(snapshot.timestamp).toLocaleString()}. This cannot be undone.`}
+        confirmLabel="Overwrite Local Data"
+        cancelLabel="Cancel"
+        danger
+        onConfirm={async () => {
+          setRestoringSnapshot(true);
+          try {
+            await importData(JSON.parse(snapshot.json));
+            await useMedicationStore.getState().loadData();
+            await useWeightStore.getState().loadData();
+            await useVialStore.getState().loadData();
+            await useSettingsStore.getState().loadSettings();
+            await useSymptomLogStore.getState().loadData();
+            await useProtocolStore.getState().loadData();
+            addToast('Data restored from scheduled backup', 'success');
+          } catch (err) {
+            addToast(
+              `Restore failed: ${err instanceof Error ? err.message : 'Invalid backup'}`,
+              'error'
+            );
+          } finally {
+            setRestoringSnapshot(false);
+          }
         }}
       />
     );
@@ -558,6 +621,86 @@ export function Settings() {
             </div>
             <ChevronRight size={16} className="text-content-muted" />
           </button>
+
+          <button
+            type="button"
+            aria-pressed={settings.scheduledBackupsEnabled ? 'true' : 'false'}
+            onClick={handleToggleScheduledBackups}
+            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors border-b border-white/5 text-left"
+          >
+            <div className="flex items-center gap-3">
+              <Clock size={18} className="text-primary-400" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-content-primary">Scheduled Local Backup</p>
+                <p className="text-xs text-content-secondary">
+                  {settings.scheduledBackupsEnabled
+                    ? `Snapshot saved every ${settings.scheduledBackupsIntervalDays === 7 ? 'week' : 'day'}`
+                    : 'Automatically keep local snapshots'}
+                </p>
+              </div>
+            </div>
+            {settings.scheduledBackupsEnabled ? (
+              <ToggleRight size={22} className="text-primary-400" />
+            ) : (
+              <ToggleLeft size={22} className="text-content-muted" />
+            )}
+          </button>
+
+          {settings.scheduledBackupsEnabled && (
+            <div className="flex border-b border-white/5">
+              <button
+                type="button"
+                onClick={() => handleSetBackupInterval(1)}
+                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+                  settings.scheduledBackupsIntervalDays === 1
+                    ? 'text-primary-400 bg-white/5'
+                    : 'text-content-secondary'
+                }`}
+              >
+                Daily
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSetBackupInterval(7)}
+                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+                  settings.scheduledBackupsIntervalDays === 7
+                    ? 'text-primary-400 bg-white/5'
+                    : 'text-content-secondary'
+                }`}
+              >
+                Weekly
+              </button>
+            </div>
+          )}
+
+          {scheduledSnapshots.length > 0 && (
+            <div className="border-b border-white/5">
+              <p className="px-4 pt-3 pb-1 text-xs text-content-secondary">
+                Scheduled snapshots ({scheduledSnapshots.length})
+              </p>
+              {[...scheduledSnapshots].reverse().map((snapshot) => (
+                <button
+                  key={snapshot.timestamp}
+                  type="button"
+                  onClick={() => handleRestoreSnapshot(snapshot)}
+                  disabled={restoringSnapshot}
+                  className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <Clock size={16} className="text-content-muted" />
+                    <span className="text-sm text-content-primary">
+                      {new Date(snapshot.timestamp).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                  <span className="text-xs text-primary-400">Restore</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           <label className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors cursor-pointer border-b border-white/5">
             <div className="flex items-center gap-3">
