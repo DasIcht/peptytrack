@@ -7,7 +7,8 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useSymptomLogStore } from '../stores/symptomLogStore';
 import { useProtocolStore } from '../stores/protocolStore';
 import { exportData, downloadBackupJSON, importData } from '../lib/cloudSync';
-import { listScheduledSnapshots, type ScheduledBackupSnapshot } from '../lib/autoBackup';
+import type { BackupData } from '../types';
+import { listScheduledSnapshots, getAutoBackup, type ScheduledBackupSnapshot } from '../lib/autoBackup';
 import { generatePDF, downloadPDF } from '../lib/pdfExport';
 import { requestNotificationPermission } from '../lib/notifications';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -54,30 +55,55 @@ export function Settings() {
   };
 
   /**
-   * Export the backup file: prefer the OS-native share sheet (e.g. "Save to
-   * Google Drive" on mobile), fall back to a plain download when sharing is
-   * unavailable or fails. No cloud credentials are involved.
+   * Export the backup file, in order of preference:
+   * 1. OS-native share sheet (e.g. "Save to Google Drive" on mobile) —
+   *    uses the cached auto-backup synchronously so the share call stays
+   *    inside the user gesture (required by iOS Safari).
+   * 2. Native "Save As" dialog (showSaveFilePicker, desktop Chrome/Edge) —
+   *    lets the user pick any folder, including a Drive-synced one.
+   * 3. Plain download.
+   * No cloud credentials are involved.
    */
   const handleExportBackup = async () => {
     setExporting(true);
     try {
-      const data = await exportData();
+      // Synchronous path: the cached auto-backup avoids an IndexedDB await
+      // before navigator.share(), which iOS Safari would reject.
+      const cached = getAutoBackup();
+      let data: BackupData | null = null;
+      let json: string;
+      if (cached) {
+        json = cached;
+      } else {
+        data = await exportData();
+        json = JSON.stringify(data, null, 2);
+      }
+
       const fileName = `peptytrack-backup-${new Date().toISOString().split('T')[0]}.json`;
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
-        type: 'application/json',
-      });
+      const blob = new Blob([json], { type: 'application/json' });
       const file = new File([blob], fileName, { type: 'application/json' });
 
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: 'PeptyTrack Backup' });
         addToast('Backup shared', 'success');
+      } else if (typeof (window as any).showSaveFilePicker === 'function') {
+        // Desktop: native Save As dialog → user picks the target folder.
+        const handle = await (window as any).showSaveFilePicker({
+          suggestedName: fileName,
+          types: [{ description: 'PeptyTrack Backup', accept: { 'application/json': ['.json'] } }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(json);
+        await writable.close();
+        addToast('Backup saved', 'success');
       } else {
+        if (!data) data = JSON.parse(json) as BackupData;
         downloadBackupJSON(data);
         addToast('Backup downloaded', 'success');
       }
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
-        // User dismissed the share sheet — not an error.
+        // User dismissed the share sheet or Save As dialog — not an error.
         return;
       }
       // Never lose the backup: fall back to a download and surface the reason.
@@ -85,7 +111,7 @@ export function Settings() {
         const data = await exportData();
         downloadBackupJSON(data);
         addToast(
-          `Share failed (${err instanceof Error ? err.message : 'unknown error'}) — backup downloaded instead`,
+          `Export failed (${err instanceof Error ? err.message : 'unknown error'}) — backup downloaded instead`,
           'error'
         );
       } catch {

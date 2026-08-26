@@ -53,6 +53,8 @@ describe('Settings — share backup to Google Drive', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
+    delete (window as any).showSaveFilePicker;
     vi.mocked(cloudSync.exportData).mockResolvedValue({
       version: 8,
       appVersion: 'test',
@@ -91,6 +93,47 @@ describe('Settings — share backup to Google Drive', () => {
     expect(
       screen.getByRole('button', { name: /export backup/i })
     ).toBeInTheDocument();
+  });
+
+  it('shares the cached auto-backup synchronously when available (no IndexedDB await before share)', async () => {
+    localStorage.setItem('peptytrack-autobackup', '{"cached":true}');
+    const shareMock = vi.fn(async (_payload: ShareData) => undefined);
+    (navigator as any).share = shareMock;
+    (navigator as any).canShare = vi.fn(() => true);
+
+    render(<Settings />);
+    fireEvent.click(screen.getByRole('button', { name: /export backup/i }));
+
+    await waitFor(() => expect(shareMock).toHaveBeenCalledTimes(1));
+    // The share payload must come from the cached backup, NOT from exportData()
+    const sharePayload = shareMock.mock.calls[0][0];
+    expect(sharePayload.files![0].name).toMatch(/^peptytrack-backup-\d{4}-\d{2}-\d{2}\.json$/);
+    await sharePayload.files![0].text().then((text: string) => {
+      expect(text).toBe('{"cached":true}');
+    });
+    expect(cloudSync.exportData).not.toHaveBeenCalled();
+  });
+
+  it('opens a native Save As dialog (showSaveFilePicker) when share is unavailable', async () => {
+    (navigator as any).share = undefined;
+    (navigator as any).canShare = undefined;
+    const writeMock = vi.fn(async () => undefined);
+    const closeMock = vi.fn(async () => undefined);
+    const savePickerMock = vi.fn(async (_opts: any) => ({
+      createWritable: vi.fn(async () => ({ write: writeMock, close: closeMock })),
+    }));
+    (window as any).showSaveFilePicker = savePickerMock;
+
+    render(<Settings />);
+    fireEvent.click(screen.getByRole('button', { name: /export backup/i }));
+
+    await waitFor(() => expect(savePickerMock).toHaveBeenCalledTimes(1));
+    expect(savePickerMock.mock.calls[0][0].suggestedName).toMatch(
+      /^peptytrack-backup-\d{4}-\d{2}-\d{2}\.json$/
+    );
+    expect(writeMock).toHaveBeenCalledTimes(1);
+    expect(closeMock).toHaveBeenCalledTimes(1);
+    expect(cloudSync.downloadBackupJSON).not.toHaveBeenCalled();
   });
 
   it('uses the native share sheet with a backup JSON file when navigator.share is available', async () => {
@@ -155,7 +198,7 @@ describe('Settings — share backup to Google Drive', () => {
     await waitFor(() => expect(shareMock).toHaveBeenCalledTimes(1));
     // The backup must never be lost: fall back to a download
     expect(downloadSpy).toHaveBeenCalledTimes(1);
-    expect(useUIStore.getState().toasts.some((t) => t.message.includes('Share failed'))).toBe(true);
+    expect(useUIStore.getState().toasts.some((t) => t.message.includes('Export failed'))).toBe(true);
   });
 });
 
