@@ -86,10 +86,10 @@ describe('Settings — share backup to Google Drive', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders a Share to Google Drive button in the Data section', () => {
+  it('renders an Export Backup button in the Data section', () => {
     render(<Settings />);
     expect(
-      screen.getByRole('button', { name: /share to google drive/i })
+      screen.getByRole('button', { name: /export backup/i })
     ).toBeInTheDocument();
   });
 
@@ -99,7 +99,7 @@ describe('Settings — share backup to Google Drive', () => {
     (navigator as any).canShare = vi.fn(() => true);
 
     render(<Settings />);
-    fireEvent.click(screen.getByRole('button', { name: /share to google drive/i }));
+    fireEvent.click(screen.getByRole('button', { name: /export backup/i }));
 
     await waitFor(() => expect(shareMock).toHaveBeenCalledTimes(1));
     const sharePayload = shareMock.mock.calls[0][0];
@@ -117,7 +117,7 @@ describe('Settings — share backup to Google Drive', () => {
     const downloadSpy = vi.spyOn(cloudSync, 'downloadBackupJSON').mockImplementation(() => {});
 
     render(<Settings />);
-    fireEvent.click(screen.getByRole('button', { name: /share to google drive/i }));
+    fireEvent.click(screen.getByRole('button', { name: /export backup/i }));
 
     await waitFor(() => expect(downloadSpy).toHaveBeenCalledTimes(1));
     const [data] = downloadSpy.mock.calls[0];
@@ -134,7 +134,7 @@ describe('Settings — share backup to Google Drive', () => {
     (navigator as any).canShare = vi.fn(() => true);
 
     render(<Settings />);
-    fireEvent.click(screen.getByRole('button', { name: /share to google drive/i }));
+    fireEvent.click(screen.getByRole('button', { name: /export backup/i }));
 
     await waitFor(() => expect(shareMock).toHaveBeenCalledTimes(1));
     expect(useUIStore.getState().toasts).toEqual([]);
@@ -150,7 +150,7 @@ describe('Settings — share backup to Google Drive', () => {
     const downloadSpy = vi.spyOn(cloudSync, 'downloadBackupJSON').mockImplementation(() => {});
 
     render(<Settings />);
-    fireEvent.click(screen.getByRole('button', { name: /share to google drive/i }));
+    fireEvent.click(screen.getByRole('button', { name: /export backup/i }));
 
     await waitFor(() => expect(shareMock).toHaveBeenCalledTimes(1));
     // The backup must never be lost: fall back to a download

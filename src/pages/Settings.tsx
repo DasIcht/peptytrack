@@ -15,7 +15,7 @@ import { HelpBox } from '../components/HelpBox';
 import { ThemeSection } from '../components/ThemeSection';
 import { FeedbackModal } from '../components/FeedbackModal';
 import {
-  Bell, FileText, Download, Upload, Share2, Clock,
+  Bell, FileText, Upload, Share2, Clock,
   RotateCw, MapPin, Wand2,
   Scale, Pill, ToggleRight, ToggleLeft,
   Shield, ChevronRight, Trash2, AlertTriangle, MessageSquare,
@@ -53,26 +53,12 @@ export function Settings() {
     addToast('PDF report downloaded', 'success');
   };
 
-  const handleExportJSON = async () => {
-    setExporting(true);
-    try {
-      const data = await exportData();
-      downloadBackupJSON(data);
-      addToast('Backup downloaded', 'success');
-    } catch {
-      addToast('Export failed', 'error');
-    } finally {
-      setExporting(false);
-    }
-  };
-
   /**
-   * Share the backup file via the OS-native share sheet (e.g. "Save to
-   * Google Drive" on mobile). No cloud credentials are involved — the
-   * device's share dialog does the work. Falls back to a plain download
-   * when the Web Share API is unavailable (e.g. desktop browsers).
+   * Export the backup file: prefer the OS-native share sheet (e.g. "Save to
+   * Google Drive" on mobile), fall back to a plain download when sharing is
+   * unavailable or fails. No cloud credentials are involved.
    */
-  const handleShareBackup = async () => {
+  const handleExportBackup = async () => {
     setExporting(true);
     try {
       const data = await exportData();
@@ -103,7 +89,7 @@ export function Settings() {
           'error'
         );
       } catch {
-        addToast('Share failed', 'error');
+        addToast('Export failed', 'error');
       }
     } finally {
       setExporting(false);
@@ -591,31 +577,16 @@ export function Settings() {
         <h2 className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3">Data</h2>
         <div className="rounded-2xl border border-white/5 bg-surface-800/50 overflow-hidden">
           <button
-            onClick={handleExportJSON}
-            disabled={exporting}
-            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors border-b border-white/5"
-          >
-            <div className="flex items-center gap-3">
-              <Download size={18} className="text-emerald-400" />
-              <div className="text-left">
-                <p className="text-sm font-medium text-content-primary">Backup Data</p>
-                <p className="text-xs text-content-secondary">Download JSON backup file</p>
-              </div>
-            </div>
-            <ChevronRight size={16} className="text-content-muted" />
-          </button>
-
-          <button
-            onClick={handleShareBackup}
+            onClick={handleExportBackup}
             disabled={exporting}
             className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors border-b border-white/5"
           >
             <div className="flex items-center gap-3">
               <Share2 size={18} className="text-emerald-400" />
               <div className="text-left">
-                <p className="text-sm font-medium text-content-primary">Share to Google Drive</p>
+                <p className="text-sm font-medium text-content-primary">Export Backup</p>
                 <p className="text-xs text-content-secondary">
-                  Save backup to your Drive via the share sheet
+                  Share (e.g. save to Google Drive) or download the backup file
                 </p>
               </div>
             </div>
