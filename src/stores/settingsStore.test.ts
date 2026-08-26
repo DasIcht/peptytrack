@@ -29,6 +29,7 @@ describe('SettingsStore', () => {
     height: null,
     heightUnit: 'cm' as 'cm',
     gender: null,
+    googleDriveBackupEnabled: false,
       },
       loading: false,
       initialized: false,
@@ -80,6 +81,7 @@ describe('SettingsStore', () => {
     height: null,
     heightUnit: 'cm' as 'cm',
     gender: null,
+    googleDriveBackupEnabled: false,
       },
       initialized: false,
     });

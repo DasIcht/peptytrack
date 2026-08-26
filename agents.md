@@ -400,11 +400,10 @@ export interface TitrationMetrics {
 - Multi-page aware (adds new pages when content overflows).
 
 ### 7.4 Cloud Sync (`lib/cloudSync.ts`)
-**Status: Scaffolding only. Requires user OAuth credentials.**
+**Status: Google Drive auto-backup live (v2.2.0+). Requires a Google OAuth client ID (`VITE_GOOGLE_DRIVE_CLIENT_ID`). No API key needed.**
 
 | Function | Cloud |
 |----------|-------|
-| `initGoogleDrive(apiKey)` | Google Drive |
 | `authenticateGoogleDrive(clientId)` | Google Drive |
 | `uploadToGoogleDrive(token, filename, content)` | Google Drive |
 | `listBackupsOnGoogleDrive(token)` | Google Drive |

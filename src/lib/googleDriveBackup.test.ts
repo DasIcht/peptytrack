@@ -13,7 +13,6 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 // ---- Mock cloudSync low-level functions ----
-const mockInitGoogleDrive = vi.fn();
 const mockAuthenticateGoogleDrive = vi.fn();
 const mockUploadToGoogleDrive = vi.fn();
 const mockListBackupsOnGoogleDrive = vi.fn();
@@ -23,7 +22,6 @@ const mockImportData = vi.fn();
 const mockValidateBackup = vi.fn();
 
 vi.mock('./cloudSync', () => ({
-  initGoogleDrive: (...args: any[]) => mockInitGoogleDrive(...args),
   authenticateGoogleDrive: (...args: any[]) => mockAuthenticateGoogleDrive(...args),
   uploadToGoogleDrive: (...args: any[]) => mockUploadToGoogleDrive(...args),
   listBackupsOnGoogleDrive: (...args: any[]) => mockListBackupsOnGoogleDrive(...args),
@@ -37,7 +35,6 @@ vi.mock('./backupValidation', () => ({
 }));
 
 import {
-  getGoogleDriveApiKey,
   getGoogleDriveClientId,
   isGoogleDriveBackupConfigured,
   authenticateGoogleDrive,
@@ -71,20 +68,6 @@ describe('googleDriveBackup — env helpers', () => {
     vi.unstubAllEnvs();
   });
 
-  describe('getGoogleDriveApiKey', () => {
-    it('returns the value of VITE_GOOGLE_DRIVE_API_KEY when set', () => {
-      vi.stubEnv('VITE_GOOGLE_DRIVE_API_KEY', 'api-key-abc');
-      expect(getGoogleDriveApiKey()).toBe('api-key-abc');
-    });
-
-    it('returns undefined when VITE_GOOGLE_DRIVE_API_KEY is unset', () => {
-      vi.stubEnv('VITE_GOOGLE_DRIVE_API_KEY', '');
-      // import.meta.env values come back as undefined for empty stubbed values in Vitest
-      const value = getGoogleDriveApiKey();
-      expect(value === '' || value === undefined).toBe(true);
-    });
-  });
-
   describe('getGoogleDriveClientId', () => {
     it('returns the value of VITE_GOOGLE_DRIVE_CLIENT_ID when set', () => {
       vi.stubEnv('VITE_GOOGLE_DRIVE_CLIENT_ID', 'client-id-xyz');
@@ -99,26 +82,12 @@ describe('googleDriveBackup — env helpers', () => {
   });
 
   describe('isGoogleDriveBackupConfigured', () => {
-    it('returns true when both API key and Client ID are configured', () => {
-      vi.stubEnv('VITE_GOOGLE_DRIVE_API_KEY', 'k');
+    it('returns true when the Client ID is configured', () => {
       vi.stubEnv('VITE_GOOGLE_DRIVE_CLIENT_ID', 'c');
       expect(isGoogleDriveBackupConfigured()).toBe(true);
     });
 
-    it('returns false when the API key is missing', () => {
-      vi.stubEnv('VITE_GOOGLE_DRIVE_API_KEY', '');
-      vi.stubEnv('VITE_GOOGLE_DRIVE_CLIENT_ID', 'c');
-      expect(isGoogleDriveBackupConfigured()).toBe(false);
-    });
-
     it('returns false when the Client ID is missing', () => {
-      vi.stubEnv('VITE_GOOGLE_DRIVE_API_KEY', 'k');
-      vi.stubEnv('VITE_GOOGLE_DRIVE_CLIENT_ID', '');
-      expect(isGoogleDriveBackupConfigured()).toBe(false);
-    });
-
-    it('returns false when both are missing', () => {
-      vi.stubEnv('VITE_GOOGLE_DRIVE_API_KEY', '');
       vi.stubEnv('VITE_GOOGLE_DRIVE_CLIENT_ID', '');
       expect(isGoogleDriveBackupConfigured()).toBe(false);
     });
@@ -127,35 +96,25 @@ describe('googleDriveBackup — env helpers', () => {
 
 describe('googleDriveBackup — authenticateGoogleDrive', () => {
   beforeEach(() => {
-    mockInitGoogleDrive.mockReset();
     mockAuthenticateGoogleDrive.mockReset();
   });
 
-  it('returns null when not configured (no API key or Client ID)', async () => {
+  it('returns null when not configured (no Client ID)', async () => {
     const result = await authenticateGoogleDrive();
     expect(result).toBeNull();
-    expect(mockInitGoogleDrive).not.toHaveBeenCalled();
     expect(mockAuthenticateGoogleDrive).not.toHaveBeenCalled();
   });
 
-  it('initializes GAPI then authenticates and returns an access token', async () => {
-    mockInitGoogleDrive.mockResolvedValueOnce(undefined);
+  it('authenticates and returns an access token', async () => {
     mockAuthenticateGoogleDrive.mockResolvedValueOnce('tok-123');
-    const token = await authenticateGoogleDrive('key-abc', 'client-xyz');
+    const token = await authenticateGoogleDrive('client-xyz');
     expect(token).toBe('tok-123');
-    expect(mockInitGoogleDrive).toHaveBeenCalledWith('key-abc');
     expect(mockAuthenticateGoogleDrive).toHaveBeenCalledWith('client-xyz');
   });
 
-  it('propagates an error from initGoogleDrive', async () => {
-    mockInitGoogleDrive.mockRejectedValueOnce(new Error('script missing'));
-    await expect(authenticateGoogleDrive('k', 'c')).rejects.toThrow('script missing');
-  });
-
   it('propagates an error from authenticateGoogleDrive', async () => {
-    mockInitGoogleDrive.mockResolvedValueOnce(undefined);
     mockAuthenticateGoogleDrive.mockRejectedValueOnce(new Error('user denied'));
-    await expect(authenticateGoogleDrive('k', 'c')).rejects.toThrow('user denied');
+    await expect(authenticateGoogleDrive('client-xyz')).rejects.toThrow('user denied');
   });
 });
 

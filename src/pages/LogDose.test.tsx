@@ -59,6 +59,7 @@ const defaultSettings = {
     height: null,
     heightUnit: 'cm' as 'cm',
     gender: null,
+    googleDriveBackupEnabled: false,
 };
 
 describe('LogDose', () => {

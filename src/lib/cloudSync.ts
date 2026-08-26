@@ -192,7 +192,6 @@ export async function clearAllData(): Promise<void> {
 
 // --- Google Drive OAuth ---
 
-const GOOGLE_DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 declare global {
@@ -208,40 +207,7 @@ declare global {
         };
       };
     };
-    gapi?: {
-      load: (api: string, callback: () => void) => void;
-      client: {
-        init: (config: { apiKey: string; discoveryDocs: string[] }) => Promise<void>;
-        drive: {
-          files: {
-            create: (params: unknown) => Promise<{ result: { id: string } }>;
-            list: (params: unknown) => Promise<{ result: { files: { id: string; name: string }[] } }>;
-            get: (params: unknown) => Promise<{ body: string }>;
-          };
-        };
-      };
-    };
   }
-}
-
-export async function initGoogleDrive(apiKey: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (!window.gapi) {
-      reject(new Error('Google API script not loaded'));
-      return;
-    }
-    window.gapi.load('client', async () => {
-      try {
-        await window.gapi!.client.init({
-          apiKey,
-          discoveryDocs: [GOOGLE_DISCOVERY_DOC],
-        });
-        resolve();
-      } catch (e) {
-        reject(e);
-      }
-    });
-  });
 }
 
 export function authenticateGoogleDrive(clientId: string): Promise<string> {

@@ -1,7 +1,6 @@
 import {
   exportData,
   importData,
-  initGoogleDrive,
   authenticateGoogleDrive as lowLevelAuthenticateGoogleDrive,
   uploadToGoogleDrive,
   listBackupsOnGoogleDrive,
@@ -20,15 +19,6 @@ export interface GoogleDriveBackupResult {
 }
 
 /**
- * Return the Google Drive API key configured at build time.
- * Returns undefined if the env var is missing or empty.
- */
-export function getGoogleDriveApiKey(): string | undefined {
-  const key = import.meta.env.VITE_GOOGLE_DRIVE_API_KEY;
-  return key ? key : undefined;
-}
-
-/**
  * Return the Google Drive OAuth client ID configured at build time.
  * Returns undefined if the env var is missing or empty.
  */
@@ -39,31 +29,28 @@ export function getGoogleDriveClientId(): string | undefined {
 
 /**
  * Whether Google Drive backup is configured in the build.
- * Requires both an API key and a client ID at build time.
+ * Requires a client ID at build time.
  */
 export function isGoogleDriveBackupConfigured(): boolean {
-  return Boolean(getGoogleDriveApiKey() && getGoogleDriveClientId());
+  return Boolean(getGoogleDriveClientId());
 }
 
 /**
  * Authenticate with Google Drive and return an access token.
  *
- * Returns null when the build is missing required env vars (so callers can render
- * a helpful UI message). Otherwise initializes the GAPI client with the API key
- * and triggers an OAuth flow via Google Identity Services to get an access token.
+ * Returns null when the build is missing the required client ID env var
+ * (so callers can render a helpful UI message). Otherwise triggers an OAuth
+ * flow via Google Identity Services to get an access token.
  */
 export async function authenticateGoogleDrive(
-  apiKeyOverride?: string,
   clientIdOverride?: string
 ): Promise<string | null> {
-  const apiKey = apiKeyOverride || getGoogleDriveApiKey();
   const clientId = clientIdOverride || getGoogleDriveClientId();
 
-  if (!apiKey || !clientId) {
+  if (!clientId) {
     return null;
   }
 
-  await initGoogleDrive(apiKey);
   return lowLevelAuthenticateGoogleDrive(clientId);
 }
 
