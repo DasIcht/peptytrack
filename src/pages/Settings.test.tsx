@@ -177,7 +177,7 @@ describe('Settings — share backup to Google Drive', () => {
     expect(sharePayload.title).toBe('PeptyTrack Backup');
     expect(sharePayload.files).toHaveLength(1);
     expect(sharePayload.files![0].name).toMatch(/^peptytrack-backup-\d{4}-\d{2}-\d{2}\.json$/);
-    expect(sharePayload.files![0].type).toBe('application/json');
+    expect(sharePayload.files![0].type).toBe('text/plain');
     // Should NOT fall back to a download when the share sheet was used
     expect(cloudSync.downloadBackupJSON).not.toHaveBeenCalled();
   });

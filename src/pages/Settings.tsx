@@ -113,8 +113,12 @@ export function Settings() {
 
     try {
       if (syncJson) {
-        const blob = new Blob([syncJson], { type: 'application/json' });
-        const file = new File([blob], fileName, { type: 'application/json' });
+        // Share as text/plain: Android Chrome often rejects application/json
+        // because no installed app registers a JSON handler, which causes
+        // navigator.share({files}) to throw NotAllowedError. The filename
+        // keeps the .json extension so Drive still saves it correctly.
+        const blob = new Blob([syncJson], { type: 'text/plain' });
+        const file = new File([blob], fileName, { type: 'text/plain' });
 
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({ files: [file], title: 'PeptyTrack Backup' });
