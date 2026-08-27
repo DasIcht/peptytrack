@@ -88,7 +88,10 @@ export function Settings() {
    */
   const handleExportBackup = async () => {
     setExporting(true);
-    const fileName = `peptytrack-backup-${new Date().toISOString().split('T')[0]}.json`;
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+    const fileName = `peptytrack-backup-${stamp}.json`;
     // Prefer JSON pre-computed on page mount (or cached auto-backup): it is
     // available synchronously, so navigator.share() can fire inside the tap
     // gesture. iOS Safari rejects share() once any await has run first.
