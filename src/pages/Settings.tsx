@@ -44,9 +44,11 @@ export function Settings() {
     setScheduledSnapshots(listScheduledSnapshots());
   }, []);
 
-  // Warm the export payload while the user reads the page, so the Export
-  // tap below never has to await exportData() before calling share().
+  // Warm the export payload while the user reads the page (only when no
+  // cached auto-backup exists), so the Export tap never has to await
+  // exportData() before calling share().
   useEffect(() => {
+    if (getAutoBackup()) return; // cache is already fresh and synchronous
     let cancelled = false;
     exportData()
       .then((data) => {
@@ -86,51 +88,83 @@ export function Settings() {
    */
   const handleExportBackup = async () => {
     setExporting(true);
+    const fileName = `peptytrack-backup-${new Date().toISOString().split('T')[0]}.json`;
+    // Prefer JSON pre-computed on page mount (or cached auto-backup): it is
+    // available synchronously, so navigator.share() can fire inside the tap
+    // gesture. iOS Safari rejects share() once any await has run first.
+    let syncJson = precomputedExportRef.current ?? getAutoBackup();
+
+    const saveWithPicker = async (content: string): Promise<void> => {
+      const handle = await (window as any).showSaveFilePicker({
+        suggestedName: fileName,
+        types: [{ description: 'PeptyTrack Backup', accept: { 'application/json': ['.json'] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(content);
+      await writable.close();
+      addToast('Backup saved', 'success');
+    };
+
+    const downloadJson = async (content: string): Promise<void> => {
+      const data = JSON.parse(content) as BackupData;
+      downloadBackupJSON(data);
+      addToast('Backup downloaded', 'success');
+    };
+
     try {
-      // Synchronous path: use the JSON pre-computed when this page mounted
-      // (or the cached auto-backup) to avoid an IndexedDB await before
-      // navigator.share(), which iOS Safari would reject with NotAllowedError.
-      const cached = precomputedExportRef.current ?? getAutoBackup();
-      let data: BackupData | null = null;
-      let json: string;
-      if (cached) {
-        json = cached;
-      } else {
-        data = await exportData();
-        json = JSON.stringify(data, null, 2);
+      if (syncJson) {
+        const blob = new Blob([syncJson], { type: 'application/json' });
+        const file = new File([blob], fileName, { type: 'application/json' });
+
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'PeptyTrack Backup' });
+          addToast('Backup shared', 'success');
+          return;
+        }
       }
 
-      const fileName = `peptytrack-backup-${new Date().toISOString().split('T')[0]}.json`;
-      const blob = new Blob([json], { type: 'application/json' });
-      const file = new File([blob], fileName, { type: 'application/json' });
+      // No sync payload or share unavailable: fetch the payload now.
+      if (!syncJson) {
+        const data = await exportData();
+        syncJson = JSON.stringify(data, null, 2);
+      }
 
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'PeptyTrack Backup' });
-        addToast('Backup shared', 'success');
-      } else if (typeof (window as any).showSaveFilePicker === 'function') {
-        // Desktop: native Save As dialog → user picks the target folder.
-        const handle = await (window as any).showSaveFilePicker({
-          suggestedName: fileName,
-          types: [{ description: 'PeptyTrack Backup', accept: { 'application/json': ['.json'] } }],
-        });
-        const writable = await handle.createWritable();
-        await writable.write(json);
-        await writable.close();
-        addToast('Backup saved', 'success');
+      if (typeof (window as any).showSaveFilePicker === 'function') {
+        await saveWithPicker(syncJson);
       } else {
-        if (!data) data = JSON.parse(json) as BackupData;
-        downloadBackupJSON(data);
-        addToast('Backup downloaded', 'success');
+        await downloadJson(syncJson);
       }
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         // User dismissed the share sheet or Save As dialog — not an error.
         return;
       }
-      // Never lose the backup: fall back to a download and surface the reason.
+
+      // If the share sheet was blocked (NotAllowedError) but the browser
+      // still exposes a native file picker, give the user the folder
+      // picker before falling back to a plain download.
+      if (typeof (window as any).showSaveFilePicker === 'function') {
+        try {
+          if (!syncJson) {
+            const data = await exportData();
+            syncJson = JSON.stringify(data, null, 2);
+          }
+          await saveWithPicker(syncJson);
+          return;
+        } catch (pickerErr) {
+          if (pickerErr instanceof Error && pickerErr.name === 'AbortError') {
+            return;
+          }
+        }
+      }
+
+      // Last-resort download — never lose the backup.
       try {
-        const data = await exportData();
-        downloadBackupJSON(data);
+        if (!syncJson) {
+          const data = await exportData();
+          syncJson = JSON.stringify(data, null, 2);
+        }
+        await downloadJson(syncJson);
         addToast(
           `Export failed (${err instanceof Error ? err.message : 'unknown error'}) — backup downloaded instead`,
           'error'

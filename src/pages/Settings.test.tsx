@@ -111,9 +111,9 @@ describe('Settings — share backup to Google Drive', () => {
     await sharePayload.files![0].text().then((text: string) => {
       expect(text).toBe('{"cached":true}');
     });
-    // exportData() runs once for the mount pre-warm, but never inside the tap
-    // (the share call stays synchronous within the user gesture).
-    expect(cloudSync.exportData).toHaveBeenCalledTimes(1);
+    // The share payload came from the sync cache, so no IndexedDB read
+    // happened during the tap (exportData was not called at all).
+    expect(cloudSync.exportData).not.toHaveBeenCalled();
   });
 
   it('shares synchronously using the JSON pre-computed on Settings mount when no cached auto-backup exists', async () => {
@@ -148,6 +148,8 @@ describe('Settings — share backup to Google Drive', () => {
     (window as any).showSaveFilePicker = savePickerMock;
 
     render(<Settings />);
+    await waitFor(() => expect(cloudSync.exportData).toHaveBeenCalledTimes(1));
+
     fireEvent.click(screen.getByRole('button', { name: /export backup/i }));
 
     await waitFor(() => expect(savePickerMock).toHaveBeenCalledTimes(1));
@@ -165,6 +167,9 @@ describe('Settings — share backup to Google Drive', () => {
     (navigator as any).canShare = vi.fn(() => true);
 
     render(<Settings />);
+    // Let the mount-time pre-warm finish so the tap path has sync JSON
+    await waitFor(() => expect(cloudSync.exportData).toHaveBeenCalledTimes(1));
+
     fireEvent.click(screen.getByRole('button', { name: /export backup/i }));
 
     await waitFor(() => expect(shareMock).toHaveBeenCalledTimes(1));
@@ -183,6 +188,8 @@ describe('Settings — share backup to Google Drive', () => {
     const downloadSpy = vi.spyOn(cloudSync, 'downloadBackupJSON').mockImplementation(() => {});
 
     render(<Settings />);
+    await waitFor(() => expect(cloudSync.exportData).toHaveBeenCalledTimes(1));
+
     fireEvent.click(screen.getByRole('button', { name: /export backup/i }));
 
     await waitFor(() => expect(downloadSpy).toHaveBeenCalledTimes(1));
@@ -200,6 +207,8 @@ describe('Settings — share backup to Google Drive', () => {
     (navigator as any).canShare = vi.fn(() => true);
 
     render(<Settings />);
+    await waitFor(() => expect(cloudSync.exportData).toHaveBeenCalledTimes(1));
+
     fireEvent.click(screen.getByRole('button', { name: /export backup/i }));
 
     await waitFor(() => expect(shareMock).toHaveBeenCalledTimes(1));
@@ -216,12 +225,41 @@ describe('Settings — share backup to Google Drive', () => {
     const downloadSpy = vi.spyOn(cloudSync, 'downloadBackupJSON').mockImplementation(() => {});
 
     render(<Settings />);
+    await waitFor(() => expect(cloudSync.exportData).toHaveBeenCalledTimes(1));
+
     fireEvent.click(screen.getByRole('button', { name: /export backup/i }));
 
     await waitFor(() => expect(shareMock).toHaveBeenCalledTimes(1));
     // The backup must never be lost: fall back to a download
     expect(downloadSpy).toHaveBeenCalledTimes(1);
     expect(useUIStore.getState().toasts.some((t) => t.message.includes('Export failed'))).toBe(true);
+  });
+
+  it('falls back to Save As picker when share throws NotAllowedError', async () => {
+    const shareMock = vi.fn(async () => {
+      const err = new Error('NotAllowedError: permission denied');
+      err.name = 'NotAllowedError';
+      throw err;
+    });
+    (navigator as any).share = shareMock;
+    (navigator as any).canShare = vi.fn(() => true);
+
+    const writeMock = vi.fn(async () => undefined);
+    const closeMock = vi.fn(async () => undefined);
+    const savePickerMock = vi.fn(async (_opts: any) => ({
+      createWritable: vi.fn(async () => ({ write: writeMock, close: closeMock })),
+    }));
+    (window as any).showSaveFilePicker = savePickerMock;
+
+    const downloadSpy = vi.spyOn(cloudSync, 'downloadBackupJSON').mockImplementation(() => {});
+
+    render(<Settings />);
+    fireEvent.click(screen.getByRole('button', { name: /export backup/i }));
+
+    await waitFor(() => expect(savePickerMock).toHaveBeenCalledTimes(1));
+    expect(downloadSpy).not.toHaveBeenCalled();
+    expect(writeMock).toHaveBeenCalledTimes(1);
+    expect(closeMock).toHaveBeenCalledTimes(1);
   });
 });
 
