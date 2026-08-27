@@ -107,7 +107,7 @@ describe('Settings — share backup to Google Drive', () => {
     await waitFor(() => expect(shareMock).toHaveBeenCalledTimes(1));
     // The share payload must come from the cached backup, NOT from exportData()
     const sharePayload = shareMock.mock.calls[0][0];
-    expect(sharePayload.files![0].name).toMatch(/^peptytrack-backup-\d{4}-\d{2}-\d{2}\.json$/);
+    expect(sharePayload.files![0].name).toMatch(/^peptytrack-backup-\d{4}-\d{2}-\d{2}\.txt$/);
     await sharePayload.files![0].text().then((text: string) => {
       expect(text).toBe('{"cached":true}');
     });
@@ -176,7 +176,7 @@ describe('Settings — share backup to Google Drive', () => {
     const sharePayload = shareMock.mock.calls[0][0];
     expect(sharePayload.title).toBe('PeptyTrack Backup');
     expect(sharePayload.files).toHaveLength(1);
-    expect(sharePayload.files![0].name).toMatch(/^peptytrack-backup-\d{4}-\d{2}-\d{2}\.json$/);
+    expect(sharePayload.files![0].name).toMatch(/^peptytrack-backup-\d{4}-\d{2}-\d{2}\.txt$/);
     expect(sharePayload.files![0].type).toBe('text/plain');
     // Should NOT fall back to a download when the share sheet was used
     expect(cloudSync.downloadBackupJSON).not.toHaveBeenCalled();

@@ -113,12 +113,13 @@ export function Settings() {
 
     try {
       if (syncJson) {
-        // Share as text/plain: Android Chrome often rejects application/json
-        // because no installed app registers a JSON handler, which causes
-        // navigator.share({files}) to throw NotAllowedError. The filename
-        // keeps the .json extension so Drive still saves it correctly.
+        // Android Chrome's file-share filter generally rejects .json files
+        // (even as text/plain) for security reasons, so we share a .txt file
+        // with the same JSON content. The user can save it to Drive and, if
+        // needed, rename .txt to .json before importing.
+        const shareFileName = fileName.replace(/\.json$/, '.txt');
         const blob = new Blob([syncJson], { type: 'text/plain' });
-        const file = new File([blob], fileName, { type: 'text/plain' });
+        const file = new File([blob], shareFileName, { type: 'text/plain' });
 
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({ files: [file], title: 'PeptyTrack Backup' });
@@ -768,7 +769,7 @@ export function Settings() {
             </div>
             <input
               type="file"
-              accept=".json,application/json"
+              accept=".json,.txt,application/json,text/plain"
               onChange={handleImportJSON}
               className="hidden"
             />
