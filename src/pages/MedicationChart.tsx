@@ -5,7 +5,7 @@ import { useWeightStore } from '../stores/weightStore';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot, Line, Legend
 } from 'recharts';
-import { format, subDays } from 'date-fns';
+import { format } from 'date-fns';
 import { medicationLevelAtTime } from '../lib/halfLifeEngine';
 import { useProtocolStore } from '../stores/protocolStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -15,12 +15,7 @@ import { HelpBox } from '../components/HelpBox';
 import { calculateWeightedSymptomScore } from '../lib/titrationAnalytics';
 import { useUIStore } from '../stores/uiStore';
 import { RefreshCw, Activity, ChevronDown } from 'lucide-react';
-
-const TIME_RANGES = [
-  { label: '7 Days', days: 7 },
-  { label: '30 Days', days: 30 },
-  { label: '90 Days', days: 90 },
-];
+import { TIME_RANGES, getRangeStart, getResolutionMs, getTickFormat, type ChartRange } from '../lib/chartRange';
 
 interface ChartPoint {
   date: number;
@@ -55,7 +50,7 @@ export function MedicationChart() {
   const { settings } = useSettingsStore();
   const { addToast } = useUIStore();
 
-  const [rangeDays, setRangeDays] = useState(30);
+  const [range, setRange] = useState<ChartRange>(30);
   const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set());
   const [titrationChartIndex, setTitrationChartIndex] = useState(0);
 
@@ -71,13 +66,17 @@ export function MedicationChart() {
 
   const chartResult = useMemo(() => {
     if (medications.length === 0) {
-      return { data: [] as ChartPoint[], dosePoints: [] as DosePoint[], maxLevel: 1 };
+      return { data: [] as ChartPoint[], dosePoints: [] as DosePoint[], maxLevel: 1, start: now, end: now };
     }
 
     const end = now;
-    const start = subDays(end, rangeDays).getTime();
-    const resolutionMinutes = rangeDays <= 7 ? 60 : rangeDays <= 30 ? 240 : 720;
-    const stepMs = resolutionMinutes * 60 * 1000;
+    const enabledIds = new Set(medications.map((m) => m.id));
+    const start = getRangeStart(range, end, [
+      ...doses.filter((d) => enabledIds.has(d.medicationId)).map((d) => d.dateTime),
+      ...weightEntries.map((w) => w.dateTime),
+      ...symptomLogs.map((s) => s.dateTime),
+    ]);
+    const stepMs = getResolutionMs(range, start, end);
 
     const timestamps: number[] = [];
     for (let t = start; t <= end; t += stepMs) {
@@ -201,10 +200,11 @@ export function MedicationChart() {
       }
     }
 
-    return { data, dosePoints, maxLevel: max * 1.2 };
-  }, [medications, doses, weightEntries, symptomLogs, rangeDays, now]);
+    return { data, dosePoints, maxLevel: max * 1.2, start, end };
+  }, [medications, doses, weightEntries, symptomLogs, range, now]);
 
   const { data: chartData, dosePoints } = chartResult;
+  const tickFormat = getTickFormat(chartResult.start, chartResult.end);
 
   const visibleMaxLevel = useMemo(() => {
     let max = 1;
@@ -280,9 +280,10 @@ export function MedicationChart() {
       <div className="flex rounded-xl border border-white/10 overflow-hidden mb-5 self-start">
         {TIME_RANGES.map((r) => (
           <button
-            key={r.days}
-            onClick={() => setRangeDays(r.days)}
-            className={`px-3 py-2.5 text-xs font-medium transition-colors ${ rangeDays === r.days ? 'bg-primary-600 text-white' : 'bg-surface-800 text-slate-400 hover:text-white' }`}
+            key={r.value}
+            onClick={() => setRange(r.value)}
+            aria-pressed={range === r.value}
+            className={`px-3 py-2.5 text-xs font-medium transition-colors ${ range === r.value ? 'bg-primary-600 text-white' : 'bg-surface-800 text-slate-400 hover:text-white' }`}
           >
             {r.label}
           </button>
@@ -304,7 +305,7 @@ export function MedicationChart() {
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis
                 dataKey="date"
-                tickFormatter={(v) => format(new Date(v), 'MMM d')}
+                tickFormatter={(v) => format(new Date(v), tickFormat)}
                 stroke="var(--color-border)"
                 tick={{ fill: '#94a3b8', fontSize: 10 }}
                 axisLine={false}
