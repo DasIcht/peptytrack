@@ -240,23 +240,24 @@ export function Vials() {
                 onClick={() => toggleExpanded(med.id)}
                 className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center"
+                    className="w-9 h-9 flex-shrink-0 rounded-xl flex items-center justify-center"
                     style={{ backgroundColor: `${med.color}20`, border: `1px solid ${med.color}40` }}
                   >
                     <FlaskConical size={16} style={{ color: med.color }} />
                   </div>
-                  <div className="text-left">
+                  <div className="text-left min-w-0">
                     <p className="text-sm font-semibold text-content-primary">{med.name}</p>
                     <p className="text-xs text-content-secondary">
                       {medVials.length} vial{medVials.length !== 1 ? 's' : ''} · {med.dosageOptions.join(', ')} {med.unit}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                   <span
-                    className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                    className="text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap max-w-[6.5rem] truncate"
+                    title={med.brand}
                     style={{
                       backgroundColor: `${med.color}15`,
                       color: med.color,

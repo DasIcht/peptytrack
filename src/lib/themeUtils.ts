@@ -122,6 +122,10 @@ export function applyTheme(themeId: ThemeId, customAccentColor: string | null): 
   // 1. Set the data-theme attribute (drives all CSS [data-theme] blocks)
   el.setAttribute('data-theme', themeId);
 
+  // 1b. Toggle Tailwind's `dark` class so `dark:` variants follow the theme
+  const isLight = THEMES.find((t) => t.id === themeId)?.isLight ?? false;
+  el.classList.toggle('dark', !isLight);
+
   if (customAccentColor) {
     // 2a. Write custom primary palette as inline CSS variables
     //     These override the [data-theme] block variables

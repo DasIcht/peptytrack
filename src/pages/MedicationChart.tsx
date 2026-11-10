@@ -267,7 +267,7 @@ export function MedicationChart() {
   }
 
   return (
-    <div className="min-h-full pb-24 px-3 pt-6">
+    <div className="min-h-full pb-24 px-5 pt-6">
       <div className="flex items-center gap-2 mb-1">
         <h1 className="text-2xl font-bold text-content-primary">Medication Levels</h1>
         <HelpBox>
@@ -277,13 +277,13 @@ export function MedicationChart() {
       <p className="text-sm text-content-secondary mb-6">Estimated concentration based on half-life</p>
 
       {/* Time range selector */}
-      <div className="flex rounded-xl border border-white/10 overflow-hidden mb-5 self-start">
+      <div className="flex rounded-xl border border-white/10 overflow-hidden mb-5" role="group" aria-label="Time range">
         {TIME_RANGES.map((r) => (
           <button
             key={r.value}
             onClick={() => setRange(r.value)}
             aria-pressed={range === r.value}
-            className={`px-3 py-2.5 text-xs font-medium transition-colors ${ range === r.value ? 'bg-primary-600 text-white' : 'bg-surface-800 text-slate-400 hover:text-white' }`}
+            className={`flex-1 px-3 py-2.5 text-xs font-medium transition-colors ${ range === r.value ? 'bg-primary-600 text-white' : 'bg-surface-800 text-content-secondary hover:text-content-primary' }`}
           >
             {r.label}
           </button>

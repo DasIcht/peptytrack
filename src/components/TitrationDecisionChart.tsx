@@ -158,9 +158,9 @@ export function TitrationDecisionChart({
 
   // default to spider
   return (
-    <div className="h-56 w-full relative">
+    <div className="h-56 w-full relative [&_.recharts-surface]:overflow-visible" data-testid="titration-spider">
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={spiderData}>
+        <RadarChart cx="50%" cy="50%" outerRadius="62%" data={spiderData}>
           <PolarGrid stroke="var(--color-border)" />
           <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10, fontWeight: 600 }} />
           <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
