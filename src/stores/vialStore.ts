@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { db } from '../db/database';
 import { uuid } from '../lib/uuid';
 import type { Vial, Dose } from '../types';
+import { convertAmount } from '../lib/units';
 
 interface VialState {
   vials: Vial[];
@@ -68,7 +69,12 @@ export const useVialStore = create<VialState>((set, get) => ({
     }
     const totalDosed = doses
       .filter((d) => d.vialId === vialId)
-      .reduce((sum, d) => sum + d.dosage, 0);
+      .reduce((sum, d) => {
+        // Doses are stored in the medication's unit; express them in the vial's unit.
+        // If the units can't be converted (e.g. "units" vs "mg"), fall back to the raw amount.
+        const converted = convertAmount(d.dosage, d.unit || vial.peptideUnit, vial.peptideUnit);
+        return sum + (converted ?? d.dosage);
+      }, 0);
     return Math.max(0, vial.peptideAmount - totalDosed);
   },
 
