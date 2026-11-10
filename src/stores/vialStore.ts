@@ -17,6 +17,7 @@ interface VialState {
   getVialRemaining: (vialId: string, doses: Dose[]) => number;
   getVialPercentage: (vialId: string, doses: Dose[]) => number;
   getLastUsedVialId: (medicationId: string, doses: Dose[]) => string | undefined;
+  getNextAvailableVialId: (medicationId: string, doses: Dose[]) => string | undefined;
 }
 
 export const useVialStore = create<VialState>((set, get) => ({
@@ -93,5 +94,21 @@ export const useVialStore = create<VialState>((set, get) => ({
       .filter((d) => d.vialId && medVialIds.has(d.vialId))
       .sort((a, b) => b.dateTime - a.dateTime);
     return vialDoses[0]?.vialId;
+  },
+
+  /**
+   * Pick the vial a new dose should come from: the last-used vial while it still has
+   * medication left, otherwise the oldest reconstituted vial that isn't empty (use up
+   * opened vials first). Returns undefined when no vial for the medication has any left.
+   */
+  getNextAvailableVialId: (medicationId, doses) => {
+    const { vials, getVialRemaining, getLastUsedVialId } = get();
+    const hasRemaining = (id: string) => getVialRemaining(id, doses) > 0;
+    const lastUsed = getLastUsedVialId(medicationId, doses);
+    if (lastUsed && hasRemaining(lastUsed)) return lastUsed;
+    const candidates = vials
+      .filter((v) => v.medicationId === medicationId && hasRemaining(v.id))
+      .sort((a, b) => (a.reconstitutedAt - b.reconstitutedAt) || (a.createdAt - b.createdAt));
+    return candidates[0]?.id;
   },
 }));

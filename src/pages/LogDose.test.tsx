@@ -197,6 +197,123 @@ describe('LogDose', () => {
     });
   });
 
+  describe('Quick Log: vial auto-selection and availability', () => {
+    const DAY = 86400000;
+    const makeDose = (id: string, vialId: string, dosage: number, agoDays: number) => ({
+      id,
+      medicationId: 'med-1',
+      vialId,
+      dosage,
+      unit: 'mg',
+      injectionSite: 'abdomen-upper-left' as InjectionSite,
+      dateTime: Date.now() - agoDays * DAY,
+      notes: '',
+      sideEffects: [],
+      createdAt: Date.now() - agoDays * DAY,
+    });
+    const vialSelect = () =>
+      screen.getAllByRole('combobox').find((el) =>
+        Array.from((el as HTMLSelectElement).options).some((o) => o.value === 'vial-1')
+      ) as HTMLSelectElement;
+
+    it('auto-selects a vial with medication left even when nothing has been logged yet', () => {
+      render(<LogDose />);
+      expect(vialSelect().value).toBe('vial-1');
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('skips an empty last-used vial and selects the next one with medication left', () => {
+      useVialStore.setState({
+        vials: [
+          { ...mockVial, id: 'vial-1', name: 'Vial #1', peptideAmount: 1, reconstitutedAt: Date.now() - 30 * DAY },
+          { ...mockVial, id: 'vial-2', name: 'Vial #2', peptideAmount: 5, reconstitutedAt: Date.now() - DAY },
+        ],
+      });
+      useMedicationStore.setState({ doses: [makeDose('d1', 'vial-1', 1, 7)] });
+      render(<LogDose />);
+      expect(vialSelect().value).toBe('vial-2');
+      expect(screen.getByRole('option', { name: 'Vial #1 — empty' })).toBeInTheDocument();
+    });
+
+    it('warns when every vial for the medication is empty', () => {
+      useVialStore.setState({ vials: [{ ...mockVial, peptideAmount: 1 }] });
+      useMedicationStore.setState({ doses: [makeDose('d1', 'vial-1', 1, 7)] });
+      render(<LogDose />);
+      const alert = screen.getByRole('alert');
+      expect(alert).toHaveTextContent(/All vials for Semaglutide are empty/);
+      expect(vialSelect().value).toBe('');
+    });
+
+    it('warns when the medication has no vials at all', () => {
+      useVialStore.setState({ vials: [] });
+      render(<LogDose />);
+      expect(screen.getByRole('alert')).toHaveTextContent(/No vial set up for Semaglutide/);
+    });
+
+    it('"Add vial" in the warning opens the Vials page', () => {
+      useVialStore.setState({ vials: [] });
+      render(<LogDose />);
+      fireEvent.click(screen.getByRole('button', { name: 'Add vial' }));
+      expect(useUIStore.getState().activePage).toBe('vials');
+    });
+
+    it('moves to the next vial after a logged dose empties the current one', async () => {
+      useVialStore.setState({
+        vials: [
+          { ...mockVial, id: 'vial-1', name: 'Vial #1', peptideAmount: 1, reconstitutedAt: Date.now() - 30 * DAY },
+          { ...mockVial, id: 'vial-2', name: 'Vial #2', peptideAmount: 5, reconstitutedAt: Date.now() - DAY },
+        ],
+      });
+      useMedicationStore.setState({ doses: [makeDose('d1', 'vial-1', 0.5, 7)] });
+      render(<LogDose />);
+      expect(vialSelect().value).toBe('vial-1');
+      // Another 0.5 mg dose lands on vial-1 and empties it
+      useMedicationStore.setState({
+        doses: [makeDose('d1', 'vial-1', 0.5, 7), makeDose('d2', 'vial-1', 0.5, 0)],
+      });
+      await waitFor(() => expect(vialSelect().value).toBe('vial-2'));
+    });
+
+    it('does not override a vial the user picked themselves', async () => {
+      useVialStore.setState({
+        vials: [
+          { ...mockVial, id: 'vial-1', name: 'Vial #1', reconstitutedAt: Date.now() - 30 * DAY },
+          { ...mockVial, id: 'vial-2', name: 'Vial #2', reconstitutedAt: Date.now() - DAY },
+        ],
+      });
+      render(<LogDose />);
+      expect(vialSelect().value).toBe('vial-1');
+      fireEvent.change(vialSelect(), { target: { value: '' } });
+      // A data change (e.g. vials reloading) must not undo the manual "No vial" choice
+      useVialStore.setState({ vials: [...useVialStore.getState().vials] });
+      await waitFor(() => expect(vialSelect().value).toBe(''));
+    });
+  });
+
+  describe('Quick Log: injection site without scrolling', () => {
+    it('renders the injection site before the symptoms section', () => {
+      render(<LogDose />);
+      const site = screen.getByText('Injection Site');
+      const symptoms = screen.getByRole('button', { name: /Symptoms/ });
+      expect(site.compareDocumentPosition(symptoms) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('keeps symptom chips collapsed until the user expands them', () => {
+      render(<LogDose />);
+      expect(screen.queryByText('Nausea')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Symptoms/ }));
+      expect(screen.getByText('Nausea')).toBeInTheDocument();
+    });
+
+    it('shows every injection site at once instead of a horizontal scroller', () => {
+      render(<LogDose />);
+      const group = screen.getByRole('group', { name: 'Injection site' });
+      expect(group.className).toContain('flex-wrap');
+      expect(group.className).not.toContain('overflow-x-auto');
+      expect(group.querySelectorAll('button')).toHaveLength(8);
+    });
+  });
+
   describe('Full Log Mode', () => {
     it('shows all sections including date/time, notes, and side effects', () => {
       localStorage.setItem('pepty-log-mode', 'full');

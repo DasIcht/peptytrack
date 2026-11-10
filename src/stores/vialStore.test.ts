@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db } from '../db/database';
 import { useVialStore } from './vialStore';
+import type { Vial } from '../types';
 
 const TEST_VIAL = {
   medicationId: 'med-1',
@@ -155,5 +156,60 @@ describe('vialStore', () => {
 
     const lastUsed = useVialStore.getState().getLastUsedVialId('med-1', doses);
     expect(lastUsed).toBe(vial2.id);
+  });
+
+  describe('getNextAvailableVialId', () => {
+    const DAY = 86400000;
+    const now = Date.now();
+    const vial = (id: string, peptideAmount: number, reconstitutedAgoDays: number, extra: Partial<Vial> = {}) => ({
+      ...TEST_VIAL,
+      id,
+      peptideAmount,
+      reconstitutedAt: now - reconstitutedAgoDays * DAY,
+      createdAt: now - reconstitutedAgoDays * DAY,
+      ...extra,
+    });
+    const dose = (id: string, vialId: string, dosage: number, agoDays: number) => ({
+      id, medicationId: 'med-1', vialId, dosage, unit: 'mg',
+      injectionSite: 'abdomen-upper-left' as const,
+      dateTime: now - agoDays * DAY, notes: '', createdAt: now - agoDays * DAY,
+    });
+
+    it('keeps the last-used vial while it still has medication left', () => {
+      useVialStore.setState({ vials: [vial('old', 10, 30), vial('used', 10, 5)] });
+      const doses = [dose('d1', 'used', 2, 1)];
+      expect(useVialStore.getState().getNextAvailableVialId('med-1', doses)).toBe('used');
+    });
+
+    it('moves on to the oldest non-empty vial once the last-used vial is empty', () => {
+      useVialStore.setState({ vials: [vial('empty', 2, 40), vial('newer', 5, 2), vial('older', 5, 10)] });
+      const doses = [dose('d1', 'empty', 1, 14), dose('d2', 'empty', 1, 7)];
+      expect(useVialStore.getState().getNextAvailableVialId('med-1', doses)).toBe('older');
+    });
+
+    it('picks the oldest non-empty vial when nothing has been used yet', () => {
+      useVialStore.setState({ vials: [vial('newer', 5, 1), vial('older', 5, 3)] });
+      expect(useVialStore.getState().getNextAvailableVialId('med-1', [])).toBe('older');
+    });
+
+    it('treats a remaining override of 0 as empty', () => {
+      useVialStore.setState({ vials: [vial('overridden', 5, 10, { remainingOverride: 0 }), vial('fresh', 5, 1)] });
+      expect(useVialStore.getState().getNextAvailableVialId('med-1', [])).toBe('fresh');
+    });
+
+    it('ignores vials that belong to other medications', () => {
+      useVialStore.setState({ vials: [vial('other', 5, 10, { medicationId: 'med-2' }), vial('mine', 5, 1)] });
+      expect(useVialStore.getState().getNextAvailableVialId('med-1', [])).toBe('mine');
+    });
+
+    it('returns undefined when every vial is empty', () => {
+      useVialStore.setState({ vials: [vial('a', 1, 20), vial('b', 1, 10)] });
+      const doses = [dose('d1', 'a', 1, 14), dose('d2', 'b', 1, 7)];
+      expect(useVialStore.getState().getNextAvailableVialId('med-1', doses)).toBeUndefined();
+    });
+
+    it('returns undefined when the medication has no vials', () => {
+      expect(useVialStore.getState().getNextAvailableVialId('med-1', [])).toBeUndefined();
+    });
   });
 });
