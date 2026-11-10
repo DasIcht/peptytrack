@@ -1,3 +1,16 @@
+/**
+ * Theme colours live in CSS custom properties (see src/styles/global.css) so the
+ * user can switch themes at runtime. Tailwind can't add an alpha channel to a bare
+ * `var(--x)`, so opacity modifiers like `bg-primary-500/20` would silently generate
+ * no CSS at all. Wrapping each variable in color-mix() with Tailwind's <alpha-value>
+ * placeholder makes those modifiers work.
+ */
+const themeColor = (name) =>
+  `color-mix(in srgb, var(--color-${name}) calc(<alpha-value> * 100%), transparent)`;
+
+const scale = (prefix, steps) =>
+  Object.fromEntries(steps.map((step) => [step, themeColor(`${prefix}-${step}`)]));
+
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: 'class',
@@ -8,32 +21,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50:  'var(--color-primary-50)',
-          100: 'var(--color-primary-100)',
-          200: 'var(--color-primary-200)',
-          300: 'var(--color-primary-300)',
-          400: 'var(--color-primary-400)',
-          500: 'var(--color-primary-500)',
-          600: 'var(--color-primary-600)',
-          700: 'var(--color-primary-700)',
-          800: 'var(--color-primary-800)',
-          900: 'var(--color-primary-900)',
+        primary: scale('primary', [50, 100, 200, 300, 400, 500, 600, 700, 800, 900]),
+        surface: scale('surface', [600, 700, 800, 900, 950]),
+        accent: scale('accent', [400, 500, 600]),
+        // Text hierarchy (text-content-primary / -secondary / -muted)
+        content: {
+          primary: themeColor('text-primary'),
+          secondary: themeColor('text-secondary'),
+          muted: themeColor('text-muted'),
         },
-        surface: {
-          800: 'var(--color-surface-800)',
-          900: 'var(--color-surface-900)',
-          950: 'var(--color-surface-950)',
-        },
-        accent: {
-          400: 'var(--color-accent-400)',
-          500: 'var(--color-accent-500)',
-          600: 'var(--color-accent-600)',
-        },
-        border: 'var(--color-border)',
-        'card-bg': 'var(--color-card-bg)',
-        'input-bg': 'var(--color-input-bg)',
-        'glass-bg': 'var(--color-glass-bg)',
+        border: themeColor('border'),
+        'card-bg': themeColor('card-bg'),
+        'input-bg': themeColor('input-bg'),
+        'glass-bg': themeColor('glass-bg'),
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

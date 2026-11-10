@@ -139,38 +139,39 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* Quick Stats */}
-      <div className="px-5 grid grid-cols-4 gap-3 mb-6">
-        <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-3 text-center">
-          <p className="text-xs text-content-secondary mb-1">Medications</p>
+      {/* Quick Stats — four equal tiles: short label, value, optional unit line */}
+      <div className="px-5 grid grid-cols-4 gap-2 mb-6" data-testid="quick-stats">
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 px-2 py-3 text-center min-w-0">
+          <p className="text-[11px] text-content-secondary mb-1 truncate">Meds</p>
           <p className="text-xl font-bold text-content-primary">{medications.length}</p>
         </div>
-        <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-3 text-center">
-          <p className="text-xs text-content-secondary mb-1">Vials</p>
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 px-2 py-3 text-center min-w-0">
+          <p className="text-[11px] text-content-secondary mb-1 truncate">Vials</p>
           <p className="text-xl font-bold text-content-primary">{vials.length}</p>
         </div>
-        <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-3 text-center">
-          <p className="text-xs text-content-secondary mb-1">Weight Trend</p>
-          <div className="flex items-center justify-center gap-1">
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 px-2 py-3 text-center min-w-0">
+          <p className="text-[11px] text-content-secondary mb-1 truncate">Trend</p>
+          <div className="flex items-center justify-center gap-0.5">
             {trend ? (
               trend.change < 0 ? (
-                <TrendingDown size={14} className="text-emerald-400" />
+                <TrendingDown size={14} className="flex-shrink-0 text-emerald-400" />
               ) : trend.change > 0 ? (
-                <TrendingUp size={14} className="text-red-400" />
+                <TrendingUp size={14} className="flex-shrink-0 text-red-400" />
               ) : (
-                <Minus size={14} className="text-content-secondary" />
+                <Minus size={14} className="flex-shrink-0 text-content-secondary" />
               )
             ) : (
-              <Minus size={14} className="text-content-secondary" />
+              <Minus size={14} className="flex-shrink-0 text-content-secondary" />
             )}
-            <p className={`text-xl font-bold ${trend ? (trend.change < 0 ? 'text-emerald-400' : trend.change > 0 ? 'text-red-400' : 'text-content-secondary') : 'text-content-secondary'}`}>
-              {trend ? `${Math.abs(trend.change)} ${latestWeight?.unit || 'kg'}` : '-'}
+            <p className={`text-xl font-bold whitespace-nowrap ${trend ? (trend.change < 0 ? 'text-emerald-400' : trend.change > 0 ? 'text-red-400' : 'text-content-secondary') : 'text-content-secondary'}`}>
+              {trend ? `${Math.abs(trend.change)}` : '-'}
             </p>
           </div>
+          {trend && <p className="text-[10px] text-content-muted">{latestWeight?.unit || 'kg'}</p>}
         </div>
-        <div className="rounded-2xl border border-white/5 bg-surface-800/50 p-3 text-center">
-          <p className="text-xs text-content-secondary mb-1">Latest</p>
-          <p className="text-xl font-bold text-content-primary">
+        <div className="rounded-2xl border border-white/5 bg-surface-800/50 px-2 py-3 text-center min-w-0">
+          <p className="text-[11px] text-content-secondary mb-1 truncate">Latest</p>
+          <p className="text-xl font-bold text-content-primary whitespace-nowrap">
             {latestWeight ? `${latestWeight.weight}` : '-'}
           </p>
           {latestWeight && <p className="text-[10px] text-content-muted">{latestWeight.unit}</p>}

@@ -113,4 +113,15 @@ describe('applyTheme', () => {
     const el = document.documentElement;
     expect(el.style.getPropertyValue('--color-primary-500')).toBe('');
   });
+
+  it('adds the `dark` class for dark themes so dark: variants apply', () => {
+    applyTheme('teal-night', null);
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+  });
+
+  it('removes the `dark` class for light themes', () => {
+    applyTheme('teal-night', null);
+    applyTheme('nordic', null);
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+  });
 });

@@ -439,9 +439,9 @@ interface EditForm {
                       <p className="text-xs font-medium text-content-primary">{med.dosageOptions.join(', ')} {med.unit}</p>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-content-secondary mb-3">
-                    <div className="flex items-center gap-2">
-                      <Clock size={14} />
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs text-content-secondary mb-3" data-testid="med-reminder-row">
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                      <Clock size={14} className="flex-shrink-0" />
                       Reminder: {med.reminderHoursBefore}h before dose
                     </div>
                     {settings.titrationWizardEnabled && activeProtocol && (
@@ -460,7 +460,7 @@ interface EditForm {
                                 });
                                 addToast(`Protocol stepped down to Step ${newIndex + 1}`, 'info');
                               }}
-                              className="px-2 py-0.5 text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed rounded bg-surface-900 border border-white/10 text-[10px] font-bold flex items-center gap-0.5 transition-all"
+                              className="px-2 py-0.5 text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed rounded bg-surface-900 border border-white/10 text-[10px] font-bold flex items-center gap-0.5 whitespace-nowrap transition-all"
                               title="Step Down Protocol"
                             >
                               <ChevronDown size={12} className="rotate-90" />
@@ -478,7 +478,7 @@ interface EditForm {
                                   });
                                   addToast(`Protocol stepped up to Step ${newIndex + 1}`, 'info');
                                 }}
-                                className="px-2 py-0.5 text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed rounded bg-surface-900 border border-white/10 text-[10px] font-bold flex items-center gap-0.5 transition-all"
+                                className="px-2 py-0.5 text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed rounded bg-surface-900 border border-white/10 text-[10px] font-bold flex items-center gap-0.5 whitespace-nowrap transition-all"
                                 title="Step Up Protocol"
                               >
                                 Step Up
@@ -487,7 +487,7 @@ interface EditForm {
                             )}
                           </div>
                         )}
-                        <span className="flex items-center gap-1 text-primary-400 font-medium">
+                        <span className="flex items-center gap-1 text-primary-400 font-medium whitespace-nowrap">
                           <Activity size={12} /> Step {activeProtocol.currentStepIndex + 1} of {activeProtocol.steps.length}
                         </span>
                       </div>
