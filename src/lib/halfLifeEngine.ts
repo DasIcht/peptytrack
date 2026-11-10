@@ -1,6 +1,31 @@
 import type { Medication, Dose, MedLevelPoint } from '../types';
 
 /**
+ * Dosing interval for a medication, in hours.
+ * Custom frequencies use customFrequencyDays; an unset or invalid custom value falls back to weekly.
+ */
+export function getDoseIntervalHours(
+  medication: Pick<Medication, 'frequency' | 'customFrequencyDays'>
+): number {
+  switch (medication.frequency) {
+    case 'daily':
+      return 24;
+    case 'twice-daily':
+      return 12;
+    case 'weekly':
+      return 168;
+    case 'biweekly':
+      return 336;
+    case 'custom': {
+      const days = medication.customFrequencyDays;
+      return typeof days === 'number' && Number.isFinite(days) && days > 0 ? days * 24 : 168;
+    }
+    default:
+      return 168;
+  }
+}
+
+/**
  * Calculate the concentration of a single dose at a given time.
  * C(t) = C0 * (0.5)^(t / t_half)
  */
@@ -67,14 +92,7 @@ export function generateLevelSeries(
  * given a regular dosing schedule.
  */
 export function estimateSteadyStateLevel(medication: Medication): number {
-  const frequencyHours =
-    medication.frequency === 'daily'
-      ? 24
-      : medication.frequency === 'twice-daily'
-        ? 12
-        : medication.frequency === 'weekly'
-          ? 168
-          : 336;
+  const frequencyHours = getDoseIntervalHours(medication);
 
   const avgDose =
     medication.dosageOptions.reduce((a, b) => a + b, 0) /
@@ -97,14 +115,7 @@ export function getNextDoseTime(medication: Medication, doses: Dose[]): Date | n
   if (medDoses.length === 0) return null;
 
   const lastDose = medDoses[0];
-  const intervalMs =
-    medication.frequency === 'daily'
-      ? 24 * 60 * 60 * 1000
-      : medication.frequency === 'twice-daily'
-        ? 12 * 60 * 60 * 1000
-        : medication.frequency === 'weekly'
-          ? 7 * 24 * 60 * 60 * 1000
-          : 14 * 24 * 60 * 60 * 1000;
+  const intervalMs = getDoseIntervalHours(medication) * 60 * 60 * 1000;
 
   return new Date(lastDose.dateTime + intervalMs);
 }

@@ -77,6 +77,30 @@ describe('vialStore', () => {
     expect(remaining).toBe(6.5); // 10 - 1 - 2.5
   });
 
+  it('converts mcg doses into the vial unit when computing remaining', async () => {
+    await useVialStore.getState().addVial(TEST_VIAL); // 10 mg vial
+    const vialId = useVialStore.getState().vials[0].id;
+
+    const doses = [
+      { id: 'd1', medicationId: 'med-1', vialId, dosage: 500, unit: 'mcg', injectionSite: 'abdomen-upper-left' as const, dateTime: Date.now(), notes: '', createdAt: Date.now() },
+      { id: 'd2', medicationId: 'med-1', vialId, dosage: 1, unit: 'mg', injectionSite: 'abdomen-upper-right' as const, dateTime: Date.now(), notes: '', createdAt: Date.now() },
+    ];
+
+    const remaining = useVialStore.getState().getVialRemaining(vialId, doses);
+    expect(remaining).toBeCloseTo(8.5); // 10 mg - 0.5 mg - 1 mg
+  });
+
+  it('converts mg doses into a mcg vial', async () => {
+    await useVialStore.getState().addVial({ ...TEST_VIAL, peptideAmount: 5000, peptideUnit: 'mcg' });
+    const vialId = useVialStore.getState().vials[0].id;
+
+    const doses = [
+      { id: 'd1', medicationId: 'med-1', vialId, dosage: 2, unit: 'mg', injectionSite: 'abdomen-upper-left' as const, dateTime: Date.now(), notes: '', createdAt: Date.now() },
+    ];
+
+    expect(useVialStore.getState().getVialRemaining(vialId, doses)).toBe(3000);
+  });
+
   it('returns 0 remaining when vial not found', async () => {
     const remaining = useVialStore.getState().getVialRemaining('nonexistent', []);
     expect(remaining).toBe(0);

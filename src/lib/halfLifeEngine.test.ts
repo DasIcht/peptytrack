@@ -7,6 +7,8 @@ import {
   getTimeUntilNextDose,
   calculateEquivalentCustomDose,
   calculateRollingAverageConcentration,
+  getDoseIntervalHours,
+  estimateSteadyStateLevel,
 } from './halfLifeEngine';
 import type { Medication, Dose } from '../types';
 
@@ -264,5 +266,53 @@ describe('calculateRollingAverageConcentration', () => {
     ] as any[];
     const avg = calculateRollingAverageConcentration(med, doses, 7);
     expect(avg).toBeGreaterThan(0);
+  });
+});
+
+describe('getDoseIntervalHours', () => {
+  it('maps the fixed frequencies', () => {
+    expect(getDoseIntervalHours({ frequency: 'daily' })).toBe(24);
+    expect(getDoseIntervalHours({ frequency: 'twice-daily' })).toBe(12);
+    expect(getDoseIntervalHours({ frequency: 'weekly' })).toBe(168);
+    expect(getDoseIntervalHours({ frequency: 'biweekly' })).toBe(336);
+  });
+
+  it('uses customFrequencyDays for custom frequencies', () => {
+    expect(getDoseIntervalHours({ frequency: 'custom', customFrequencyDays: 3 })).toBe(72);
+    expect(getDoseIntervalHours({ frequency: 'custom', customFrequencyDays: 10 })).toBe(240);
+  });
+
+  it('falls back to weekly when a custom interval is missing or invalid', () => {
+    expect(getDoseIntervalHours({ frequency: 'custom' })).toBe(168);
+    expect(getDoseIntervalHours({ frequency: 'custom', customFrequencyDays: 0 })).toBe(168);
+    expect(getDoseIntervalHours({ frequency: 'custom', customFrequencyDays: NaN })).toBe(168);
+  });
+});
+
+describe('custom frequency scheduling', () => {
+  const CUSTOM_MED: Medication = { ...TEST_MED, frequency: 'custom', customFrequencyDays: 3 };
+
+  it('getNextDoseTime honours customFrequencyDays', () => {
+    const last = 1_700_000_000_000;
+    const doses: Dose[] = [
+      { id: 'd1', medicationId: CUSTOM_MED.id, dosage: 1, unit: 'mg', injectionSite: 'thigh-left', dateTime: last, notes: '', createdAt: last },
+    ];
+    const next = getNextDoseTime(CUSTOM_MED, doses);
+    expect(next?.getTime()).toBe(last + 3 * 24 * 60 * 60 * 1000);
+  });
+
+  it('getNextDoseTime gives biweekly meds a 14 day interval', () => {
+    const last = 1_700_000_000_000;
+    const med: Medication = { ...TEST_MED, frequency: 'biweekly' };
+    const doses: Dose[] = [
+      { id: 'd1', medicationId: med.id, dosage: 1, unit: 'mg', injectionSite: 'thigh-left', dateTime: last, notes: '', createdAt: last },
+    ];
+    expect(getNextDoseTime(med, doses)?.getTime()).toBe(last + 14 * 24 * 60 * 60 * 1000);
+  });
+
+  it('estimateSteadyStateLevel uses the custom interval', () => {
+    const lambda = Math.LN2 / CUSTOM_MED.halfLifeHours;
+    const avgDose = CUSTOM_MED.dosageOptions.reduce((a, b) => a + b, 0) / CUSTOM_MED.dosageOptions.length;
+    expect(estimateSteadyStateLevel(CUSTOM_MED)).toBeCloseTo(avgDose / (1 - Math.exp(-lambda * 72)));
   });
 });

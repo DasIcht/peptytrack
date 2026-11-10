@@ -9,7 +9,7 @@ import { useWeightStore } from '../stores/weightStore';
 import { useSymptomLogStore } from '../stores/symptomLogStore';
 import { evaluateTitration, type TitrationRecommendation } from '../lib/titrationAnalytics';
 import { scheduleReminder } from '../lib/notifications';
-import { medicationLevelAtTime } from '../lib/halfLifeEngine';
+import { medicationLevelAtTime, getDoseIntervalHours } from '../lib/halfLifeEngine';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { SideEffectChips } from '../components/SideEffectChips';
 import { CircularProgress } from '../components/CircularProgress';
@@ -18,6 +18,7 @@ import { MedicalWarningBanner } from '../components/MedicalWarningBanner';
 import type { Dose, InjectionSite, SideEffectLog, SideEffectSeverity } from '../types';
 import { getSideEffectsOrderedForMedication } from '../lib/sideEffects';
 import { getNextInjectionSite } from '../lib/injectionRotation';
+import { areUnitsCompatible, calculateInjection } from '../lib/units';
 import {
   ChevronDown,
   MapPin,
@@ -217,11 +218,7 @@ export function LogDose() {
     const msDiff = dateTime - precedingDose.dateTime;
     const daysDiff = msDiff / (1000 * 60 * 60 * 24);
 
-    let expectedIntervalDays = 7;
-    if (selectedMed.frequency === 'daily') expectedIntervalDays = 1;
-    else if (selectedMed.frequency === 'twice-daily') expectedIntervalDays = 0.5;
-    else if (selectedMed.frequency === 'biweekly') expectedIntervalDays = 14;
-    else if (selectedMed.frequency === 'custom') expectedIntervalDays = selectedMed.customFrequencyDays || 7;
+    const expectedIntervalDays = getDoseIntervalHours(selectedMed) / 24;
 
     const diffDays = daysDiff - expectedIntervalDays;
 
@@ -326,18 +323,18 @@ export function LogDose() {
     ? remainingPeptide / concentrationPerMl
     : 0;
 
-  const doseUnits = dosage && parseFloat(dosage) > 0 && concentrationPerMl > 0
-    ? Math.round((parseFloat(dosage) / concentrationPerMl) * 100)
-    : 0;
+  // The dose is entered in the medication's unit; the vial may use a different one (mg vs mcg).
+  const dosageValue = dosage ? parseFloat(dosage) : NaN;
+  const vialUnitMismatch = !!(selectedVial && selectedMed && !areUnitsCompatible(selectedMed.unit, selectedVial.peptideUnit));
+  const injection = selectedVial && selectedMed
+    ? calculateInjection(dosageValue, selectedMed.unit, selectedVial)
+    : null;
+  const doseUnits = injection ? injection.insulinUnits : 0;
 
   const vialPercentage = selectedVial ? getVialPercentage(selectedVial.id, doses) : 0;
   const animatedRemaining = useAnimatedNumber(remainingPeptide);
   const animatedRemainingMl = useAnimatedNumber(remainingMl);
-  const animatedInjectMl = useAnimatedNumber(
-    dosage && parseFloat(dosage) > 0 && concentrationPerMl > 0
-      ? parseFloat(dosage) / concentrationPerMl
-      : 0
-  );
+  const animatedInjectMl = useAnimatedNumber(injection ? injection.volumeMl : 0);
 
 
   const resetForm = () => {
@@ -561,7 +558,7 @@ export function LogDose() {
     );
   };
 
-  const doseExceedsRemaining = selectedVial && dosage && parseFloat(dosage) > remainingPeptide;
+  const doseExceedsRemaining = !!injection && injection.doseInVialUnit > remainingPeptide;
 
   // Determine which zone is currently selected
   const selectedZone = SITE_ZONES.find((z) => z.sites.includes(injectionSite));
@@ -947,6 +944,12 @@ export function LogDose() {
                     This dose exceeds the remaining amount.
                   </div>
                 )}
+                {vialUnitMismatch && selectedVial && selectedMed && (
+                  <div className="flex items-center gap-2 text-amber-400 text-xs bg-amber-500/5 border border-amber-500/10 rounded-lg px-3 py-2">
+                    <AlertTriangle size={14} className="flex-shrink-0" />
+                    Vial is in {selectedVial.peptideUnit}, dose is in {selectedMed.unit}: syringe units can't be calculated.
+                  </div>
+                )}
               </div>
             ) : (
               // Full Log: 2-column top row (dropdown + summary), dashboard below
@@ -1018,7 +1021,13 @@ export function LogDose() {
                         This dose exceeds the remaining amount in the vial.
                       </div>
                     )}
-                    {dosage && parseFloat(dosage) > 0 && concentrationPerMl > 0 && (
+                    {vialUnitMismatch && (
+                      <div className="flex items-center gap-2 text-amber-400 text-xs bg-amber-500/5 border border-amber-500/10 rounded-lg px-3 py-2">
+                        <AlertTriangle size={14} className="flex-shrink-0" />
+                        This vial is measured in {selectedVial.peptideUnit} but {selectedMed.name} is dosed in {selectedMed.unit}, so the injection volume can't be calculated.
+                      </div>
+                    )}
+                    {injection && (
                       <div className="rounded-lg border border-white/5 bg-surface-900/40 p-3 flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-primary-500/10 flex items-center justify-center flex-shrink-0">
                           <Syringe size={18} className="text-primary-400" />
@@ -1028,7 +1037,7 @@ export function LogDose() {
                             Inject <strong className="text-primary-300">{animatedInjectMl.toFixed(2)} ml</strong>
                           </div>
                           <div className="text-xs text-content-secondary">
-                            {Math.round((parseFloat(dosage) / concentrationPerMl) * 100)} units (U-100) · {concentrationPerMl.toFixed(2)} {selectedVial.peptideUnit}/ml
+                            {injection.insulinUnits} units (U-100) · {injection.concentrationPerMl.toFixed(2)} {selectedVial.peptideUnit}/ml
                           </div>
                         </div>
                       </div>
