@@ -92,8 +92,8 @@ function useAnimatedNumber(target: number, duration = 600) {
 
 export function LogDose() {
   const { medications, doses, logDose, updateDose, deleteDose } = useMedicationStore();
-  const { vials, getVialRemaining, getVialPercentage, getLastUsedVialId } = useVialStore();
-  const { addToast, logDoseMedId, setLogDoseMedId } = useUIStore();
+  const { vials, getVialRemaining, getVialPercentage, getNextAvailableVialId } = useVialStore();
+  const { addToast, logDoseMedId, setLogDoseMedId, setPage } = useUIStore();
   const { settings } = useSettingsStore();
   const { customEffects, addCustomSideEffect } = useSideEffectsStore();
   const { protocols, updateProtocol } = useProtocolStore();
@@ -105,6 +105,9 @@ export function LogDose() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingType, setEditingType] = useState<'dose' | 'symptom' | null>(null);
   const [selectedVialId, setSelectedVialId] = useState<string>('');
+  // True once the user picks a vial themselves, so auto-selection stops overriding it.
+  const [vialChosenByUser, setVialChosenByUser] = useState(false);
+  const [symptomsExpanded, setSymptomsExpanded] = useState(false);
   const [dosage, setDosage] = useState('');
   const [customDosage, setCustomDosage] = useState(false);
   const [injectionSite, setInjectionSite] = useState<InjectionSite>('abdomen-upper-left');
@@ -155,25 +158,26 @@ export function LogDose() {
     if (logDoseMedId) setLogDoseMedId(null);
   }, [logDoseMedId, setLogDoseMedId]);
 
+  // Auto-select the next vial that still has medication in it. Re-runs when vials load
+  // or doses change (e.g. after logging a dose that empties the current vial), unless
+  // the user has picked a vial themselves for this entry.
   useEffect(() => {
-    if (editingId || !selectedMedId) return;
-    const lastUsed = getLastUsedVialId(selectedMedId, doses);
-    if (lastUsed) {
-      setSelectedVialId(lastUsed);
-    } else {
-      setSelectedVialId('');
-    }
-  }, [selectedMedId, editingId]);
+    if (editingId || !selectedMedId || vialChosenByUser) return;
+    setSelectedVialId(getNextAvailableVialId(selectedMedId, doses) ?? '');
+  }, [selectedMedId, editingId, vialChosenByUser, vials, doses, getNextAvailableVialId]);
 
+  // Pre-select the next injection site in the rotation. Re-runs after each logged dose
+  // so consecutive entries keep rotating instead of falling back to the default site.
+  const rotationSites = settings.injectionRotationSites;
+  const rotationStrategy = settings.injectionRotationStrategy;
   useEffect(() => {
     if (editingId || !selectedMedId) return;
-    const activeSites = settings.injectionRotationSites;
-    if (activeSites.length < 2) return;
-    const nextSite = getNextInjectionSite(doses, settings.injectionRotationStrategy, activeSites);
+    if (rotationSites.length < 2) return;
+    const nextSite = getNextInjectionSite(doses, rotationStrategy, rotationSites);
     if (nextSite) {
       setInjectionSite(nextSite);
     }
-  }, [selectedMedId, editingId]);
+  }, [selectedMedId, editingId, doses, rotationSites, rotationStrategy]);
 
   // When editing, always open in full mode
   useEffect(() => {
@@ -311,6 +315,9 @@ export function LogDose() {
 
   const selectedVial = vialsForMed.find((v) => v.id === selectedVialId);
 
+  // No vial for this medication has anything left in it (or none exist).
+  const noVialAvailable = vialsForMed.every((v) => getVialRemaining(v.id, doses) <= 0);
+
   const remainingPeptide = selectedVial
     ? getVialRemaining(selectedVial.id, doses)
     : 0;
@@ -341,6 +348,8 @@ export function LogDose() {
     setEditingId(null);
     setEditingType(null);
     setSelectedVialId('');
+    setVialChosenByUser(false);
+    setSymptomsExpanded(false);
     setDosage('');
     setCustomDosage(false);
     setInjectionSite('abdomen-upper-left');
@@ -757,6 +766,7 @@ export function LogDose() {
               onChange={(e) => {
                 setSelectedMedId(e.target.value);
                 setSelectedVialId('');
+                setVialChosenByUser(false);
                 setDosage('');
                 setCustomDosage(false);
                 setSelectedSideEffects([]);
@@ -878,6 +888,28 @@ export function LogDose() {
           </div>
         )}
 
+        {/* No usable vial — tell the user instead of silently logging against nothing */}
+        {selectedMed && !editingId && !isEditingSymptom && noVialAvailable && (
+          <div
+            role="alert"
+            className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-amber-300 text-xs"
+          >
+            <AlertTriangle size={14} className="flex-shrink-0 mt-0.5 text-amber-400" />
+            <div className="flex-1 leading-relaxed">
+              {vialsForMed.length === 0
+                ? <>No vial set up for {selectedMed.name}. This dose won't be deducted from a vial.</>
+                : <>All vials for {selectedMed.name} are empty. Add a new vial to keep tracking what's left.</>}
+            </div>
+            <button
+              type="button"
+              onClick={() => setPage('vials')}
+              className="btn-tactile flex-shrink-0 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-200 font-semibold"
+            >
+              Add vial
+            </button>
+          </div>
+        )}
+
         {/* Vial — Quick Log: compact summary; Full Log: select + dashboard */}
         {selectedMed && vialsForMed.length > 0 && !isEditingSymptom && (
           <div className="card-premium p-5">
@@ -895,7 +927,7 @@ export function LogDose() {
                   <div className="relative">
                     <select
                       value={selectedVialId}
-                      onChange={(e) => setSelectedVialId(e.target.value)}
+                      onChange={(e) => { setSelectedVialId(e.target.value); setVialChosenByUser(true); }}
                       className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-3 py-3 text-content-primary text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
                     >
                       <option value="">No vial</option>
@@ -903,7 +935,7 @@ export function LogDose() {
                         const rem = getVialRemaining(v.id, doses);
                         return (
                           <option key={v.id} value={v.id}>
-                            {v.name} — {rem.toFixed(2)} {v.peptideUnit}
+                            {v.name} — {rem > 0 ? `${rem.toFixed(2)} ${v.peptideUnit}` : 'empty'}
                           </option>
                         );
                       })}
@@ -958,7 +990,7 @@ export function LogDose() {
                   <div className="relative">
                     <select
                       value={selectedVialId}
-                      onChange={(e) => setSelectedVialId(e.target.value)}
+                      onChange={(e) => { setSelectedVialId(e.target.value); setVialChosenByUser(true); }}
                       className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-3 py-3.5 text-content-primary text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
                     >
                       <option value="">No vial — generic dose</option>
@@ -966,7 +998,7 @@ export function LogDose() {
                         const rem = getVialRemaining(v.id, doses);
                         return (
                           <option key={v.id} value={v.id}>
-                            {v.name} — {rem.toFixed(2)} {v.peptideUnit}
+                            {v.name} — {rem > 0 ? `${rem.toFixed(2)} ${v.peptideUnit}` : 'empty'}
                           </option>
                         );
                       })}
@@ -1120,20 +1152,6 @@ export function LogDose() {
               </>
             )}
 
-            {isQuick && (
-              <div className="mt-6 pt-6 border-t border-white/5">
-                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-content-secondary mb-3 uppercase tracking-widest">
-                  <ActivityIcon size={12} className="text-primary-400" />
-                  Symptoms
-                </label>
-                <SideEffectChips
-                  sideEffects={orderedSideEffects}
-                  selected={selectedSideEffects}
-                  onToggle={toggleSideEffect}
-                  onAddCustom={handleAddCustom}
-                />
-              </div>
-            )}
           </div>
         )}
 
@@ -1157,7 +1175,7 @@ export function LogDose() {
           </div>
 
           {isQuick ? (
-            <div className="flex gap-1 overflow-x-auto no-scrollbar py-0.5">
+            <div className="flex flex-wrap gap-1 py-0.5" role="group" aria-label="Injection site">
               {(settings.injectionRotationSites.length > 0 ? settings.injectionRotationSites : INJECTION_SITES.map((s) => s.id)).map((siteId) => {
                 const site = INJECTION_SITES.find((s) => s.id === siteId)!;
                 const isSelected = injectionSite === siteId;
@@ -1166,6 +1184,7 @@ export function LogDose() {
                     key={siteId}
                     type="button"
                     onClick={() => setInjectionSite(siteId)}
+                    aria-pressed={isSelected}
                     className={`btn-tactile flex-shrink-0 h-7 px-2 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all ${ isSelected ? 'bg-primary-600/20 border border-primary-500/50 text-primary-300 shadow-[0_0_8px_rgba(20,184,166,0.12)]' : 'bg-surface-800/50 border border-white/5 text-slate-500 hover:border-white/15 hover:bg-surface-700 hover:text-slate-300' }`}
                   >
                     {site.emoji} {site.label}
@@ -1241,6 +1260,39 @@ export function LogDose() {
           )}
         </div>
       )}
+
+        {/* Symptoms (Quick Log) — collapsed by default so the injection site and
+            submit button stay on screen without scrolling */}
+        {isQuick && selectedMed && (
+          <div className="card-premium p-5">
+            <button
+              type="button"
+              onClick={() => setSymptomsExpanded((p) => !p)}
+              aria-expanded={symptomsExpanded}
+              className="w-full flex items-center justify-between"
+            >
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-content-secondary uppercase tracking-widest">
+                <ActivityIcon size={12} className="text-primary-400" />
+                Symptoms
+                {selectedSideEffects.length > 0 && (
+                  <span className="text-primary-400 text-[10px] normal-case">({selectedSideEffects.length})</span>
+                )}
+                <span className="text-content-muted font-normal normal-case tracking-normal ml-1">optional</span>
+              </span>
+              {symptomsExpanded ? <ChevronUp size={14} className="text-content-muted" /> : <ChevronDown size={14} className="text-content-muted" />}
+            </button>
+            {symptomsExpanded && (
+              <div className="mt-3 animate-slide-up">
+                <SideEffectChips
+                  sideEffects={orderedSideEffects}
+                  selected={selectedSideEffects}
+                  onToggle={toggleSideEffect}
+                  onAddCustom={handleAddCustom}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Full Log Only Sections */}
         {!isQuick && (
