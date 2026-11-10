@@ -25,14 +25,14 @@ export function BottomNav() {
             <button
               key={item.id}
               onClick={() => setPage(item.id)}
-              className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-200 ${ isActive ? 'text-primary-400 scale-105' : 'text-content-secondary hover:text-content-primary' }`}
+              className={`flex-1 min-w-0 flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all duration-200 ${ isActive ? 'text-primary-400 scale-105' : 'text-content-secondary hover:text-content-primary' }`}
             >
               <Icon
                 size={22}
                 strokeWidth={isActive ? 2.5 : 1.5}
                 className={isActive ? 'drop-shadow-[0_0_8px_rgba(45,212,191,0.4)]' : ''}
               />
-              <span className="text-[10px] mt-0.5 font-medium">{item.label}</span>
+              <span className="text-[10px] mt-0.5 font-medium max-w-full truncate">{item.label}</span>
             </button>
           );
         })}

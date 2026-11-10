@@ -456,10 +456,10 @@ export function MedicationChart() {
                    This section displays your current titration protocol details. It uses your symptom logs and weight entries to recommend when it's safe to step up your dose based on the protocol.
                 </HelpBox>
               </h2>
-              <div className="flex items-center gap-2 mt-0.5">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
                 <p className="text-xs text-content-secondary">{currentProtocolMed.name}</p>
                 {currentProtocol.steps.length > 1 && (
-                  <div className="flex items-center gap-1 ml-2">
+                  <div className="flex flex-wrap items-center gap-1">
                     <button
                       type="button"
                       disabled={currentProtocol.currentStepIndex === 0}
@@ -495,7 +495,7 @@ export function MedicationChart() {
                         <ChevronDown size={12} className="-rotate-90" />
                       </button>
                     )}
-                    <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold text-[10px]">
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold text-[10px] whitespace-nowrap">
                       Step {currentProtocol.currentStepIndex + 1} of {currentProtocol.steps.length}
                     </span>
                   </div>

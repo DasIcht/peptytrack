@@ -62,6 +62,12 @@ const SITE_ZONES: { key: string; label: string; emoji: string; sites: InjectionS
 ];
 
 const LOG_MODE_KEY = 'pepty-log-mode';
+
+/** Round a PK target for display, e.g. 8.05061118646457 -> "8.05". */
+function formatConcentration(value: number | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return String(Number(value.toFixed(2)));
+}
 type LogMode = 'quick' | 'full';
 
 function useAnimatedNumber(target: number, duration = 600) {
@@ -774,7 +780,7 @@ export function LogDose() {
                 hasAutoProposedForMedRef.current = {};
               }}
               disabled={!!editingId}
-              className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-4 py-3.5 text-content-primary text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all disabled:opacity-50"
+              className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl pl-4 pr-10 py-3.5 truncate text-content-primary text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all disabled:opacity-50"
             >
               {medsWithDoses.map((m) => (
                 <option key={m.id} value={m.id}>{m.name} — {m.brand}</option>
@@ -784,13 +790,13 @@ export function LogDose() {
           </div>
           {settings.titrationWizardEnabled && activeProtocol && selectedMed && (
             <div className="mt-4 pt-4 border-t border-white/5 space-y-2" aria-label="Titration Protocol Info">
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-content-secondary">
-                  <ActivityIcon size={13} className="text-amber-400 animate-pulse" />
-                  <span className="font-semibold text-content-secondary">Titration Protocol:</span>
-                  <span className="text-content-secondary truncate max-w-[150px]">{activeProtocol.name}</span>
+              <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 text-xs">
+                <div className="flex items-center gap-1.5 text-content-secondary min-w-0 flex-1 basis-40">
+                  <ActivityIcon size={13} className="text-amber-400 animate-pulse flex-shrink-0" />
+                  <span className="font-semibold text-content-secondary whitespace-nowrap">Titration Protocol:</span>
+                  <span className="text-content-secondary truncate min-w-0" title={activeProtocol.name}>{activeProtocol.name}</span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center justify-end gap-1.5 ml-auto">
                   {activeProtocol.steps.length > 1 && (
                     <div className="flex items-center gap-1">
                       <button
@@ -811,7 +817,7 @@ export function LogDose() {
                           }
                           addToast(`Protocol stepped down to Step ${newIndex + 1}`, 'info');
                         }}
-                        className="px-1.5 py-0.5 text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed rounded bg-surface-800 border border-white/10 text-[10px] font-bold flex items-center gap-0.5"
+                        className="px-1.5 py-0.5 text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed rounded bg-surface-800 border border-white/10 text-[10px] font-bold flex items-center gap-0.5 whitespace-nowrap"
                         title="Step Down Protocol"
                       >
                         <ChevronDown size={12} className="rotate-90" />
@@ -835,7 +841,7 @@ export function LogDose() {
                             }
                             addToast(`Protocol stepped up to Step ${newIndex + 1}`, 'info');
                           }}
-                          className="px-1.5 py-0.5 text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed rounded bg-surface-800 border border-white/10 text-[10px] font-bold flex items-center gap-0.5"
+                          className="px-1.5 py-0.5 text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed rounded bg-surface-800 border border-white/10 text-[10px] font-bold flex items-center gap-0.5 whitespace-nowrap"
                           title="Step Up Protocol"
                         >
                           Step Up
@@ -849,11 +855,11 @@ export function LogDose() {
                   </span>
                 </div>
               </div>
-              <div className="flex items-center justify-between text-[11px] bg-surface-900/40 rounded-lg p-2.5 border border-white/5">
-                <span className="text-content-secondary">Current Step Target:</span>
-                <span className="font-semibold text-content-primary">
+              <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-[11px] bg-surface-900/40 rounded-lg p-2.5 border border-white/5">
+                <span className="text-content-secondary whitespace-nowrap">Current Step Target:</span>
+                <span className="font-semibold text-content-primary text-right min-w-0 break-words">
                   {activeProtocol.targetType === 'steady-state-concentration' ? (
-                    <>Maintain <span className="text-primary-300">{activeProtocol.steps[activeProtocol.currentStepIndex]?.targetConcentration} ng/ml</span> PK Target</>
+                    <>Maintain <span className="text-primary-300">{formatConcentration(activeProtocol.steps[activeProtocol.currentStepIndex]?.targetConcentration)} ng/ml</span> PK Target</>
                   ) : (
                     <>{activeProtocol.steps[activeProtocol.currentStepIndex]?.dosage} {selectedMed.unit} Weekly Dose</>
                   )}
@@ -923,12 +929,12 @@ export function LogDose() {
             {isQuick ? (
               // Quick Log: 2-column layout — dropdown left, summary right
               <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-2">
                   <div className="relative">
                     <select
                       value={selectedVialId}
                       onChange={(e) => { setSelectedVialId(e.target.value); setVialChosenByUser(true); }}
-                      className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-3 py-3 text-content-primary text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
+                      className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl pl-3 pr-9 py-3 truncate text-content-primary text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
                     >
                       <option value="">No vial</option>
                       {vialsForMed.map((v) => {
@@ -986,12 +992,12 @@ export function LogDose() {
             ) : (
               // Full Log: 2-column top row (dropdown + summary), dashboard below
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-3">
                   <div className="relative">
                     <select
                       value={selectedVialId}
                       onChange={(e) => { setSelectedVialId(e.target.value); setVialChosenByUser(true); }}
-                      className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl px-3 py-3.5 text-content-primary text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
+                      className="w-full appearance-none bg-surface-900/50 border border-white/8 rounded-xl pl-3 pr-9 py-3.5 truncate text-content-primary text-sm font-medium focus:outline-none focus:border-primary-500/50 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.12)] transition-all"
                     >
                       <option value="">No vial — generic dose</option>
                       {vialsForMed.map((v) => {
@@ -1123,13 +1129,13 @@ export function LogDose() {
                   value={dosage}
                   onChange={(e) => setDosage(e.target.value)}
                   placeholder={`Enter dosage in ${selectedMed.unit}`}
-                  className="flex-1 input-premium py-2.5 text-sm"
+                  className="flex-1 min-w-0 input-premium py-2.5 text-sm"
                   autoFocus
                 />
                 <button
                   type="button"
                   onClick={() => { setCustomDosage(false); setDosage(''); }}
-                  className="btn-tactile px-3 py-2 rounded-lg text-xs font-medium bg-surface-800 border border-white/10 text-content-secondary hover:text-content-primary"
+                  className="btn-tactile flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium bg-surface-800 border border-white/10 text-content-secondary hover:text-content-primary"
                 >
                   Presets
                 </button>
@@ -1141,7 +1147,7 @@ export function LogDose() {
                 {activeProtocol.targetType === 'steady-state-concentration' ? (
                   <div className="mt-3 text-[10px] text-primary-400 opacity-90 animate-fade-in flex items-center gap-1.5 bg-primary-500/10 px-2 py-1.5 rounded-lg border border-primary-500/15 animate-slide-up">
                     <Zap size={10} className="flex-shrink-0" />
-                    <span>Calculated top-up dose to reach your {activeProtocol.steps[activeProtocol.currentStepIndex]?.targetConcentration} ng/ml target peak.</span>
+                    <span>Calculated top-up dose to reach your {formatConcentration(activeProtocol.steps[activeProtocol.currentStepIndex]?.targetConcentration)} ng/ml target peak.</span>
                   </div>
                 ) : (
                   <div className="mt-3 text-[10px] text-amber-400 opacity-90 animate-fade-in flex items-center gap-1.5 bg-amber-500/10 px-2 py-1.5 rounded-lg border border-amber-500/15 animate-slide-up">

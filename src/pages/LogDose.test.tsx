@@ -587,6 +587,29 @@ describe('LogDose', () => {
       expect(screen.getByText(/Recommended clinical dosage for Step 2 is 0.5 mg/)).toBeInTheDocument();
     });
 
+    it('rounds long PK target concentrations for display', () => {
+      useProtocolStore.setState({
+        protocols: [{
+          id: 'p-1',
+          medicationId: 'med-1',
+          name: 'PK rounding prot',
+          steps: [{ id: 's1', dosage: 0.5, durationWeeks: 4, targetConcentration: 8.05061118646457 }],
+          currentStepIndex: 0,
+          startDate: Date.now(),
+          currentStepStartDate: Date.now(),
+          autoAdvance: false,
+          createdAt: Date.now(),
+          targetType: 'steady-state-concentration'
+        }],
+        initialized: true
+      });
+
+      render(<LogDose />);
+
+      expect(screen.getAllByText(/8\.05 ng\/ml/).length).toBeGreaterThanOrEqual(2);
+      expect(screen.queryByText(/8\.0506/)).not.toBeInTheDocument();
+    });
+
     it('shows step indication and calculates top-up dose in PK mode', () => {
       useProtocolStore.setState({
         protocols: [{
